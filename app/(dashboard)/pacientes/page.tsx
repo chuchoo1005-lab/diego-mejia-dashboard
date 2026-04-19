@@ -16,11 +16,11 @@ interface Paciente {
 }
 
 const estadoBadge: Record<string, string> = {
-  nuevo: "bg-sky-500/15 text-sky-400 border-sky-500/20",
-  activo: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
-  inactivo: "bg-slate-500/15 text-slate-400 border-slate-500/20",
-  vip: "bg-amber-500/15 text-amber-400 border-amber-500/20",
-  bloqueado: "bg-rose-500/15 text-rose-400 border-rose-500/20",
+  nuevo:     "bg-sky-50 text-sky-700 border-sky-200",
+  activo:    "bg-emerald-50 text-emerald-700 border-emerald-200",
+  inactivo:  "bg-slate-100 text-slate-600 border-slate-200",
+  vip:       "bg-amber-50 text-amber-700 border-amber-200",
+  bloqueado: "bg-rose-50 text-rose-700 border-rose-200",
 };
 
 const origenIcon: Record<string, string> = {
@@ -57,8 +57,8 @@ export default function PacientesPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Users className="w-6 h-6 text-sky-400" /> Pacientes
+          <h1 className="text-2xl font-bold text-[#1a2740] flex items-center gap-2">
+            <Users className="w-6 h-6 text-[#1a2740]" /> Pacientes
           </h1>
           <p className="text-slate-500 text-sm mt-1">{pacientes.length} registros totales</p>
         </div>
@@ -66,54 +66,54 @@ export default function PacientesPage() {
 
       {/* Buscador */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input
           type="text"
           placeholder="Buscar por alias o estado..."
           value={busqueda}
           onChange={e => setBusqueda(e.target.value)}
-          className="w-full pl-9 pr-4 py-2.5 bg-[#1a1f2e] border border-[#1e2535] rounded-xl text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500/50"
+          className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:border-[#1a2740]/40 shadow-sm"
         />
       </div>
 
       {loading ? (
         <div className="flex justify-center py-16">
-          <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-[#1a2740] border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
         <>
           {/* Desktop table */}
-          <div className="hidden sm:block bg-[#1a1f2e] border border-[#1e2535] rounded-2xl overflow-hidden">
+          <div className="hidden sm:block bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[#1e2535]">
+                <tr className="border-b border-slate-100 bg-slate-50">
                   {["Alias", "Canal", "Estado", "Calificado", "Intereses", "Desde"].map(h => (
                     <th key={h} className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#1e2535]">
+              <tbody className="divide-y divide-slate-100">
                 {filtrados.map(p => (
-                  <tr key={p.id} className="hover:bg-[#0f1117] transition-colors">
+                  <tr key={p.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-5 py-4">
-                      <span className="font-bold text-white">{p.alias}</span>
-                      {p.estado === "vip" && <span className="ml-2 text-amber-400">★</span>}
+                      <span className="font-bold text-[#1a2740]">{p.alias}</span>
+                      {p.estado === "vip" && <span className="ml-2 text-amber-500">★</span>}
                     </td>
-                    <td className="px-5 py-4 text-slate-400">{origenIcon[p.origen]} {p.origen}</td>
+                    <td className="px-5 py-4 text-slate-500">{origenIcon[p.origen]} {p.origen}</td>
                     <td className="px-5 py-4">
                       <span className={`text-xs px-2.5 py-1 rounded-full border font-medium capitalize ${estadoBadge[p.estado]}`}>
                         {p.estado}
                       </span>
                     </td>
                     <td className="px-5 py-4">
-                      <span className={`text-xs font-semibold ${p.calificado ? "text-emerald-400" : "text-slate-600"}`}>
+                      <span className={`text-xs font-semibold ${p.calificado ? "text-emerald-600" : "text-slate-400"}`}>
                         {p.calificado ? "✓ Sí" : "No"}
                       </span>
                     </td>
-                    <td className="px-5 py-4 text-slate-500 text-xs max-w-[160px] truncate">
+                    <td className="px-5 py-4 text-slate-400 text-xs max-w-[160px] truncate">
                       {((p.perfil_paciente?.intereses as string[]) || []).join(", ") || "—"}
                     </td>
-                    <td className="px-5 py-4 text-slate-600 text-xs">
+                    <td className="px-5 py-4 text-slate-400 text-xs">
                       {format(new Date(p.created_at), "d MMM yyyy", { locale: es })}
                     </td>
                   </tr>
@@ -125,14 +125,14 @@ export default function PacientesPage() {
           {/* Mobile cards */}
           <div className="sm:hidden space-y-3">
             {filtrados.map(p => (
-              <div key={p.id} className="bg-[#1a1f2e] border border-[#1e2535] rounded-2xl p-4">
+              <div key={p.id} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-bold text-white">{p.alias} {p.estado === "vip" && "★"}</span>
+                  <span className="font-bold text-[#1a2740]">{p.alias} {p.estado === "vip" && "★"}</span>
                   <span className={`text-xs px-2.5 py-1 rounded-full border font-medium capitalize ${estadoBadge[p.estado]}`}>{p.estado}</span>
                 </div>
                 <div className="flex flex-wrap gap-3 text-xs text-slate-500">
                   <span>{origenIcon[p.origen]} {p.origen}</span>
-                  <span className={p.calificado ? "text-emerald-400" : ""}>{p.calificado ? "✓ Calificado" : "Sin calificar"}</span>
+                  <span className={p.calificado ? "text-emerald-600 font-medium" : ""}>{p.calificado ? "✓ Calificado" : "Sin calificar"}</span>
                   <span>{format(new Date(p.created_at), "d MMM yyyy", { locale: es })}</span>
                 </div>
               </div>
@@ -140,7 +140,7 @@ export default function PacientesPage() {
           </div>
 
           {filtrados.length === 0 && (
-            <p className="text-center text-slate-500 py-12">No se encontraron pacientes</p>
+            <p className="text-center text-slate-400 py-12">No se encontraron pacientes</p>
           )}
         </>
       )}

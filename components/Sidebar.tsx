@@ -2,12 +2,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, CalendarDays, Users, Bell, BarChart3, Menu, X, Stethoscope
+  LayoutDashboard, CalendarDays, Users, Bell, BarChart3, Menu, X
 } from "lucide-react";
 import { useState } from "react";
 
 const nav = [
-  { href: "/", label: "Resumen", icon: LayoutDashboard },
+  { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/citas", label: "Citas", icon: CalendarDays },
   { href: "/pacientes", label: "Pacientes", icon: Users },
   { href: "/notificaciones", label: "Notificaciones", icon: Bell },
@@ -21,43 +21,33 @@ export default function Sidebar() {
   return (
     <>
       {/* Mobile top bar */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3 bg-[#0d1117] border-b border-[#1e2535]">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-indigo-500 flex items-center justify-center">
-            <Stethoscope className="w-4 h-4 text-white" />
-          </div>
-          <span className="font-semibold text-sm text-white">Diego Mejía Dental</span>
-        </div>
-        <button onClick={() => setOpen(!open)} className="text-slate-400 hover:text-white p-1">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3 bg-[#1a2740] shadow-md">
+        <LogoMark />
+        <button onClick={() => setOpen(!open)} className="text-white/70 hover:text-white p-1">
           {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
       </div>
 
       {/* Mobile overlay */}
       {open && (
-        <div className="lg:hidden fixed inset-0 z-40 bg-black/60" onClick={() => setOpen(false)} />
+        <div className="lg:hidden fixed inset-0 z-40 bg-black/50" onClick={() => setOpen(false)} />
       )}
 
       {/* Sidebar */}
       <aside className={`
-        fixed top-0 left-0 h-full z-40 w-64 bg-[#0d1117] border-r border-[#1e2535]
-        flex flex-col transition-transform duration-200
+        fixed top-0 left-0 h-full z-40 w-64
+        bg-gradient-to-b from-[#1a2740] to-[#1e2f4a]
+        flex flex-col transition-transform duration-200 shadow-xl
         ${open ? "translate-x-0" : "-translate-x-full"}
         lg:translate-x-0
       `}>
-        {/* Logo */}
-        <div className="flex items-center gap-3 px-5 py-5 border-b border-[#1e2535]">
-          <div className="w-9 h-9 rounded-xl bg-indigo-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-            <Stethoscope className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <p className="font-bold text-sm text-white leading-tight">Diego Mejía</p>
-            <p className="text-xs text-slate-500">Dental Group</p>
-          </div>
+        {/* Brand logo area */}
+        <div className="px-5 py-6 border-b border-white/10">
+          <LogoFull />
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-3 py-4 space-y-1">
+        <nav className="flex-1 px-3 py-5 space-y-1">
           {nav.map(({ href, label, icon: Icon }) => {
             const active = pathname === href;
             return (
@@ -66,13 +56,13 @@ export default function Sidebar() {
                 href={href}
                 onClick={() => setOpen(false)}
                 className={`
-                  flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all
+                  flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all
                   ${active
-                    ? "bg-indigo-500/15 text-indigo-400 border border-indigo-500/20"
-                    : "text-slate-400 hover:bg-[#1a1f2e] hover:text-slate-200"}
+                    ? "bg-white text-[#1a2740] shadow-md shadow-black/20"
+                    : "text-white/70 hover:bg-white/10 hover:text-white"}
                 `}
               >
-                <Icon className={`w-4 h-4 ${active ? "text-indigo-400" : ""}`} />
+                <Icon className="w-4 h-4 shrink-0" />
                 {label}
               </Link>
             );
@@ -80,11 +70,34 @@ export default function Sidebar() {
         </nav>
 
         {/* Footer */}
-        <div className="px-5 py-4 border-t border-[#1e2535]">
-          <p className="text-xs text-slate-600">Desarrollado por</p>
-          <p className="text-xs font-semibold text-slate-500">Flowlution</p>
+        <div className="px-5 py-4 border-t border-white/10">
+          <p className="text-xs text-white/30">Sistema desarrollado por</p>
+          <p className="text-xs font-semibold text-white/50 tracking-wide">FLOWLUTION</p>
         </div>
       </aside>
     </>
+  );
+}
+
+function LogoMark() {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex items-center">
+        <span className="bg-white text-[#1a2740] text-xs font-black px-2 py-1 tracking-tight">DIEGO</span>
+        <span className="bg-transparent border border-white text-white text-xs font-black px-2 py-1 tracking-tight">MEJÍA</span>
+      </div>
+    </div>
+  );
+}
+
+function LogoFull() {
+  return (
+    <div>
+      <div className="flex items-center mb-1">
+        <span className="bg-white text-[#1a2740] text-sm font-black px-2.5 py-1.5 tracking-tight leading-none">DIEGO</span>
+        <span className="border border-white/60 text-white text-sm font-black px-2.5 py-1.5 tracking-tight leading-none">MEJÍA</span>
+      </div>
+      <p className="text-white/50 text-xs tracking-[0.2em] uppercase mt-2 pl-0.5">Dental Group</p>
+    </div>
   );
 }
