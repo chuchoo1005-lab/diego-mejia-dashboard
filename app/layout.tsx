@@ -1,18 +1,23 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Diego Mejía Dental Group — Panel de Control",
-  description: "Sistema de gestión y métricas en tiempo real",
+  description: "Sistema inteligente de gestión y métricas en tiempo real para su clínica dental",
+  icons: { icon: "/favicon.ico" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={`${geist.variable} h-full`}>
-      <body className="min-h-full bg-[#f0f4f8] text-slate-800 antialiased">
+    <html lang="es" className={`${inter.variable} h-full`}>
+      <body className="min-h-full antialiased bg-[#080c14] text-[#f1f5f9]">
         {children}
       </body>
     </html>

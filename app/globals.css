@@ -1,39 +1,67 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #0f1117;
-  --foreground: #f1f5f9;
-  --card: #1a1f2e;
-  --card-foreground: #f1f5f9;
-  --primary: #6366f1;
+  /* Dental premium dark palette */
+  --dental-bg: #0a0e1a;
+  --dental-surface: #111827;
+  --dental-card: #1a2332;
+  --dental-card-elevated: #1f2b3d;
+  --dental-border: rgba(255, 255, 255, 0.06);
+  --dental-border-hover: rgba(255, 255, 255, 0.12);
+  --dental-text: #f1f5f9;
+  --dental-text-secondary: #94a3b8;
+  --dental-text-muted: #64748b;
+  --dental-accent: #14b8a6;
+  --dental-accent-light: #2dd4bf;
+  --dental-accent-glow: rgba(20, 184, 166, 0.15);
+  --dental-accent-subtle: rgba(20, 184, 166, 0.08);
+  --dental-gradient-start: #0d9488;
+  --dental-gradient-end: #06b6d4;
+  --dental-sidebar: #0d1117;
+  --dental-sidebar-hover: rgba(20, 184, 166, 0.08);
+  --dental-sidebar-active: rgba(20, 184, 166, 0.12);
+  --dental-success: #10b981;
+  --dental-warning: #f59e0b;
+  --dental-danger: #ef4444;
+  --dental-info: #38bdf8;
+
+  /* shadcn compat */
+  --background: var(--dental-bg);
+  --foreground: var(--dental-text);
+  --card: var(--dental-card);
+  --card-foreground: var(--dental-text);
+  --primary: var(--dental-accent);
   --primary-foreground: #ffffff;
-  --secondary: #1e2535;
-  --secondary-foreground: #94a3b8;
-  --muted: #1e2535;
-  --muted-foreground: #64748b;
-  --accent: #1e2535;
-  --accent-foreground: #f1f5f9;
-  --destructive: #ef4444;
-  --border: #1e2535;
-  --input: #1e2535;
-  --ring: #6366f1;
+  --secondary: var(--dental-card);
+  --secondary-foreground: var(--dental-text-secondary);
+  --muted: var(--dental-surface);
+  --muted-foreground: var(--dental-text-muted);
+  --accent: var(--dental-card-elevated);
+  --accent-foreground: var(--dental-text);
+  --destructive: var(--dental-danger);
+  --border: var(--dental-border);
+  --input: var(--dental-border);
+  --ring: var(--dental-accent);
   --radius: 0.75rem;
+  --popover: var(--dental-card);
+  --popover-foreground: var(--dental-text);
+  --chart-1: var(--dental-accent);
+  --chart-2: var(--dental-info);
+  --chart-3: var(--dental-success);
+  --chart-4: var(--dental-warning);
+  --chart-5: var(--dental-danger);
+  --sidebar: var(--dental-sidebar);
+  --sidebar-foreground: var(--dental-text);
+  --sidebar-primary: var(--dental-accent);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--dental-sidebar-active);
+  --sidebar-accent-foreground: var(--dental-text);
+  --sidebar-border: var(--dental-border);
+  --sidebar-ring: var(--dental-accent);
 }
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  -webkit-font-smoothing: antialiased;
-}
-
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #0f1117; }
-::-webkit-scrollbar-thumb { background: #1e2535; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #2d3748; }
 
 @theme inline {
   --color-background: var(--background);
@@ -79,73 +107,251 @@ body {
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-:root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+/* ===== Global styles ===== */
+body {
+  background: var(--dental-bg);
+  color: var(--dental-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(20, 184, 166, 0.2); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(20, 184, 166, 0.35); }
+
+/* Selection */
+::selection {
+  background: rgba(20, 184, 166, 0.3);
+  color: #ffffff;
+}
+
+/* ===== Animations ===== */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(20, 184, 166, 0); }
+}
+
+@keyframes floatSubtle {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes borderGlow {
+  0%, 100% { border-color: rgba(20, 184, 166, 0.15); }
+  50% { border-color: rgba(20, 184, 166, 0.35); }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.4s ease-out forwards;
+}
+
+/* Stagger children */
+.stagger-children > * {
+  opacity: 0;
+  animation: fadeInUp 0.4s ease-out forwards;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.1s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.2s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.3s; }
+.stagger-children > *:nth-child(7) { animation-delay: 0.35s; }
+.stagger-children > *:nth-child(8) { animation-delay: 0.4s; }
+
+/* ===== Glass card ===== */
+.glass-card {
+  position: relative;
+  background: linear-gradient(145deg, rgba(22, 32, 48, 0.92), rgba(13, 18, 28, 0.75));
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-radius: 1.125rem;
+  transition: all 0.3s ease;
+}
+
+.glass-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(45,212,191,0.2) 0%, rgba(6,182,212,0.08) 40%, transparent 70%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.glass-card:hover {
+  box-shadow: 0 16px 48px rgba(0,0,0,0.4), 0 0 0 1px rgba(20,184,166,0.08);
+  transform: translateY(-1px);
+}
+
+/* ===== Stat card premium ===== */
+.stat-card {
+  position: relative;
+  background: linear-gradient(145deg, #151e2e, #0f1520);
+  border-radius: 1.375rem;
+  padding: 1.5rem;
+  overflow: hidden;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+/* gradient border */
+.stat-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg,
+    rgba(45,212,191,0.35) 0%,
+    rgba(6,182,212,0.15) 35%,
+    rgba(255,255,255,0.03) 65%,
+    transparent 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* glow orb top-right */
+.stat-card::after {
+  content: "";
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  width: 140px;
+  height: 140px;
+  background: radial-gradient(circle, var(--glow-color, rgba(20,184,166,0.09)) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 56px rgba(0,0,0,0.45), 0 0 0 1px rgba(45,212,191,0.12), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+/* ===== Tooth icon for brand ===== */
+.tooth-icon {
+  filter: drop-shadow(0 0 8px rgba(20, 184, 166, 0.5));
+}
+
+/* ===== Gradient text ===== */
+.gradient-text {
+  background: linear-gradient(135deg, var(--dental-accent-light), var(--dental-gradient-end));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ===== Hero number (stat cards) ===== */
+.number-hero {
+  font-size: 2.75rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  background: linear-gradient(160deg, #ffffff 40%, rgba(255,255,255,0.55) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ===== Grid background ===== */
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(45,212,191,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(45,212,191,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* ===== Premium section header ===== */
+.section-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.22);
+}
+
+/* ===== Glowing badge ===== */
+.badge-premium {
+  background: linear-gradient(135deg, rgba(45,212,191,0.12), rgba(6,182,212,0.08));
+  border: 1px solid rgba(45,212,191,0.18);
+  color: #2dd4bf;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  box-shadow: 0 0 12px rgba(20,184,166,0.12);
+}
+
+/* ===== Active dot ===== */
+.active-dot {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+/* ===== Premium badge ===== */
+.badge-glow {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* ===== Table row hover ===== */
+.table-row-hover {
+  transition: all 0.2s ease;
+}
+.table-row-hover:hover {
+  background: rgba(20, 184, 166, 0.04);
+}
+
+/* ===== Sidebar nav link ===== */
+.nav-link-active {
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.15), rgba(6, 182, 212, 0.08));
+  border-left: 3px solid var(--dental-accent);
+  color: var(--dental-accent-light);
+}
+
+/* ===== Loading skeleton ===== */
+.skeleton {
+  background: linear-gradient(90deg, var(--dental-card) 25%, var(--dental-card-elevated) 50%, var(--dental-card) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  border-radius: 0.5rem;
 }
 
 @layer base {
