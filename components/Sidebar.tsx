@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, CalendarDays, Users, Bell, BarChart3, Menu, X, Settings, Video, LogOut, Cpu } from "lucide-react";
+import { LayoutDashboard, CalendarDays, Users, Bell, BarChart3, Menu, X, Settings, Video, LogOut, Cpu, MessageCircle } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -12,6 +12,7 @@ const nav = [
   { href: "/notificaciones", label: "Actividad",         icon: Bell,            desc: "Feed en tiempo real" },
   { href: "/metricas",       label: "Métricas",          icon: BarChart3,       desc: "Análisis" },
   { href: "/recursos",       label: "Recursos",          icon: Video,           desc: "Videos clínica" },
+  { href: "/whatsapp",      label: "WhatsApp",          icon: MessageCircle,   desc: "Conexión y QR" },
 ];
 
 export default function Sidebar() {
