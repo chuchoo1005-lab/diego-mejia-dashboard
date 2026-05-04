@@ -1,317 +1,249 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import StatCard from "@/components/StatCard";
-import {
-  MessageSquare, CalendarCheck, Users, TrendingUp, Clock,
-  AlertCircle, Activity, Sparkles, ArrowRight, Zap
-} from "lucide-react";
-import { format } from "date-fns";
+import { format, formatDistanceToNow, differenceInHours } from "date-fns";
 import { es } from "date-fns/locale";
+import { MessageSquare, Users, CheckCircle, Flame, RefreshCw, TrendingUp, ArrowUpRight, Activity } from "lucide-react";
 
-interface Metricas {
-  conversaciones_total: number;
-  pacientes_nuevos: number;
-  citas_agendadas: number;
-  citas_completadas: number;
-  conversion_rate: number;
+interface Paciente {
+  id: string; alias: string; estado: string; calificado: boolean;
+  perfil_paciente: Record<string, unknown>; created_at: string; updated_at: string;
+}
+interface Sugerencia {
+  tipo: "caliente" | "seguimiento" | "referido" | "nuevo";
+  alias: string; accion: string; servicio: string | null; score: number;
 }
 
-interface Cita {
-  id: string;
-  fecha_hora: string;
-  estado: string;
-  paciente_id: string;
-  pacientes: { alias: string };
-  tratamientos: { nombre: string } | null;
+const servicioLabel: Record<string, string> = { ortodoncia: "Ortodoncia", diseno: "Diseño de sonrisa", general: "Odontología general" };
+
+function getScore(p: Paciente) { return parseInt(String(p.perfil_paciente?.score ?? "0")) || 0; }
+function getServicio(p: Paciente) { return (p.perfil_paciente?.servicio_interes as string) || null; }
+function getNivel(p: Paciente) { return (p.perfil_paciente?.nivel_interes as string) || "bajo"; }
+function getEstadoConv(p: Paciente) { return (p.perfil_paciente?.estado_conv as string) || "nuevo"; }
+function getUA(p: Paciente) {
+  const ua = p.perfil_paciente?.ultima_actividad_at as string;
+  return ua ? new Date(ua) : new Date(p.updated_at);
 }
 
-interface Notificacion {
-  id: string;
-  tipo: string;
-  contenido: string;
-  leida: boolean;
-  timestamp: string;
+function buildSugerencias(pacientes: Paciente[]): Sugerencia[] {
+  const sugs: Sugerencia[] = [];
+  const now = Date.now();
+  pacientes.forEach(p => {
+    const score = getScore(p); const servicio = getServicio(p);
+    const estadoConv = getEstadoConv(p);
+    const horasSin = (now - getUA(p).getTime()) / 3600000;
+    const tipoIntencion = p.perfil_paciente?.tipo_intencion as string;
+    if (tipoIntencion === "referido" && score >= 10) sugs.push({ tipo: "referido", alias: p.alias, accion: "Referido nuevo — alta prioridad", servicio, score });
+    else if (score >= 70) sugs.push({ tipo: "caliente", alias: p.alias, accion: "Lead caliente — confirmar valoración", servicio, score });
+    else if (horasSin > 48 && score >= 20 && estadoConv !== "entrega_premium") sugs.push({ tipo: "seguimiento", alias: p.alias, accion: `Sin respuesta ${Math.round(horasSin)}h — enviar recordatorio`, servicio, score });
+    else if (estadoConv === "nuevo" && horasSin < 2) sugs.push({ tipo: "nuevo", alias: p.alias, accion: "Lead nuevo — responder pronto", servicio, score });
+  });
+  return sugs.sort((a, b) => b.score - a.score).slice(0, 6);
 }
-
-const estadoBadge: Record<string, { bg: string; text: string; dot: string }> = {
-  confirmada: { bg: "bg-emerald-500/10", text: "text-emerald-400", dot: "bg-emerald-400" },
-  pendiente:  { bg: "bg-amber-500/10",   text: "text-amber-400",   dot: "bg-amber-400" },
-  completada: { bg: "bg-white/5",         text: "text-white/50",    dot: "bg-white/30" },
-  cancelada:  { bg: "bg-rose-500/10",     text: "text-rose-400",    dot: "bg-rose-400" },
-};
-
-const tipoBadge: Record<string, { color: string; label: string }> = {
-  nueva_cita:          { color: "text-emerald-400", label: "Cita" },
-  paciente_calificado: { color: "text-sky-400",     label: "Paciente" },
-  alerta_discrecion:   { color: "text-amber-400",   label: "VIP" },
-  cancelacion:         { color: "text-rose-400",     label: "Cancelación" },
-  seguimiento_urgente: { color: "text-orange-400",   label: "Urgente" },
-  reporte_listo:       { color: "text-teal-400",     label: "Reporte" },
-};
 
 export default function Home() {
-  const [metricas, setMetricas] = useState<Metricas | null>(null);
-  const [citas, setCitas] = useState<Cita[]>([]);
-  const [notifs, setNotifs] = useState<Notificacion[]>([]);
+  const [kpis, setKpis] = useState({ totalPacientes: 0, pacientesHoy: 0, convsHoy: 0, calificados: 0, leadsCalientes: 0 });
+  const [pacientes, setPacientes] = useState<Paciente[]>([]);
+  const [sugerencias, setSugerencias] = useState<Sugerencia[]>([]);
   const [loading, setLoading] = useState(true);
-  const hoy = format(new Date(), "yyyy-MM-dd");
+  const [lastUpdate, setLastUpdate] = useState(new Date());
 
-  useEffect(() => {
-    async function load() {
-      const [{ data: met }, { data: citasData }, { data: notifsData }] = await Promise.all([
-        supabase.from("metricas_diarias").select("*").eq("fecha", hoy).single(),
-        supabase.from("citas")
-          .select("id,fecha_hora,estado,paciente_id,pacientes(alias),tratamientos(nombre)")
-          .gte("fecha_hora", new Date().toISOString())
-          .order("fecha_hora", { ascending: true })
-          .limit(5),
-        supabase.from("notificaciones_equipo")
-          .select("*")
-          .eq("leida", false)
-          .order("timestamp", { ascending: false })
-          .limit(5),
+  const load = useCallback(async () => {
+    try {
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const todayISO = today.toISOString();
+      const [{ count: total }, { count: nuevosHoy }, { count: convsHoy }, { count: calificados }, { data: pacs }] = await Promise.all([
+        supabase.from("pacientes").select("*", { count: "exact", head: true }),
+        supabase.from("pacientes").select("*", { count: "exact", head: true }).gte("created_at", todayISO),
+        supabase.from("conversaciones").select("*", { count: "exact", head: true }).gte("timestamp", todayISO),
+        supabase.from("pacientes").select("*", { count: "exact", head: true }).eq("calificado", true),
+        supabase.from("pacientes").select("id,alias,estado,calificado,perfil_paciente,created_at,updated_at").eq("estado", "activo").order("updated_at", { ascending: false }).limit(30),
       ]);
-      setMetricas(met);
-      setCitas((citasData as unknown as Cita[]) || []);
-      setNotifs(notifsData || []);
-      setLoading(false);
-    }
-    load();
-    const channel = supabase.channel("realtime-home")
-      .on("postgres_changes", { event: "*", schema: "public", table: "notificaciones_equipo" }, () => load())
-      .on("postgres_changes", { event: "*", schema: "public", table: "citas" }, () => load())
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [hoy]);
+      const pacsData = (pacs || []) as Paciente[];
+      const calientes = pacsData.filter(p => getScore(p) >= 60).length;
+      setKpis({ totalPacientes: total ?? 0, pacientesHoy: nuevosHoy ?? 0, convsHoy: convsHoy ?? 0, calificados: calificados ?? 0, leadsCalientes: calientes });
+      setPacientes(pacsData);
+      setSugerencias(buildSugerencias(pacsData));
+      setLastUpdate(new Date());
+    } finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { load(); const t = setInterval(load, 30000); return () => clearInterval(t); }, [load]);
 
   if (loading) return (
-    <div className="flex items-center justify-center h-64 animate-fade-in">
-      <div className="flex flex-col items-center gap-4">
-        <div className="relative">
-          <div className="w-12 h-12 border-2 border-teal-500/30 border-t-teal-400 rounded-full animate-spin" />
-          <div className="absolute inset-0 w-12 h-12 border-2 border-transparent border-b-cyan-400/50 rounded-full animate-spin" style={{ animationDirection: "reverse", animationDuration: "1.5s" }} />
-        </div>
-        <p className="text-sm text-white/30 font-medium">Cargando panel...</p>
+    <div className="flex items-center justify-center h-64">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-7 h-7 border border-white/20 border-t-white rounded-full animate-spin" />
+        <p className="text-xs" style={{ color: "var(--text-muted)" }}>Cargando...</p>
       </div>
     </div>
   );
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+
+      {/* ── Header ── */}
+      <div className="flex items-end justify-between">
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="w-4 h-4 text-teal-400" />
-            <span className="text-[11px] font-semibold text-teal-400/70 uppercase tracking-[0.15em]">Panel de control</span>
-          </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">
-            Buenos{getGreetingTime()}, <span className="gradient-text">Dr. Mejía</span>
+          <p className="section-label mb-3">Panel de control</p>
+          <h1 style={{ fontFamily: "var(--font-cormorant)", fontSize: "2rem", fontWeight: 300, letterSpacing: "-0.01em", lineHeight: 1.1 }}>
+            Diego Mejía<br /><span style={{ fontWeight: 600 }}>Dental Group</span>
           </h1>
-          <p className="text-white/40 text-sm mt-1.5 flex items-center gap-2">
-            <CalendarCheck className="w-3.5 h-3.5" />
+          <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>
             {format(new Date(), "EEEE d 'de' MMMM, yyyy", { locale: es })}
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-xs text-white/50 bg-white/[0.03] backdrop-blur-sm px-4 py-2.5 rounded-xl border border-white/5">
-            <Activity className="w-3.5 h-3.5 text-teal-400" />
-            <span>IA activa</span>
-            <div className="w-2 h-2 bg-teal-400 rounded-full active-dot" />
+          <div className="flex items-center gap-1.5 text-xs" style={{ color: "var(--text-muted)" }}>
+            <Activity className="w-3 h-3" />
+            <span>Activo</span>
+            <div className="w-1.5 h-1.5 bg-white rounded-full active-dot" />
           </div>
-          <div className="flex items-center gap-2 text-xs text-white/50 bg-white/[0.03] backdrop-blur-sm px-4 py-2.5 rounded-xl border border-white/5">
-            <Zap className="w-3.5 h-3.5 text-amber-400" />
-            <span>Tiempo real</span>
+          <div className="flex items-center gap-1.5 text-xs" style={{ color: "var(--text-muted)" }}>
+            <RefreshCw className="w-3 h-3" />
+            <span>{format(lastUpdate, "HH:mm:ss")}</span>
           </div>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
-        <StatCard
-          title="Conversaciones hoy"
-          value={metricas?.conversaciones_total ?? 0}
-          icon={MessageSquare}
-          color="teal"
-          trend={{ value: 12, label: "vs ayer" }}
-          delay={0}
-        />
-        <StatCard
-          title="Pacientes nuevos"
-          value={metricas?.pacientes_nuevos ?? 0}
-          icon={Users}
-          color="sky"
-          trend={{ value: 8, label: "vs ayer" }}
-          delay={50}
-        />
-        <StatCard
-          title="Citas agendadas"
-          value={metricas?.citas_agendadas ?? 0}
-          icon={CalendarCheck}
-          color="emerald"
-          trend={{ value: 15, label: "vs ayer" }}
-          delay={100}
-        />
-        <StatCard
-          title="Tasa de conversión"
-          value={`${metricas?.conversion_rate ?? 0}%`}
-          icon={TrendingUp}
-          color="amber"
-          trend={{ value: 3, label: "vs ayer" }}
-          delay={150}
-        />
-      </div>
-
-      {/* Quick insights banner */}
-      <div className="glass-card p-4 flex items-center gap-4 animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500/20 to-cyan-500/20 flex items-center justify-center shrink-0 border border-teal-500/10">
-          <Sparkles className="w-5 h-5 text-teal-400" />
-        </div>
-        <div className="flex-1">
-          <p className="text-sm text-white/70">
-            <span className="text-teal-400 font-semibold">Insight IA:</span>{" "}
-            {metricas && metricas.conversion_rate > 50
-              ? "Excelente tasa de conversión hoy. El sistema está captando pacientes eficientemente."
-              : "El asistente de IA está procesando conversaciones. Los datos se actualizan en tiempo real."
-            }
-          </p>
-        </div>
-      </div>
-
-      {/* Próximas citas + Notificaciones */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Citas */}
-        <div className="glass-card p-6 animate-fade-in-up" style={{ animationDelay: "0.25s" }}>
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-teal-500/10 flex items-center justify-center">
-                <Clock className="w-4 h-4 text-teal-400" />
+      {/* ── KPIs ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        {[
+          { label: "Total pacientes", value: kpis.totalPacientes, icon: Users },
+          { label: "Nuevos hoy", value: kpis.pacientesHoy, icon: TrendingUp },
+          { label: "Conversaciones hoy", value: kpis.convsHoy, icon: MessageSquare },
+          { label: "Calificados", value: kpis.calificados, icon: CheckCircle },
+          { label: "Leads calientes", value: kpis.leadsCalientes, icon: Flame, highlight: true },
+        ].map(({ label, value, icon: Icon, highlight }, i) => (
+          <div key={label} className="dm-card p-4 animate-fade-up" style={{ animationDelay: `${i * 50}ms`, ...(highlight ? { borderColor: "rgba(255,255,255,0.15)" } : {}) }}>
+            <div className="flex items-start justify-between mb-3">
+              <div className="w-7 h-7 rounded-sm flex items-center justify-center" style={{ background: "rgba(255,255,255,0.06)" }}>
+                <Icon className="w-3.5 h-3.5" style={{ color: highlight ? "#FFFFFF" : "var(--text-secondary)" }} />
               </div>
-              <div>
-                <h2 className="font-bold text-white text-sm">Próximas citas</h2>
-                <p className="text-[11px] text-white/30">Agenda del día</p>
-              </div>
+              {highlight && <div className="w-1.5 h-1.5 bg-white rounded-full active-dot" />}
             </div>
-            <a href="/citas" className="flex items-center gap-1 text-xs text-teal-400/70 font-medium hover:text-teal-400 transition-colors group">
-              Ver todas
-              <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-            </a>
+            <p className="text-2xl font-semibold text-white">{value}</p>
+            <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{label}</p>
           </div>
-          {citas.length === 0 ? (
-            <div className="text-center py-10">
-              <div className="w-14 h-14 rounded-2xl bg-white/[0.03] flex items-center justify-center mx-auto mb-3 border border-white/5">
-                <CalendarCheck className="w-6 h-6 text-white/15" />
-              </div>
-              <p className="text-white/30 text-sm font-medium">No hay citas próximas</p>
-              <p className="text-white/15 text-xs mt-1">Las citas aparecerán aquí en tiempo real</p>
+        ))}
+      </div>
+
+      {/* ── Sugerencias + Actividad ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className="dm-card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="section-label mb-1">IA · Acciones recomendadas</p>
+              <h2 style={{ fontFamily: "var(--font-cormorant)", fontSize: "1.1rem", fontWeight: 500 }}>Sugerencias del sistema</h2>
             </div>
+            <span className="text-xs px-2 py-1 rounded-sm" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-secondary)" }}>{sugerencias.length}</span>
+          </div>
+          {sugerencias.length === 0 ? (
+            <p className="text-sm text-center py-8" style={{ color: "var(--text-muted)" }}>Sin sugerencias activas</p>
           ) : (
-            <div className="space-y-2.5">
-              {citas.map((c, i) => {
-                const badge = estadoBadge[c.estado] ?? estadoBadge.pendiente;
-                return (
-                  <div key={c.id}
-                    className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] hover:border-white/8 transition-all group"
-                    style={{ animationDelay: `${0.3 + i * 0.05}s` }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-white/5 to-white/[0.02] flex items-center justify-center border border-white/5 shrink-0">
-                        <span className="text-teal-400/70 font-bold text-xs">{c.pacientes?.alias?.slice(0, 2)?.toUpperCase()}</span>
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-white/80 group-hover:text-white transition-colors">{c.pacientes?.alias ?? "—"}</p>
-                        <p className="text-[11px] text-white/30 mt-0.5">
-                          {c.tratamientos?.nombre ?? "Sin tratamiento"} · {format(new Date(c.fecha_hora), "HH:mm", { locale: es })}
-                        </p>
-                      </div>
+            <div className="space-y-2">
+              {sugerencias.map((s, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-sm" style={{ background: "rgba(255,255,255,0.02)", borderLeft: `2px solid ${s.tipo === "caliente" || s.tipo === "referido" ? "#FFF" : "#444"}` }}>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-xs font-semibold text-white">{s.alias}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-sm capitalize" style={{ background: "rgba(255,255,255,0.06)", color: "var(--text-secondary)" }}>{s.tipo}</span>
                     </div>
-                    <div className={`flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-full font-medium ${badge.bg} ${badge.text}`}>
-                      <div className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
-                      {c.estado}
-                    </div>
+                    <p className="text-xs truncate" style={{ color: "var(--text-secondary)" }}>{s.accion}</p>
+                    {s.servicio && <p className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>{servicioLabel[s.servicio] ?? s.servicio}</p>}
                   </div>
-                );
-              })}
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-semibold text-white">{s.score}</p>
+                    <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>score</p>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
 
-        {/* Notificaciones */}
-        <div className="glass-card p-6 animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                  <AlertCircle className="w-4 h-4 text-amber-400" />
-                </div>
-                {notifs.length > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 bg-gradient-to-br from-teal-500 to-cyan-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-lg shadow-teal-500/30">
-                    {notifs.length}
-                  </span>
-                )}
-              </div>
-              <div>
-                <h2 className="font-bold text-white text-sm">Alertas activas</h2>
-                <p className="text-[11px] text-white/30">Notificaciones sin leer</p>
-              </div>
+        <div className="dm-card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="section-label mb-1">Actividad reciente</p>
+              <h2 style={{ fontFamily: "var(--font-cormorant)", fontSize: "1.1rem", fontWeight: 500 }}>Pacientes en conversación</h2>
             </div>
-            <a href="/notificaciones" className="flex items-center gap-1 text-xs text-teal-400/70 font-medium hover:text-teal-400 transition-colors group">
-              Ver todas
-              <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-            </a>
+            <a href="/pacientes" className="flex items-center gap-1 text-xs" style={{ color: "var(--text-secondary)" }}>Ver todos <ArrowUpRight className="w-3 h-3" /></a>
           </div>
-          {notifs.length === 0 ? (
-            <div className="text-center py-10">
-              <div className="w-14 h-14 rounded-2xl bg-white/[0.03] flex items-center justify-center mx-auto mb-3 border border-white/5">
-                <AlertCircle className="w-6 h-6 text-white/15" />
-              </div>
-              <p className="text-white/30 text-sm font-medium">Todo al día ✓</p>
-              <p className="text-white/15 text-xs mt-1">Sin alertas pendientes</p>
-            </div>
-          ) : (
-            <div className="space-y-2.5">
-              {notifs.map((n, i) => {
-                const badge = tipoBadge[n.tipo] ?? { color: "text-white/50", label: n.tipo };
-                return (
-                  <div key={n.id}
-                    className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] hover:border-white/8 transition-all"
-                    style={{ animationDelay: `${0.35 + i * 0.05}s` }}
-                  >
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <span className={`text-[10px] font-bold uppercase tracking-wider ${badge.color}`}>
-                        {badge.label}
-                      </span>
-                      <div className="w-1.5 h-1.5 bg-teal-400 rounded-full animate-pulse" />
-                    </div>
-                    <p className="text-sm text-white/60 leading-relaxed">{n.contenido}</p>
-                    <p className="text-[11px] text-white/20 mt-2 flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {format(new Date(n.timestamp), "d MMM · HH:mm", { locale: es })}
+          <div className="space-y-1">
+            {pacientes.slice(0, 7).map(p => {
+              const score = getScore(p); const nivel = getNivel(p); const servicio = getServicio(p); const ua = getUA(p);
+              return (
+                <div key={p.id} className="flex items-center gap-3 px-2 py-2.5 rounded-sm hover:bg-white/[0.02] transition-colors">
+                  <div className="w-7 h-7 rounded-sm flex items-center justify-center shrink-0 text-xs font-bold" style={{ background: "rgba(255,255,255,0.06)", color: "var(--text-secondary)" }}>
+                    {p.alias.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">{p.alias}</p>
+                    <p className="text-[10px] truncate" style={{ color: "var(--text-muted)" }}>
+                      {servicio ? (servicioLabel[servicio] ?? servicio) : "Sin servicio"} · {formatDistanceToNow(ua, { locale: es, addSuffix: true })}
                     </p>
                   </div>
-                );
-              })}
-            </div>
-          )}
+                  <div className="text-right shrink-0">
+                    <p className={`text-sm font-semibold ${nivel === "alto" ? "text-white" : nivel === "medio" ? "text-white/60" : "text-white/30"}`}>{score}</p>
+                    <div className="score-bar w-10 mt-1"><div className="score-bar-fill" style={{ width: `${score}%` }} /></div>
+                  </div>
+                </div>
+              );
+            })}
+            {pacientes.length === 0 && <p className="text-sm text-center py-8" style={{ color: "var(--text-muted)" }}>Sin actividad reciente</p>}
+          </div>
         </div>
       </div>
 
-      {/* Footer info */}
-      <div className="flex items-center justify-center py-4">
-        <p className="text-[10px] text-white/15 flex items-center gap-2">
-          <span className="w-1 h-1 rounded-full bg-teal-500/30" />
-          Sistema actualizado en tiempo real · Diego Mejía Dental Group
-          <span className="w-1 h-1 rounded-full bg-teal-500/30" />
-        </p>
+      {/* ── Tabla pacientes ── */}
+      <div className="dm-card p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="section-label mb-1">Gestión de leads</p>
+            <h2 style={{ fontFamily: "var(--font-cormorant)", fontSize: "1.1rem", fontWeight: 500 }}>Todos los pacientes activos</h2>
+          </div>
+          <span className="text-xs" style={{ color: "var(--text-muted)" }}>{pacientes.length} registros</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                {["Alias", "Estado conversación", "Servicio", "Score", "Calificado", "Última actividad"].map(h => (
+                  <th key={h} className="text-left pb-3 pr-4 section-label">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {pacientes.map(p => {
+                const score = getScore(p); const servicio = getServicio(p);
+                const estadoConv = getEstadoConv(p); const ua = getUA(p);
+                const horasOld = differenceInHours(new Date(), ua);
+                return (
+                  <tr key={p.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.03)" }} className="hover:bg-white/[0.01] transition-colors">
+                    <td className="py-3 pr-4 font-medium text-white">{p.alias}</td>
+                    <td className="py-3 pr-4"><span className="text-xs px-2 py-1 rounded-sm" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-secondary)" }}>{estadoConv}</span></td>
+                    <td className="py-3 pr-4" style={{ color: "var(--text-secondary)" }}>{servicio ? (servicioLabel[servicio] ?? servicio) : "—"}</td>
+                    <td className="py-3 pr-4">
+                      <div className="flex items-center gap-2">
+                        <span className={`font-semibold ${score >= 60 ? "text-white" : score >= 30 ? "text-white/60" : "text-white/30"}`}>{score}</span>
+                        <div className="score-bar w-14"><div className="score-bar-fill" style={{ width: `${score}%` }} /></div>
+                      </div>
+                    </td>
+                    <td className="py-3 pr-4"><span className={`text-xs ${p.calificado ? "text-white" : "text-white/30"}`}>{p.calificado ? "✓ Sí" : "—"}</span></td>
+                    <td className="py-3"><span className="text-xs" style={{ color: horasOld > 48 ? "var(--text-muted)" : "var(--text-secondary)" }}>{formatDistanceToNow(ua, { locale: es, addSuffix: true })}</span></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          {pacientes.length === 0 && <p className="text-sm text-center py-8" style={{ color: "var(--text-muted)" }}>Sin pacientes activos</p>}
+        </div>
+      </div>
+
+      <div className="text-center py-2">
+        <p className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--font-cormorant)", fontStyle: "italic" }}>Diego Mejía Dental Group · Creamos Estilos de Vida</p>
       </div>
     </div>
   );
-}
-
-function getGreetingTime() {
-  const h = new Date().getHours();
-  if (h < 12) return " días";
-  if (h < 18) return "as tardes";
-  return "as noches";
 }

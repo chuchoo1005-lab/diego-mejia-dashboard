@@ -1,247 +1,187 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
-import { Users, Search, Star, Shield, UserCheck, UserPlus } from "lucide-react";
+import { Users, Search, RefreshCw } from "lucide-react";
 
 interface Paciente {
-  id: string;
-  alias: string;
-  estado: string;
-  origen: string;
-  calificado: boolean;
-  perfil_paciente: Record<string, unknown>;
-  created_at: string;
+  id: string; alias: string; estado: string; origen: string;
+  calificado: boolean; perfil_paciente: Record<string, unknown>; created_at: string; updated_at: string;
 }
 
-const estadoBadge: Record<string, { bg: string; text: string; dot: string }> = {
-  nuevo:     { bg: "bg-sky-500/10",     text: "text-sky-400",     dot: "bg-sky-400" },
-  activo:    { bg: "bg-emerald-500/10", text: "text-emerald-400", dot: "bg-emerald-400" },
-  inactivo:  { bg: "bg-white/5",        text: "text-white/40",    dot: "bg-white/30" },
-  vip:       { bg: "bg-amber-500/10",   text: "text-amber-400",   dot: "bg-amber-400" },
-  bloqueado: { bg: "bg-rose-500/10",    text: "text-rose-400",    dot: "bg-rose-400" },
-};
-
-const origenConfig: Record<string, { icon: string; color: string }> = {
-  whatsapp:  { icon: "📱", color: "text-emerald-400" },
-  instagram: { icon: "📸", color: "text-pink-400" },
-  referido:  { icon: "🤝", color: "text-sky-400" },
-  otro:      { icon: "🔗", color: "text-white/40" },
-};
+const servicioLabel: Record<string, string> = { ortodoncia: "Ortodoncia", diseno: "Diseño de sonrisa", general: "Odontología general" };
+const nivelLabel: Record<string, string> = { alto: "Alto", medio: "Medio", bajo: "Bajo" };
 
 export default function PacientesPage() {
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [busqueda, setBusqueda] = useState("");
-  const [filtroEstado, setFiltroEstado] = useState("Todos");
+  const [filtroEstado, setFiltroEstado] = useState("todos");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function load() {
-      const { data } = await supabase
-        .from("pacientes")
-        .select("id,alias,estado,origen,calificado,perfil_paciente,created_at")
-        .order("created_at", { ascending: false })
-        .limit(100);
-      setPacientes(data || []);
-      setLoading(false);
-    }
-    load();
+  const load = useCallback(async () => {
+    const { data } = await supabase
+      .from("pacientes")
+      .select("id,alias,estado,origen,calificado,perfil_paciente,created_at,updated_at")
+      .order("updated_at", { ascending: false })
+      .limit(100);
+    setPacientes((data || []) as Paciente[]);
+    setLoading(false);
   }, []);
 
-  const filtrados = pacientes.filter(p =>
-    (p.alias.toLowerCase().includes(busqueda.toLowerCase()) ||
-     p.estado.toLowerCase().includes(busqueda.toLowerCase())) &&
-    (filtroEstado === "Todos" || p.estado === filtroEstado)
-  );
+  useEffect(() => { load(); }, [load]);
 
-  const totalVip = pacientes.filter(p => p.estado === "vip").length;
-  const totalActivos = pacientes.filter(p => p.estado === "activo").length;
-  const totalNuevos = pacientes.filter(p => p.estado === "nuevo").length;
-  const totalCalificados = pacientes.filter(p => p.calificado).length;
+  const filtrados = pacientes.filter(p => {
+    const matchBusqueda = !busqueda || p.alias.toLowerCase().includes(busqueda.toLowerCase());
+    const estadoConv = (p.perfil_paciente?.estado_conv as string) || "nuevo";
+    const matchFiltro = filtroEstado === "todos" || (filtroEstado === "calificados" && p.calificado) || (filtroEstado === "calientes" && parseInt(String(p.perfil_paciente?.score ?? "0")) >= 60) || estadoConv === filtroEstado;
+    return matchBusqueda && matchFiltro;
+  });
+
+  const getScore = (p: Paciente) => parseInt(String(p.perfil_paciente?.score ?? "0")) || 0;
+  const getEstadoConv = (p: Paciente) => (p.perfil_paciente?.estado_conv as string) || "nuevo";
+  const getServicio = (p: Paciente) => (p.perfil_paciente?.servicio_interes as string) || null;
+  const getNivel = (p: Paciente) => (p.perfil_paciente?.nivel_interes as string) || "bajo";
+  const getUA = (p: Paciente) => { const ua = p.perfil_paciente?.ultima_actividad_at as string; return ua ? new Date(ua) : new Date(p.updated_at); };
+
+  const total = pacientes.length;
+  const calificados = pacientes.filter(p => p.calificado).length;
+  const calientes = pacientes.filter(p => getScore(p) >= 60).length;
+  const listos = pacientes.filter(p => getEstadoConv(p) === "entrega_premium").length;
 
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+      <div className="flex items-end justify-between">
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <Users className="w-4 h-4 text-teal-400" />
-            <span className="text-[11px] font-semibold text-teal-400/70 uppercase tracking-[0.15em]">Base de pacientes</span>
-          </div>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight">Pacientes</h1>
-          <p className="text-white/40 text-sm mt-1">{pacientes.length} registros totales</p>
+          <p className="section-label mb-3">Base de datos</p>
+          <h1 style={{ fontFamily: "var(--font-cormorant)", fontSize: "1.9rem", fontWeight: 300 }}>
+            Pacientes
+          </h1>
+          <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{total} registros totales</p>
         </div>
+        <button onClick={load} className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-sm transition-colors" style={{ background: "rgba(255,255,255,0.04)", color: "var(--text-secondary)", border: "1px solid var(--border)" }}>
+          <RefreshCw className="w-3 h-3" /> Actualizar
+        </button>
       </div>
 
-      {/* Quick stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 stagger-children">
+      {/* KPIs */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "VIP", value: totalVip, icon: Star, color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/15" },
-          { label: "Activos", value: totalActivos, icon: UserCheck, color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/15" },
-          { label: "Nuevos", value: totalNuevos, icon: UserPlus, color: "text-sky-400", bg: "bg-sky-500/10", border: "border-sky-500/15" },
-          { label: "Calificados", value: totalCalificados, icon: Shield, color: "text-teal-400", bg: "bg-teal-500/10", border: "border-teal-500/15" },
-        ].map(({ label, value, icon: Icon, color, bg, border }) => (
-          <div key={label} className={`flex items-center gap-3 p-3.5 rounded-xl ${bg} border ${border}`}>
-            <Icon className={`w-4 h-4 ${color}`} />
-            <div>
-              <p className={`text-lg font-extrabold ${color}`}>{value}</p>
-              <p className="text-[10px] text-white/30 font-medium uppercase tracking-wider">{label}</p>
-            </div>
+          { label: "Total", value: total },
+          { label: "Calificados", value: calificados },
+          { label: "Score ≥ 60", value: calientes },
+          { label: "Listos para llamada", value: listos },
+        ].map(({ label, value }) => (
+          <div key={label} className="dm-card p-4">
+            <p className="text-2xl font-semibold text-white">{value}</p>
+            <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{label}</p>
           </div>
         ))}
       </div>
 
-      {/* Search + Estado filter */}
+      {/* Búsqueda + Filtros */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
-          <input
-            type="text"
-            placeholder="Buscar por alias o estado..."
-            value={busqueda}
-            onChange={e => setBusqueda(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white/[0.03] border border-white/5 rounded-xl text-sm text-white placeholder-white/20 focus:outline-none focus:border-teal-500/30 focus:bg-white/[0.05] transition-all"
-          />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: "var(--text-muted)" }} />
+          <input type="text" placeholder="Buscar por alias..." value={busqueda} onChange={e => setBusqueda(e.target.value)}
+            className="w-full pl-9 pr-4 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none transition-all rounded-sm"
+            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)" }} />
         </div>
         <div className="flex flex-wrap gap-2">
-          {["Todos", "activo", "nuevo", "vip", "inactivo", "bloqueado"].map(f => (
-            <button key={f} onClick={() => setFiltroEstado(f)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all capitalize
-                ${filtroEstado === f
-                  ? "bg-teal-500/15 text-teal-400 border-teal-500/20"
-                  : "bg-white/[0.02] text-white/40 border-white/5 hover:border-white/10 hover:text-white/60"}`}>
-              {f}
+          {[
+            { key: "todos", label: "Todos" },
+            { key: "calificados", label: "Calificados" },
+            { key: "calientes", label: "Score alto" },
+            { key: "entrega_premium", label: "Listos" },
+            { key: "nuevo", label: "Nuevos" },
+          ].map(({ key, label }) => (
+            <button key={key} onClick={() => setFiltroEstado(key)}
+              className="px-3 py-2 text-xs font-medium rounded-sm transition-all"
+              style={{ background: filtroEstado === key ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.02)", color: filtroEstado === key ? "#FFF" : "var(--text-secondary)", border: "1px solid", borderColor: filtroEstado === key ? "rgba(255,255,255,0.2)" : "var(--border)" }}>
+              {label}
             </button>
           ))}
         </div>
       </div>
 
+      {/* Tabla */}
       {loading ? (
-        <div className="flex justify-center py-16">
-          <div className="w-10 h-10 border-2 border-teal-500/30 border-t-teal-400 rounded-full animate-spin" />
-        </div>
+        <div className="flex justify-center py-16"><div className="w-7 h-7 border border-white/20 border-t-white rounded-full animate-spin" /></div>
       ) : (
-        <>
-          {/* Desktop table */}
-          <div className="hidden sm:block glass-card overflow-hidden">
+        <div className="dm-card overflow-hidden">
+          {/* Desktop */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-white/5">
-                  {["Paciente", "Canal", "Estado", "Score", "Calificado", "Intereses", "Registrado"].map(h => (
-                    <th key={h} className="text-left px-5 py-4 text-[10px] font-semibold text-white/25 uppercase tracking-[0.15em]">{h}</th>
+                <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                  {["Alias", "Canal", "Estado conv.", "Servicio", "Nivel", "Score", "Calificado", "Última actividad"].map(h => (
+                    <th key={h} className="text-left px-5 py-4 section-label">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.03]">
-                {filtrados.map((p, i) => {
-                  const badge = estadoBadge[p.estado] ?? estadoBadge.nuevo;
-                  const origen = origenConfig[p.origen] ?? origenConfig.otro;
-                  const score = (p.perfil_paciente as any)?.score || 0;
-                  
-                  // Score color logic
-                  const scoreColor = 
-                    score >= 70 ? "text-emerald-400" :
-                    score >= 40 ? "text-amber-400" :
-                    "text-rose-400";
-
+              <tbody>
+                {filtrados.map(p => {
+                  const score = getScore(p); const estadoConv = getEstadoConv(p); const servicio = getServicio(p);
+                  const nivel = getNivel(p); const ua = getUA(p); const origen = p.origen || "otro";
                   return (
-                    <tr key={p.id} className="table-row-hover group" style={{ animationDelay: `${i * 30}ms` }}>
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-teal-500/10 to-cyan-500/5 flex items-center justify-center border border-white/5 shrink-0">
-                            <span className="text-teal-400/70 font-bold text-xs">{p.alias.slice(0, 2).toUpperCase()}</span>
+                    <tr key={p.id} className="table-row-hover" style={{ borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-sm flex items-center justify-center shrink-0 text-xs font-bold" style={{ background: "rgba(255,255,255,0.06)", color: "var(--text-secondary)" }}>
+                            {p.alias.slice(0, 2).toUpperCase()}
                           </div>
-                          <div>
-                            <span className="font-bold text-white/80 group-hover:text-white transition-colors">{p.alias}</span>
-                            {p.estado === "vip" && <Star className="w-3 h-3 text-amber-400 inline ml-1.5" />}
-                          </div>
+                          <span className="font-medium text-white">{p.alias}</span>
                         </div>
                       </td>
-                      <td className="px-5 py-4">
-                        <span className={`text-xs ${origen.color} flex items-center gap-1.5`}>
-                          {origen.icon} {p.origen}
+                      <td className="px-5 py-3.5"><span className="text-xs capitalize" style={{ color: "var(--text-secondary)" }}>{origen}</span></td>
+                      <td className="px-5 py-3.5">
+                        <span className="text-xs px-2 py-1 rounded-sm" style={{ background: "rgba(255,255,255,0.04)", color: estadoConv === "entrega_premium" ? "#FFF" : "var(--text-secondary)", border: "1px solid", borderColor: estadoConv === "entrega_premium" ? "rgba(255,255,255,0.15)" : "transparent" }}>
+                          {estadoConv}
                         </span>
                       </td>
-                      <td className="px-5 py-4">
-                        <span className={`flex items-center gap-1.5 w-fit text-[11px] px-2.5 py-1 rounded-full font-semibold ${badge.bg} ${badge.text}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
-                          {p.estado}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4">
+                      <td className="px-5 py-3.5" style={{ color: "var(--text-secondary)" }}>{servicio ? (servicioLabel[servicio] ?? servicio) : "—"}</td>
+                      <td className="px-5 py-3.5" style={{ color: nivel === "alto" ? "#FFF" : nivel === "medio" ? "rgba(255,255,255,0.5)" : "var(--text-muted)" }}>{nivelLabel[nivel] ?? nivel}</td>
+                      <td className="px-5 py-3.5">
                         <div className="flex items-center gap-2">
-                          <div className="w-12 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                            <div 
-                              className={`h-full ${score >= 70 ? 'bg-emerald-500' : score >= 40 ? 'bg-amber-500' : 'bg-rose-500'}`}
-                              style={{ width: `${score}%` }}
-                            />
-                          </div>
-                          <span className={`text-[10px] font-bold ${scoreColor}`}>{score}%</span>
+                          <span className={`font-semibold text-sm ${score >= 60 ? "text-white" : score >= 30 ? "text-white/60" : "text-white/30"}`}>{score}</span>
+                          <div className="score-bar w-12"><div className="score-bar-fill" style={{ width: `${score}%` }} /></div>
                         </div>
                       </td>
-                      <td className="px-5 py-4">
-                        {p.calificado ? (
-                          <span className="flex items-center gap-1 text-xs text-emerald-400 font-semibold">
-                            <Shield className="w-3 h-3" /> Sí
-                          </span>
-                        ) : (
-                          <span className="text-xs text-white/20">No</span>
-                        )}
-                      </td>
-                      <td className="px-5 py-4 text-white/25 text-xs max-w-[160px] truncate">
-                        {((p.perfil_paciente?.intereses as string[]) || []).join(", ") || "—"}
-                      </td>
-                      <td className="px-5 py-4 text-white/25 text-xs">
-                        {format(new Date(p.created_at), "d MMM yyyy", { locale: es })}
-                      </td>
+                      <td className="px-5 py-3.5"><span className={`text-xs ${p.calificado ? "text-white" : "text-white/30"}`}>{p.calificado ? "✓ Sí" : "—"}</span></td>
+                      <td className="px-5 py-3.5 text-xs" style={{ color: "var(--text-muted)" }}>{formatDistanceToNow(ua, { locale: es, addSuffix: true })}</td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
+            {filtrados.length === 0 && <p className="text-sm text-center py-10" style={{ color: "var(--text-muted)" }}>No se encontraron pacientes</p>}
           </div>
 
-          {/* Mobile cards */}
-          <div className="sm:hidden space-y-3 stagger-children">
+          {/* Mobile */}
+          <div className="sm:hidden divide-y" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
             {filtrados.map(p => {
-              const badge = estadoBadge[p.estado] ?? estadoBadge.nuevo;
-              const origen = origenConfig[p.origen] ?? origenConfig.otro;
+              const score = getScore(p); const estadoConv = getEstadoConv(p); const servicio = getServicio(p); const ua = getUA(p);
               return (
-                <div key={p.id} className="glass-card p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-teal-500/10 to-cyan-500/5 flex items-center justify-center border border-white/5">
-                        <span className="text-teal-400/70 font-bold text-xs">{p.alias.slice(0, 2).toUpperCase()}</span>
-                      </div>
-                      <span className="font-bold text-white/80">{p.alias} {p.estado === "vip" && "★"}</span>
+                <div key={p.id} className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-sm flex items-center justify-center text-xs font-bold" style={{ background: "rgba(255,255,255,0.06)", color: "var(--text-secondary)" }}>{p.alias.slice(0, 2).toUpperCase()}</div>
+                      <span className="font-medium text-white text-sm">{p.alias}</span>
                     </div>
-                    <span className={`flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-full font-semibold ${badge.bg} ${badge.text}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
-                      {p.estado}
-                    </span>
+                    <span className="text-sm font-semibold" style={{ color: score >= 60 ? "#FFF" : "var(--text-muted)" }}>{score}</span>
                   </div>
-                  <div className="flex flex-wrap gap-3 text-xs text-white/30">
-                    <span className={origen.color}>{origen.icon} {p.origen}</span>
-                    <span className={p.calificado ? "text-emerald-400 font-medium" : ""}>
-                      {p.calificado ? "✓ Calificado" : "Sin calificar"}
-                    </span>
-                    <span>{format(new Date(p.created_at), "d MMM yyyy", { locale: es })}</span>
+                  <div className="flex flex-wrap gap-2 text-xs" style={{ color: "var(--text-secondary)" }}>
+                    <span>{estadoConv}</span>
+                    {servicio && <span>{servicioLabel[servicio] ?? servicio}</span>}
+                    {p.calificado && <span className="text-white">✓ Calificado</span>}
+                    <span style={{ color: "var(--text-muted)" }}>{formatDistanceToNow(ua, { locale: es, addSuffix: true })}</span>
                   </div>
                 </div>
               );
             })}
           </div>
-
-          {filtrados.length === 0 && (
-            <div className="text-center py-12 animate-fade-in">
-              <div className="w-16 h-16 rounded-2xl bg-white/[0.03] flex items-center justify-center mx-auto mb-4 border border-white/5">
-                <Users className="w-7 h-7 text-white/15" />
-              </div>
-              <p className="text-white/30 font-medium">No se encontraron pacientes</p>
-            </div>
-          )}
-        </>
+        </div>
       )}
     </div>
   );

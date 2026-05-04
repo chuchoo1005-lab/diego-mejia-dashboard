@@ -1,173 +1,182 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { format } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
 import { es } from "date-fns/locale";
-import { CalendarDays, Clock, DollarSign, Filter, Search } from "lucide-react";
+import { Phone, Search, RefreshCw, Clock } from "lucide-react";
 
-interface Cita {
-  id: string;
-  fecha_hora: string;
-  estado: string;
-  notas_encriptadas: string | null;
-  pacientes: { alias: string; estado: string };
-  tratamientos: { nombre: string; duracion_minutos: number; precio_cop: number } | null;
+interface Lead {
+  id: string; alias: string; perfil_paciente: Record<string, unknown>;
+  calificado: boolean; updated_at: string; created_at: string;
 }
 
-const estadoBadge: Record<string, { bg: string; text: string; dot: string }> = {
-  confirmada: { bg: "bg-emerald-500/10", text: "text-emerald-400", dot: "bg-emerald-400" },
-  pendiente:  { bg: "bg-amber-500/10",   text: "text-amber-400",   dot: "bg-amber-400" },
-  completada: { bg: "bg-white/5",         text: "text-white/40",    dot: "bg-white/30" },
-  cancelada:  { bg: "bg-rose-500/10",     text: "text-rose-400",    dot: "bg-rose-400" },
-  reagendada: { bg: "bg-sky-500/10",      text: "text-sky-400",     dot: "bg-sky-400" },
-  no_asistio: { bg: "bg-orange-500/10",   text: "text-orange-400",  dot: "bg-orange-400" },
-};
-
-const filters = ["Todas", "confirmada", "pendiente", "completada", "cancelada"];
+const servicioLabel: Record<string, string> = { ortodoncia: "Ortodoncia", diseno: "Diseño de sonrisa", general: "Odontología general" };
 
 export default function CitasPage() {
-  const [citas, setCitas] = useState<Cita[]>([]);
-  const [filtro, setFiltro] = useState("Todas");
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [busqueda, setBusqueda] = useState("");
+  const [filtro, setFiltro] = useState("todos");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function load() {
-      let q = supabase
-        .from("citas")
-        .select("id,fecha_hora,estado,notas_encriptadas,pacientes(alias,estado),tratamientos(nombre,duracion_minutos,precio_cop)")
-        .order("fecha_hora", { ascending: true });
-      if (filtro !== "Todas") q = q.eq("estado", filtro);
-      const { data } = await q.limit(50);
-      setCitas((data as unknown as Cita[]) || []);
-      setLoading(false);
-    }
-    load();
-  }, [filtro]);
+  const load = useCallback(async () => {
+    const { data } = await supabase
+      .from("pacientes")
+      .select("id,alias,perfil_paciente,calificado,updated_at,created_at")
+      .eq("estado", "activo")
+      .order("updated_at", { ascending: false })
+      .limit(100);
+    setLeads((data || []) as Lead[]);
+    setLoading(false);
+  }, []);
 
-  const filtrados = citas.filter(c =>
-    !busqueda || c.pacientes?.alias?.toLowerCase().includes(busqueda.toLowerCase())
-  );
+  useEffect(() => { load(); }, [load]);
 
-  const formatPrecio = (v: number) => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(v);
+  const getScore = (p: Lead) => parseInt(String(p.perfil_paciente?.score ?? "0")) || 0;
+  const getEstadoConv = (p: Lead) => (p.perfil_paciente?.estado_conv as string) || "nuevo";
+  const getServicio = (p: Lead) => (p.perfil_paciente?.servicio_interes as string) || null;
+  const getNombre = (p: Lead) => (p.perfil_paciente?.nombre as string) || null;
+  const getCiudad = (p: Lead) => (p.perfil_paciente?.ciudad as string) || null;
+  const getHorario = (p: Lead) => (p.perfil_paciente?.horario_contacto as string) || null;
+  const getUA = (p: Lead) => { const ua = p.perfil_paciente?.ultima_actividad_at as string; return ua ? new Date(ua) : new Date(p.updated_at); };
 
-  const totalConfirmadas = citas.filter(c => c.estado === "confirmada").length;
-  const totalPendientes = citas.filter(c => c.estado === "pendiente").length;
+  const filtrados = leads.filter(p => {
+    const estadoConv = getEstadoConv(p);
+    const score = getScore(p);
+    const nombre = getNombre(p) || p.alias;
+    const matchBusqueda = !busqueda || nombre.toLowerCase().includes(busqueda.toLowerCase()) || p.alias.toLowerCase().includes(busqueda.toLowerCase());
+    const matchFiltro = filtro === "todos"
+      || (filtro === "listos" && estadoConv === "entrega_premium")
+      || (filtro === "calificados" && p.calificado)
+      || (filtro === "calientes" && score >= 60)
+      || (filtro === "pendientes" && estadoConv !== "entrega_premium" && score >= 20);
+    return matchBusqueda && matchFiltro;
+  });
+
+  const listos = leads.filter(p => getEstadoConv(p) === "entrega_premium").length;
+  const calificados = leads.filter(p => p.calificado).length;
+  const calientes = leads.filter(p => getScore(p) >= 60).length;
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+      <div className="flex items-end justify-between">
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <CalendarDays className="w-4 h-4 text-teal-400" />
-            <span className="text-[11px] font-semibold text-teal-400/70 uppercase tracking-[0.15em]">Agenda dental</span>
-          </div>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight">Gestión de Citas</h1>
-          <p className="text-white/40 text-sm mt-1">{citas.length} cita{citas.length !== 1 ? "s" : ""} encontrada{citas.length !== 1 ? "s" : ""}</p>
+          <p className="section-label mb-3">Gestión comercial</p>
+          <h1 style={{ fontFamily: "var(--font-cormorant)", fontSize: "1.9rem", fontWeight: 300 }}>Leads para llamada</h1>
+          <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Pacientes listos para contactar</p>
         </div>
-        {/* Mini stats */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/15">
-            <div className="w-2 h-2 bg-emerald-400 rounded-full" />
-            <span className="text-xs font-semibold text-emerald-400">{totalConfirmadas} confirmadas</span>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/15">
-            <div className="w-2 h-2 bg-amber-400 rounded-full" />
-            <span className="text-xs font-semibold text-amber-400">{totalPendientes} pendientes</span>
-          </div>
-        </div>
+        <button onClick={load} className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-sm" style={{ background: "rgba(255,255,255,0.04)", color: "var(--text-secondary)", border: "1px solid var(--border)" }}>
+          <RefreshCw className="w-3 h-3" /> Actualizar
+        </button>
       </div>
 
-      {/* Search + Filters */}
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: "Listos para llamada", value: listos },
+          { label: "Calificados", value: calificados },
+          { label: "Score ≥ 60", value: calientes },
+        ].map(({ label, value }) => (
+          <div key={label} className="dm-card p-4">
+            <p className="text-2xl font-semibold text-white">{value}</p>
+            <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Filtros + Búsqueda */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
-          <input
-            type="text"
-            placeholder="Buscar paciente..."
-            value={busqueda}
-            onChange={e => setBusqueda(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white/[0.03] border border-white/5 rounded-xl text-sm text-white placeholder-white/20 focus:outline-none focus:border-teal-500/30 focus:bg-white/[0.05] transition-all"
-          />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: "var(--text-muted)" }} />
+          <input type="text" placeholder="Buscar por nombre o alias..." value={busqueda} onChange={e => setBusqueda(e.target.value)}
+            className="w-full pl-9 pr-4 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none rounded-sm"
+            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)" }} />
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Filter className="w-4 h-4 text-white/20 hidden sm:block" />
-          {filters.map((f) => (
-            <button key={f} onClick={() => setFiltro(f)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all capitalize
-                ${filtro === f
-                  ? "bg-teal-500/15 text-teal-400 border-teal-500/20 shadow-lg shadow-teal-500/5"
-                  : "bg-white/[0.02] text-white/40 border-white/5 hover:border-white/10 hover:text-white/60"}`}>
-              {f}
+        <div className="flex gap-2">
+          {[
+            { key: "todos", label: "Todos" },
+            { key: "listos", label: "Listos" },
+            { key: "calientes", label: "Calientes" },
+            { key: "calificados", label: "Calificados" },
+          ].map(({ key, label }) => (
+            <button key={key} onClick={() => setFiltro(key)} className="px-3 py-2 text-xs font-medium rounded-sm transition-all"
+              style={{ background: filtro === key ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.02)", color: filtro === key ? "#FFF" : "var(--text-secondary)", border: "1px solid", borderColor: filtro === key ? "rgba(255,255,255,0.2)" : "var(--border)" }}>
+              {label}
             </button>
           ))}
         </div>
       </div>
 
+      {/* Cards */}
       {loading ? (
-        <div className="flex justify-center py-16">
-          <div className="relative">
-            <div className="w-10 h-10 border-2 border-teal-500/30 border-t-teal-400 rounded-full animate-spin" />
-          </div>
-        </div>
+        <div className="flex justify-center py-16"><div className="w-7 h-7 border border-white/20 border-t-white rounded-full animate-spin" /></div>
       ) : filtrados.length === 0 ? (
-        <div className="text-center py-16 animate-fade-in">
-          <div className="w-16 h-16 rounded-2xl bg-white/[0.03] flex items-center justify-center mx-auto mb-4 border border-white/5">
-            <CalendarDays className="w-7 h-7 text-white/15" />
-          </div>
-          <p className="text-white/30 font-medium">No hay citas con este filtro</p>
-          <p className="text-white/15 text-sm mt-1">Intenta cambiar los filtros de búsqueda</p>
+        <div className="dm-card p-12 text-center">
+          <Phone className="w-8 h-8 mx-auto mb-3" style={{ color: "var(--text-muted)" }} />
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>No hay leads en esta categoría</p>
+          <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Los leads aparecerán cuando los pacientes avancen en la conversación</p>
         </div>
       ) : (
-        <div className="space-y-3 stagger-children">
-          {filtrados.map((c) => {
-            const badge = estadoBadge[c.estado] ?? estadoBadge.pendiente;
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {filtrados.map(p => {
+            const score = getScore(p); const estadoConv = getEstadoConv(p); const servicio = getServicio(p);
+            const nombre = getNombre(p); const ciudad = getCiudad(p); const horario = getHorario(p); const ua = getUA(p);
+            const esListo = estadoConv === "entrega_premium";
             return (
-              <div key={c.id} className="glass-card p-5 hover:border-white/10 group">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-start gap-4">
-                    {/* Avatar */}
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-500/15 to-cyan-500/10 flex items-center justify-center border border-teal-500/10 shrink-0 group-hover:from-teal-500/20 group-hover:to-cyan-500/15 transition-all">
-                      <span className="text-teal-400/80 font-bold text-sm">{c.pacientes?.alias?.slice(0, 2)?.toUpperCase()}</span>
+              <div key={p.id} className="dm-card p-5" style={esListo ? { borderColor: "rgba(255,255,255,0.15)" } : {}}>
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-sm flex items-center justify-center text-sm font-bold" style={{ background: "rgba(255,255,255,0.06)", color: "var(--text-secondary)" }}>
+                      {p.alias.slice(0, 2).toUpperCase()}
                     </div>
                     <div>
-                      <div className="flex items-center gap-2.5 flex-wrap">
-                        <p className="font-bold text-white/90 group-hover:text-white transition-colors">{c.pacientes?.alias ?? "—"}</p>
-                        <div className={`flex items-center gap-1.5 text-[11px] px-2.5 py-0.5 rounded-full font-semibold ${badge.bg} ${badge.text}`}>
-                          <div className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
-                          {c.estado}
-                        </div>
-                      </div>
-                      <p className="text-sm text-white/40 mt-1">{c.tratamientos?.nombre ?? "Sin tratamiento asignado"}</p>
-                      <div className="flex items-center gap-4 mt-2 text-xs text-white/25">
-                        <span className="flex items-center gap-1">
-                          <CalendarDays className="w-3 h-3" />
-                          {format(new Date(c.fecha_hora), "EEEE d 'de' MMMM", { locale: es })}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {format(new Date(c.fecha_hora), "HH:mm", { locale: es })}
-                          {c.tratamientos && ` · ${c.tratamientos.duracion_minutos} min`}
-                        </span>
-                      </div>
+                      <p className="font-semibold text-white text-sm">{nombre || p.alias}</p>
+                      {nombre && <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{p.alias}</p>}
                     </div>
                   </div>
-                  {c.tratamientos && (
-                    <div className="text-right sm:shrink-0 flex items-center gap-3 sm:flex-col sm:items-end">
-                      <div className="flex items-center gap-1.5">
-                        <DollarSign className="w-3.5 h-3.5 text-teal-400/50" />
-                        <p className="text-lg font-extrabold text-white/80">{formatPrecio(c.tratamientos.precio_cop)}</p>
-                      </div>
-                      <p className="text-[11px] text-white/20">Valor estimado</p>
+                  <div className="text-right">
+                    <p className={`text-lg font-bold ${score >= 60 ? "text-white" : "text-white/40"}`}>{score}</p>
+                    <p className="text-[9px]" style={{ color: "var(--text-muted)" }}>score</p>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 mb-4">
+                  {servicio && (
+                    <div className="flex items-center gap-2 text-xs" style={{ color: "var(--text-secondary)" }}>
+                      <span className="w-1 h-1 bg-white/40 rounded-full" />
+                      {servicioLabel[servicio] ?? servicio}
                     </div>
                   )}
+                  {ciudad && (
+                    <div className="flex items-center gap-2 text-xs" style={{ color: "var(--text-secondary)" }}>
+                      <span className="w-1 h-1 bg-white/40 rounded-full" />
+                      {ciudad}
+                    </div>
+                  )}
+                  {horario && (
+                    <div className="flex items-center gap-2 text-xs" style={{ color: "var(--text-secondary)" }}>
+                      <Clock className="w-3 h-3" />
+                      {horario}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-xs px-2 py-1 rounded-sm" style={{ background: esListo ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.04)", color: esListo ? "#FFF" : "var(--text-secondary)", border: `1px solid ${esListo ? "rgba(255,255,255,0.2)" : "var(--border)"}` }}>
+                    {esListo ? "✓ Listo para llamada" : estadoConv}
+                  </span>
+                  <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                    {formatDistanceToNow(ua, { locale: es, addSuffix: true })}
+                  </span>
                 </div>
               </div>
             );
           })}
         </div>
       )}
+
+      <p className="text-xs text-center py-2" style={{ color: "var(--text-muted)" }}>
+        {filtrados.length} leads · Actualización automática cada 30 segundos
+      </p>
     </div>
   );
 }
