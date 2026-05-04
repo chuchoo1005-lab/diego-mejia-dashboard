@@ -1,19 +1,34 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { formatDistanceToNow, format } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
-import { Phone, Search, RefreshCw, Clock } from "lucide-react";
+import { Phone, Search, RefreshCw, Clock, MapPin, Stethoscope } from "lucide-react";
 
-interface Lead {
-  id: string; alias: string; perfil_paciente: Record<string, unknown>;
-  calificado: boolean; updated_at: string; created_at: string;
+interface Paciente {
+  id: string; alias: string; calificado: boolean;
+  telefono_encriptado: string | null;
+  perfil_paciente: Record<string, unknown>; updated_at: string;
 }
 
-const servicioLabel: Record<string, string> = { ortodoncia: "Ortodoncia", diseno: "Diseño de sonrisa", general: "Odontología general" };
+const SRV: Record<string, string> = { ortodoncia: "Ortodoncia", diseno: "Diseño de sonrisa", general: "Odontología general" };
+
+function formatTel(t: string | null): string {
+  if (!t) return "";
+  const c = t.replace(/\D/g, "");
+  if (c.length >= 10 && c.startsWith("57")) return `+57 ${c.slice(2, 5)} ${c.slice(5, 8)} ${c.slice(8)}`;
+  if (c.length === 10) return `${c.slice(0, 3)} ${c.slice(3, 6)} ${c.slice(6)}`;
+  return t;
+}
+function displayName(p: Paciente): string {
+  return (p.perfil_paciente?.nombre as string) || formatTel(p.telefono_encriptado) || p.alias;
+}
+function sc(p: Paciente) { return parseInt(String(p.perfil_paciente?.score ?? "0")) || 0; }
+function ec(p: Paciente) { return (p.perfil_paciente?.estado_conv as string) || "nuevo"; }
+function ua(p: Paciente) { const v = p.perfil_paciente?.ultima_actividad_at as string; return v ? new Date(v) : new Date(p.updated_at); }
 
 export default function CitasPage() {
-  const [leads, setLeads] = useState<Lead[]>([]);
+  const [leads, setLeads] = useState<Paciente[]>([]);
   const [busqueda, setBusqueda] = useState("");
   const [filtro, setFiltro] = useState("todos");
   const [loading, setLoading] = useState(true);
@@ -21,151 +36,157 @@ export default function CitasPage() {
   const load = useCallback(async () => {
     const { data } = await supabase
       .from("pacientes")
-      .select("id,alias,perfil_paciente,calificado,updated_at,created_at")
-      .eq("estado", "activo")
-      .order("updated_at", { ascending: false })
-      .limit(100);
-    setLeads((data || []) as Lead[]);
+      .select("id,alias,calificado,telefono_encriptado,perfil_paciente,updated_at")
+      .eq("estado", "activo").order("updated_at", { ascending: false }).limit(100);
+    setLeads((data || []) as Paciente[]);
     setLoading(false);
   }, []);
 
-  useEffect(() => { load(); }, [load]);
-
-  const getScore = (p: Lead) => parseInt(String(p.perfil_paciente?.score ?? "0")) || 0;
-  const getEstadoConv = (p: Lead) => (p.perfil_paciente?.estado_conv as string) || "nuevo";
-  const getServicio = (p: Lead) => (p.perfil_paciente?.servicio_interes as string) || null;
-  const getNombre = (p: Lead) => (p.perfil_paciente?.nombre as string) || null;
-  const getCiudad = (p: Lead) => (p.perfil_paciente?.ciudad as string) || null;
-  const getHorario = (p: Lead) => (p.perfil_paciente?.horario_contacto as string) || null;
-  const getUA = (p: Lead) => { const ua = p.perfil_paciente?.ultima_actividad_at as string; return ua ? new Date(ua) : new Date(p.updated_at); };
+  useEffect(() => { load(); const t = setInterval(load, 30000); return () => clearInterval(t); }, [load]);
 
   const filtrados = leads.filter(p => {
-    const estadoConv = getEstadoConv(p);
-    const score = getScore(p);
-    const nombre = getNombre(p) || p.alias;
-    const matchBusqueda = !busqueda || nombre.toLowerCase().includes(busqueda.toLowerCase()) || p.alias.toLowerCase().includes(busqueda.toLowerCase());
-    const matchFiltro = filtro === "todos"
-      || (filtro === "listos" && estadoConv === "entrega_premium")
-      || (filtro === "calificados" && p.calificado)
-      || (filtro === "calientes" && score >= 60)
-      || (filtro === "pendientes" && estadoConv !== "entrega_premium" && score >= 20);
-    return matchBusqueda && matchFiltro;
+    const nom = displayName(p); const tel = formatTel(p.telefono_encriptado);
+    const match = !busqueda || nom.toLowerCase().includes(busqueda.toLowerCase()) || tel.includes(busqueda);
+    const estado = ec(p); const score = sc(p);
+    const f = filtro === "todos" ? true
+      : filtro === "listos" ? estado === "entrega_premium"
+      : filtro === "calificados" ? p.calificado
+      : filtro === "calientes" ? score >= 60
+      : true;
+    return match && f;
   });
 
-  const listos = leads.filter(p => getEstadoConv(p) === "entrega_premium").length;
-  const calificados = leads.filter(p => p.calificado).length;
-  const calientes = leads.filter(p => getScore(p) >= 60).length;
+  const stats = {
+    listos: leads.filter(p => ec(p) === "entrega_premium").length,
+    calif: leads.filter(p => p.calificado).length,
+    calientes: leads.filter(p => sc(p) >= 60).length,
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-end justify-between">
         <div>
-          <p className="section-label mb-3">Gestión comercial</p>
-          <h1 style={{ fontFamily: "var(--font-cormorant)", fontSize: "1.9rem", fontWeight: 300 }}>Leads para llamada</h1>
-          <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Pacientes listos para contactar</p>
+          <p className="section-label mb-2">Gestión comercial</p>
+          <h1 style={{ fontFamily: "var(--font-cormorant)", fontSize: "2rem", fontWeight: 500, color: "var(--text)" }}>
+            Leads para llamar
+          </h1>
+          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Pacientes listos para contactar</p>
         </div>
-        <button onClick={load} className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-sm" style={{ background: "rgba(255,255,255,0.04)", color: "var(--text-secondary)", border: "1px solid var(--border)" }}>
-          <RefreshCw className="w-3 h-3" /> Actualizar
+        <button onClick={load} className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg"
+          style={{ background: "var(--card)", border: "1px solid var(--border)", color: "var(--text-secondary)", boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}>
+          <RefreshCw className="w-3.5 h-3.5" /> Actualizar
         </button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-4">
         {[
-          { label: "Listos para llamada", value: listos },
-          { label: "Calificados", value: calificados },
-          { label: "Score ≥ 60", value: calientes },
-        ].map(({ label, value }) => (
+          { label: "Listos para llamar", value: stats.listos, color: "text-emerald-600" },
+          { label: "Calificados", value: stats.calif, color: "text-blue-600" },
+          { label: "Score ≥ 60", value: stats.calientes, color: "text-orange-500" },
+        ].map(({ label, value, color }) => (
           <div key={label} className="dm-card p-4">
-            <p className="text-2xl font-semibold text-white">{value}</p>
-            <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{label}</p>
+            <p className={`text-2xl font-bold ${color}`}>{value}</p>
+            <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>{label}</p>
           </div>
         ))}
       </div>
 
-      {/* Filtros + Búsqueda */}
+      {/* Búsqueda + filtros */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: "var(--text-muted)" }} />
-          <input type="text" placeholder="Buscar por nombre o alias..." value={busqueda} onChange={e => setBusqueda(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none rounded-sm"
-            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)" }} />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "var(--text-muted)" }} />
+          <input type="text" placeholder="Buscar por nombre o teléfono..." value={busqueda}
+            onChange={e => setBusqueda(e.target.value)} className="w-full pl-10 pr-4 py-2.5 text-sm rounded-lg"
+            style={{ background: "var(--card)", border: "1px solid var(--border)", color: "var(--text)", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }} />
         </div>
         <div className="flex gap-2">
           {[
-            { key: "todos", label: "Todos" },
-            { key: "listos", label: "Listos" },
-            { key: "calientes", label: "Calientes" },
-            { key: "calificados", label: "Calificados" },
+            { key: "todos", label: "Todos" }, { key: "listos", label: "Listos" },
+            { key: "calientes", label: "Calientes" }, { key: "calificados", label: "Calificados" },
           ].map(({ key, label }) => (
-            <button key={key} onClick={() => setFiltro(key)} className="px-3 py-2 text-xs font-medium rounded-sm transition-all"
-              style={{ background: filtro === key ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.02)", color: filtro === key ? "#FFF" : "var(--text-secondary)", border: "1px solid", borderColor: filtro === key ? "rgba(255,255,255,0.2)" : "var(--border)" }}>
+            <button key={key} onClick={() => setFiltro(key)} className="px-4 py-2 text-sm font-medium rounded-lg transition-all"
+              style={{ background: filtro === key ? "#111827" : "var(--card)", color: filtro === key ? "#FFF" : "var(--text-secondary)", border: "1px solid", borderColor: filtro === key ? "#111827" : "var(--border)", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
               {label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Cards */}
       {loading ? (
-        <div className="flex justify-center py-16"><div className="w-7 h-7 border border-white/20 border-t-white rounded-full animate-spin" /></div>
+        <div className="flex justify-center py-16"><div className="w-8 h-8 border-2 border-gray-200 border-t-gray-600 rounded-full animate-spin" /></div>
       ) : filtrados.length === 0 ? (
-        <div className="dm-card p-12 text-center">
-          <Phone className="w-8 h-8 mx-auto mb-3" style={{ color: "var(--text-muted)" }} />
-          <p className="text-sm" style={{ color: "var(--text-muted)" }}>No hay leads en esta categoría</p>
-          <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Los leads aparecerán cuando los pacientes avancen en la conversación</p>
+        <div className="dm-card p-14 text-center">
+          <Phone className="w-10 h-10 mx-auto mb-3" style={{ color: "var(--text-muted)" }} />
+          <p className="font-medium" style={{ color: "var(--text-secondary)" }}>No hay leads en esta categoría</p>
+          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Los leads aparecen cuando los pacientes avanzan en la conversación</p>
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtrados.map(p => {
-            const score = getScore(p); const estadoConv = getEstadoConv(p); const servicio = getServicio(p);
-            const nombre = getNombre(p); const ciudad = getCiudad(p); const horario = getHorario(p); const ua = getUA(p);
-            const esListo = estadoConv === "entrega_premium";
+            const score = sc(p); const estado = ec(p); const act = ua(p);
+            const nom = displayName(p); const tel = formatTel(p.telefono_encriptado);
+            const nombre = p.perfil_paciente?.nombre as string;
+            const ciudad = p.perfil_paciente?.ciudad as string;
+            const horario = p.perfil_paciente?.horario_contacto as string;
+            const servicio = p.perfil_paciente?.servicio_interes as string;
+            const isListo = estado === "entrega_premium";
             return (
-              <div key={p.id} className="dm-card p-5" style={esListo ? { borderColor: "rgba(255,255,255,0.15)" } : {}}>
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-sm flex items-center justify-center text-sm font-bold" style={{ background: "rgba(255,255,255,0.06)", color: "var(--text-secondary)" }}>
-                      {p.alias.slice(0, 2).toUpperCase()}
+              <div key={p.id} className="dm-card p-5" style={isListo ? { borderColor: "#10B981", borderWidth: "2px" } : {}}>
+                {/* Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold"
+                      style={{ background: isListo ? "#D1FAE5" : "#F4F4F6", color: isListo ? "#065F46" : "#6B7280" }}>
+                      {nom.slice(0, 2).toUpperCase()}
                     </div>
                     <div>
-                      <p className="font-semibold text-white text-sm">{nombre || p.alias}</p>
-                      {nombre && <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{p.alias}</p>}
+                      <p className="font-semibold text-sm" style={{ color: "var(--text)" }}>{nombre || nom}</p>
+                      {nombre && tel && <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{tel}</p>}
+                      {!nombre && <p className="text-[10px] mt-0.5" style={{ color: "#D1D5DB" }}>{p.alias}</p>}
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className={`text-lg font-bold ${score >= 60 ? "text-white" : "text-white/40"}`}>{score}</p>
-                    <p className="text-[9px]" style={{ color: "var(--text-muted)" }}>score</p>
+                    <p className="text-xl font-bold" style={{ color: score >= 60 ? "#111827" : "#D1D5DB" }}>{score}</p>
+                    <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>score</p>
                   </div>
                 </div>
 
-                <div className="space-y-1.5 mb-4">
-                  {servicio && (
-                    <div className="flex items-center gap-2 text-xs" style={{ color: "var(--text-secondary)" }}>
-                      <span className="w-1 h-1 bg-white/40 rounded-full" />
-                      {servicioLabel[servicio] ?? servicio}
+                {/* Datos */}
+                <div className="space-y-2 mb-4">
+                  {tel && (
+                    <div className="flex items-center gap-2 text-sm" style={{ color: "var(--text-secondary)" }}>
+                      <Phone className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--text-muted)" }} />
+                      <span className="font-medium" style={{ color: "var(--text)" }}>{tel}</span>
                     </div>
                   )}
                   {ciudad && (
-                    <div className="flex items-center gap-2 text-xs" style={{ color: "var(--text-secondary)" }}>
-                      <span className="w-1 h-1 bg-white/40 rounded-full" />
+                    <div className="flex items-center gap-2 text-sm" style={{ color: "var(--text-secondary)" }}>
+                      <MapPin className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--text-muted)" }} />
                       {ciudad}
                     </div>
                   )}
+                  {servicio && (
+                    <div className="flex items-center gap-2 text-sm" style={{ color: "var(--text-secondary)" }}>
+                      <Stethoscope className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--text-muted)" }} />
+                      {SRV[servicio] ?? servicio}
+                    </div>
+                  )}
                   {horario && (
-                    <div className="flex items-center gap-2 text-xs" style={{ color: "var(--text-secondary)" }}>
-                      <Clock className="w-3 h-3" />
+                    <div className="flex items-center gap-2 text-sm" style={{ color: "var(--text-secondary)" }}>
+                      <Clock className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--text-muted)" }} />
                       {horario}
                     </div>
                   )}
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-xs px-2 py-1 rounded-sm" style={{ background: esListo ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.04)", color: esListo ? "#FFF" : "var(--text-secondary)", border: `1px solid ${esListo ? "rgba(255,255,255,0.2)" : "var(--border)"}` }}>
-                    {esListo ? "✓ Listo para llamada" : estadoConv}
+                {/* Footer */}
+                <div className="flex items-center justify-between pt-3" style={{ borderTop: "1px solid var(--border)" }}>
+                  <span className={`badge ${isListo ? "badge-green" : "badge-gray"}`}>
+                    {isListo ? "✓ Listo para llamar" : estado}
                   </span>
-                  <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
-                    {formatDistanceToNow(ua, { locale: es, addSuffix: true })}
+                  <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+                    {formatDistanceToNow(act, { locale: es, addSuffix: true })}
                   </span>
                 </div>
               </div>
@@ -173,10 +194,6 @@ export default function CitasPage() {
           })}
         </div>
       )}
-
-      <p className="text-xs text-center py-2" style={{ color: "var(--text-muted)" }}>
-        {filtrados.length} leads · Actualización automática cada 30 segundos
-      </p>
     </div>
   );
 }
