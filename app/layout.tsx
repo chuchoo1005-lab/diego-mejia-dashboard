@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import "./globals.css";
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
@@ -42,6 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es" className={`${cormorant.variable} ${dmSans.variable} h-full`}>
       <body className="min-h-full antialiased" style={{ background: "#0A0A0A", color: "#FFFFFF", fontFamily: "var(--font-dm), sans-serif" }}>
+        <ServiceWorkerRegister />
         {children}
       </body>
     </html>
