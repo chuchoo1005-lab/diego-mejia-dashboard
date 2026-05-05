@@ -140,16 +140,18 @@ export default function Home() {
     try {
       const today = new Date(); today.setHours(0,0,0,0);
       const t = today.toISOString();
-      const [{ count: total }, { count: hoy }, { count: cHoy }, { data: pacsD }, { data: convsD }] = await Promise.all([
+      const [{ count: total }, { count: hoy }, { data: convsHoyData }, { data: pacsD }, { data: convsD }] = await Promise.all([
         supabase.from("pacientes").select("*", { count:"exact", head:true }),
         supabase.from("pacientes").select("*", { count:"exact", head:true }).gte("created_at", t),
-        supabase.from("conversaciones").select("*", { count:"exact", head:true }).gte("timestamp", t),
+        supabase.from("conversaciones").select("paciente_id").gte("timestamp", t),
         supabase.from("pacientes").select("id,alias,calificado,origen,telefono_encriptado,perfil_paciente,created_at,updated_at").eq("estado","activo").order("updated_at",{ascending:false}).limit(50),
         supabase.from("conversaciones").select("id,paciente_id,direccion,mensaje_encriptado,timestamp,metadata").order("timestamp",{ascending:false}).limit(30),
       ]);
       const d = (pacsD || []) as Paciente[];
       const cv = (convsD || []) as Conv[];
-      setKpis({ total:total??0, hoy:hoy??0, convsHoy:cHoy??0, listos:d.filter(p=>ec(p)==="entrega_premium").length, calientes:d.filter(p=>sc(p)>=60).length });
+      // Contar chats únicos (pacientes distintos), no mensajes individuales
+      const chatsUnicos = new Set((convsHoyData || []).map((c: {paciente_id: string}) => c.paciente_id)).size;
+      setKpis({ total:total??0, hoy:hoy??0, convsHoy:chatsUnicos, listos:d.filter(p=>ec(p)==="entrega_premium").length, calientes:d.filter(p=>sc(p)>=60).length });
       setPacs(d); setConvs(cv);
       setFeedItems(cv.slice(0,10).map(c => {
         const msg = c.direccion === "entrante"
