@@ -229,7 +229,7 @@ export default function Home() {
               <span className="text-xs font-bold tracking-[0.2em]" style={{ color:"var(--cyan)" }}>SISTEMA INTELIGENTE ACTIVO</span>
             </div>
             <h1 style={{ fontFamily:"var(--font-cormorant)", fontSize:"1.85rem", fontWeight:500, color:"var(--text)", lineHeight:1.15 }}>
-              Centro de Admisiones<br /><span className="gradient-text">con Inteligencia Artificial</span>
+              Diego Mejía<br /><span className="gradient-text">Dental Group</span>
             </h1>
             <p className="text-xs mt-2" style={{ color:"var(--text-3)" }}>
               {format(new Date(), "EEEE d 'de' MMMM, yyyy", { locale:es })} · {format(lastUpdate, "HH:mm:ss")}

@@ -1,8 +1,12 @@
 "use client";
+interface BeforeInstallPromptEvent extends Event {
+  prompt?: () => void;
+  userChoice?: Promise<{ outcome: string }>;
+}
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, CalendarDays, Users, Bell, BarChart3, Menu, X, Settings, Video, LogOut, Cpu, MessageCircle } from "lucide-react";
-import { useState } from "react";
+import { LayoutDashboard, CalendarDays, Users, Bell, BarChart3, Menu, X, Settings, Video, LogOut, Cpu, MessageCircle, Download } from "lucide-react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
 const nav = [
@@ -19,6 +23,24 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<Event | null>(null);
+  const [installed, setInstalled] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: Event) => { e.preventDefault(); setInstallPrompt(e); };
+    window.addEventListener("beforeinstallprompt", handler);
+    window.addEventListener("appinstalled", () => setInstalled(true));
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (!installPrompt) return;
+    const prompt = installPrompt as BeforeInstallPromptEvent;
+    prompt.prompt?.();
+    const result = await prompt.userChoice;
+    if (result?.outcome === "accepted") setInstalled(true);
+    setInstallPrompt(null);
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -101,6 +123,16 @@ export default function Sidebar() {
             <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(255,255,255,0.03)" }}><Settings className="w-3.5 h-3.5" /></div>
             Configuración
           </button>
+          {installPrompt && !installed && (
+            <button onClick={handleInstall}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-semibold mt-0.5 transition-all"
+              style={{ background: "rgba(6,182,212,0.1)", color: "var(--cyan)", border: "1px solid rgba(6,182,212,0.2)" }}>
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(6,182,212,0.15)" }}>
+                <Download className="w-3.5 h-3.5" />
+              </div>
+              Instalar como app
+            </button>
+          )}
           <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] mt-0.5" style={{ color: "rgba(255,255,255,0.28)" }}>
             <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(255,255,255,0.03)" }}><LogOut className="w-3.5 h-3.5" /></div>
             Cerrar sesión
