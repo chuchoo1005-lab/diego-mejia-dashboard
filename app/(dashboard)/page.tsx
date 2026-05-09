@@ -1,9 +1,14 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { format, formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow, isToday, isTomorrow } from "date-fns";
 import { es } from "date-fns/locale";
-import { Brain, Flame, Clock, MessageSquare, Users, TrendingUp, ArrowRight, Zap, Activity, Phone, AlertTriangle, Target, ChevronDown, ChevronUp } from "lucide-react";
+import { Brain, Flame, Clock, MessageSquare, Users, TrendingUp, ArrowRight, Zap, Activity, Phone, AlertTriangle, Target, ChevronDown, ChevronUp, CalendarDays, Plus } from "lucide-react";
+
+interface CitaAgenda {
+  id: string; paciente_nombre: string; fecha_hora: string;
+  servicio: string | null; estado: string; duracion_min: number;
+}
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface Paciente {
@@ -130,6 +135,7 @@ function buildInsights(pacs: Paciente[]): { icon: string; text: string; tipo: st
 export default function Home() {
   const [pacs, setPacs] = useState<Paciente[]>([]);
   const [convs, setConvs] = useState<Conv[]>([]);
+  const [citas, setCitas] = useState<CitaAgenda[]>([]);
   const [kpis, setKpis] = useState({ total: 0, hoy: 0, convsHoy: 0, listos: 0, calientes: 0 });
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(new Date());
@@ -140,19 +146,21 @@ export default function Home() {
     try {
       const today = new Date(); today.setHours(0,0,0,0);
       const t = today.toISOString();
-      const [{ count: total }, { count: hoy }, { data: convsHoyData }, { data: pacsD }, { data: convsD }] = await Promise.all([
+      const semana = new Date(); semana.setDate(semana.getDate() + 7);
+      const [{ count: total }, { count: hoy }, { data: convsHoyData }, { data: pacsD }, { data: convsD }, { data: citasD }] = await Promise.all([
         supabase.from("pacientes").select("*", { count:"exact", head:true }),
         supabase.from("pacientes").select("*", { count:"exact", head:true }).gte("created_at", t),
         supabase.from("conversaciones").select("paciente_id").gte("timestamp", t),
         supabase.from("pacientes").select("id,alias,calificado,origen,telefono_encriptado,perfil_paciente,created_at,updated_at").eq("estado","activo").order("updated_at",{ascending:false}).limit(50),
         supabase.from("conversaciones").select("id,paciente_id,direccion,mensaje_encriptado,timestamp,metadata").order("timestamp",{ascending:false}).limit(30),
+        supabase.from("agenda_citas").select("id,paciente_nombre,fecha_hora,servicio,estado,duracion_min").gte("fecha_hora", t).lte("fecha_hora", semana.toISOString()).neq("estado","cancelada").order("fecha_hora").limit(10),
       ]);
       const d = (pacsD || []) as Paciente[];
       const cv = (convsD || []) as Conv[];
       // Contar chats únicos (pacientes distintos), no mensajes individuales
       const chatsUnicos = new Set((convsHoyData || []).map((c: {paciente_id: string}) => c.paciente_id)).size;
       setKpis({ total:total??0, hoy:hoy??0, convsHoy:chatsUnicos, listos:d.filter(p=>ec(p)==="entrega_premium").length, calientes:d.filter(p=>sc(p)>=60).length });
-      setPacs(d); setConvs(cv);
+      setPacs(d); setConvs(cv); setCitas((citasD || []) as CitaAgenda[]);
       setFeedItems(cv.slice(0,10).map(c => {
         const msg = c.direccion === "entrante"
           ? (c.mensaje_encriptado?.length > 40 ? c.mensaje_encriptado.slice(0,40) + "..." : c.mensaje_encriptado) || "Nuevo mensaje"
@@ -250,6 +258,62 @@ export default function Home() {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* ══ AGENDA HOY / SEMANA ═══════════════════════════════════════ */}
+      <div className="dm-card p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background:"rgba(6,182,212,0.1)", border:"1px solid rgba(6,182,212,0.15)" }}>
+              <CalendarDays className="w-4 h-4" style={{ color:"var(--cyan)" }} />
+            </div>
+            <div>
+              <p className="section-label">Esta semana</p>
+              <h2 className="text-sm font-bold" style={{ color:"var(--text)" }}>Agenda de citas</h2>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="badge badge-cyan">{citas.length} citas</span>
+            <a href="/agenda" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+              style={{ background:"rgba(6,182,212,0.1)", color:"var(--cyan)", border:"1px solid rgba(6,182,212,0.2)" }}>
+              <Plus className="w-3 h-3" /> Nueva cita
+            </a>
+          </div>
+        </div>
+        {citas.length === 0 ? (
+          <div className="text-center py-6">
+            <CalendarDays className="w-8 h-8 mx-auto mb-2" style={{ color:"var(--text-3)" }} />
+            <p className="text-sm" style={{ color:"var(--text-3)" }}>Sin citas programadas esta semana</p>
+            <a href="/agenda" className="inline-block mt-2 text-xs px-3 py-1.5 rounded-lg" style={{ background:"rgba(6,182,212,0.1)", color:"var(--cyan)" }}>
+              Ir al calendario →
+            </a>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2">
+            {citas.map(c => {
+              const fecha = new Date(c.fecha_hora);
+              const esHoy = isToday(fecha);
+              const esManana = isTomorrow(fecha);
+              const ESTADO_COLOR: Record<string, string> = { pendiente:"var(--amber)", confirmada:"var(--cyan)", completada:"var(--green)", no_asistio:"var(--text-3)" };
+              const SRV: Record<string, string> = { ortodoncia_invisible:"Ortodoncia", diseno_sonrisa:"Diseño", general:"General", valoracion:"Valoración" };
+              return (
+                <div key={c.id} className="p-3 rounded-xl transition-all" style={{ background: esHoy ? "rgba(6,182,212,0.08)" : "rgba(255,255,255,0.03)", border:`1px solid ${esHoy ? "rgba(6,182,212,0.25)" : "var(--border)"}` }}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: esHoy ? "var(--cyan)" : esManana ? "var(--amber)" : "var(--text-3)" }}>
+                      {esHoy ? "HOY" : esManana ? "MAÑANA" : format(fecha, "EEE d MMM", { locale: es })}
+                    </span>
+                    <div className="w-2 h-2 rounded-full" style={{ background: ESTADO_COLOR[c.estado] ?? "var(--text-3)" }} />
+                  </div>
+                  <p className="text-sm font-semibold truncate" style={{ color:"var(--text)" }}>{c.paciente_nombre}</p>
+                  <p className="text-[11px] mt-0.5" style={{ color:"var(--text-3)" }}>
+                    {format(fecha, "HH:mm")} · {c.duracion_min}min
+                    {c.servicio ? ` · ${SRV[c.servicio] ?? c.servicio}` : ""}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* ══ GRID PRINCIPAL ════════════════════════════════════════════ */}

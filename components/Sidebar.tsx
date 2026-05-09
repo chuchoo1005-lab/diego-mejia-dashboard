@@ -5,20 +5,19 @@ interface BeforeInstallPromptEvent extends Event {
 }
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, CalendarDays, Users, Bell, BarChart3, Menu, X, Settings, Video, LogOut, Cpu, MessageCircle, Download, Calendar, UserCheck } from "lucide-react";
+import { CalendarDays, Users, Bell, BarChart3, Menu, X, Settings, LogOut, Cpu, Download, Calendar, UserCheck, TrendingUp } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
 const nav = [
-  { href: "/",               label: "Panel IA",          icon: Cpu,             desc: "Centro de admisiones" },
-  { href: "/citas",          label: "Leads prioritarios",icon: CalendarDays,    desc: "Listos para contactar" },
-  { href: "/pacientes",      label: "Pacientes",         icon: Users,           desc: "Base de datos" },
-  { href: "/notificaciones", label: "Actividad",         icon: Bell,            desc: "Feed en tiempo real" },
-  { href: "/metricas",       label: "Métricas",          icon: BarChart3,       desc: "Análisis" },
-  { href: "/recursos",       label: "Recursos",          icon: Video,           desc: "Videos clínica" },
-  { href: "/agenda",              label: "Agenda",            icon: Calendar,        desc: "Calendario de citas" },
-  { href: "/pacientes-invisalign",label: "Pacientes Invisalign",icon: UserCheck,     desc: "Base 55 pacientes" },
-  { href: "/whatsapp",            label: "WhatsApp",          icon: MessageCircle,   desc: "Conexión y QR" },
+  { href: "/",               label: "Panel IA",            icon: Cpu,         desc: "Centro de admisiones" },
+  { href: "/citas",          label: "Leads para llamar",   icon: CalendarDays,desc: "Listos para contactar" },
+  { href: "/agenda",         label: "Agenda",              icon: Calendar,    desc: "Calendario de citas" },
+  { href: "/pacientes",      label: "Pacientes",           icon: Users,       desc: "Base de datos" },
+  { href: "/pacientes-invisalign", label: "Invisalign",    icon: UserCheck,   desc: "55 pacientes activos" },
+  { href: "/notificaciones", label: "Actividad",           icon: Bell,        desc: "Feed en tiempo real" },
+  { href: "/metricas",       label: "Métricas",            icon: BarChart3,   desc: "Análisis" },
+  { href: "/roi",            label: "Retorno de Inversión",icon: TrendingUp,  desc: "ROI del sistema" },
 ];
 
 export default function Sidebar() {
