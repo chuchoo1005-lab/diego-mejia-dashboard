@@ -164,7 +164,7 @@ export default function Home() {
       setFeedItems(cv.slice(0,10).map(c => {
         const msg = c.direccion === "entrante"
           ? (c.mensaje_encriptado?.length > 40 ? c.mensaje_encriptado.slice(0,40) + "..." : c.mensaje_encriptado) || "Nuevo mensaje"
-          : "Respuesta del agente IA enviada";
+          : "Respuesta del asistente virtual enviada";
         return { msg, time: new Date(c.timestamp), tipo: c.direccion };
       }));
       setLastUpdate(new Date());
@@ -234,7 +234,7 @@ export default function Home() {
           <div>
             <div className="flex items-center gap-2 mb-3">
               <div className="glow-dot pulse-ring" />
-              <span className="text-xs font-bold tracking-[0.2em]" style={{ color:"var(--cyan)" }}>SISTEMA INTELIGENTE ACTIVO</span>
+              <span className="text-xs font-bold tracking-[0.2em]" style={{ color:"var(--cyan)" }}>ADMISIONES · EN LÍNEA</span>
             </div>
             <h1 style={{ fontFamily:"var(--font-cormorant)", fontSize:"1.85rem", fontWeight:500, color:"var(--text)", lineHeight:1.15 }}>
               Diego Mejía<br /><span className="gradient-text">Dental Group</span>
@@ -330,7 +330,7 @@ export default function Home() {
                   <Flame className="w-4 h-4" style={{ color:"var(--red)" }} />
                 </div>
                 <div>
-                  <p className="section-label">Score IA · Alta prioridad</p>
+                  <p className="section-label">Puntuación · Alta prioridad</p>
                   <h2 className="text-sm font-bold" style={{ color:"var(--text)" }}>Leads prioritarios</h2>
                 </div>
               </div>
@@ -377,7 +377,7 @@ export default function Home() {
                         <div className="text-right shrink-0 mr-2">
                           <p className="text-xl font-black" style={{ color: score >= 60 ? "var(--cyan)" : score >= 30 ? "var(--amber)" : "var(--text-3)" }}>{score}</p>
                           <div className="score-bar w-16 mt-1"><div className="score-bar-fill" style={{ width:`${score}%` }} /></div>
-                          <p className="text-[9px] mt-0.5" style={{ color:"var(--text-3)" }}>score IA</p>
+                          <p className="text-[9px] mt-0.5" style={{ color:"var(--text-3)" }}>puntuación</p>
                         </div>
                         {/* Actions */}
                         <div className="flex flex-col gap-1.5 shrink-0">
@@ -488,7 +488,7 @@ export default function Home() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
                         <span className="text-xs font-semibold" style={{ color:isEnt ? "var(--cyan)" : "var(--text-3)" }}>
-                          {isEnt ? "Paciente" : "Agente IA"}
+                          {isEnt ? "Paciente" : "Asistente virtual"}
                         </span>
                         {estado && (
                           <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background:"rgba(255,255,255,0.06)", color:"var(--text-3)" }}>
@@ -585,8 +585,8 @@ export default function Home() {
                 <Brain className="w-4 h-4" style={{ color:"var(--cyan)" }} />
               </div>
               <div>
-                <p className="section-label" style={{ color:"rgba(6,182,212,0.5)" }}>Inteligencia artificial</p>
-                <h2 className="text-sm font-bold" style={{ color:"var(--text)" }}>Insights IA</h2>
+                <p className="section-label" style={{ color:"rgba(6,182,212,0.5)" }}>Observaciones</p>
+                <h2 className="text-sm font-bold" style={{ color:"var(--text)" }}>Centro de análisis</h2>
               </div>
             </div>
             <div className="space-y-3">
@@ -633,7 +633,7 @@ export default function Home() {
                         <span className="badge badge-amber"><Clock className="w-2.5 h-2.5" /> {hrs}h sin responder</span>
                         {emocion && <span className="text-[11px]" style={{ color:emocion.color }}>{emocion.emoji} {emocion.label}</span>}
                       </div>
-                      <p className="text-[11px] mb-2.5" style={{ color:"var(--amber)" }}>🧠 {rec}</p>
+                      <p className="text-[11px] mb-2.5" style={{ color:"var(--amber)" }}>{rec}</p>
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-[10px]" style={{ color:"var(--text-3)" }}>Prob. cierre</p>
@@ -681,7 +681,7 @@ export default function Home() {
 
       <div className="text-center py-1">
         <p className="text-xs" style={{ color:"var(--text-3)", fontFamily:"var(--font-cormorant)", fontStyle:"italic" }}>
-          Diego Mejía Dental Group · Sistema Privado de Admisiones con IA
+          Diego Mejía Dental Group · Sistema Privado de Admisiones · Diego Mejía Dental Group
         </p>
       </div>
     </div>
