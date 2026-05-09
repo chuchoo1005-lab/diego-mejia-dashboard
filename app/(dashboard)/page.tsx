@@ -30,7 +30,7 @@ function tel(p: Paciente): string {
   if (c.length >= 10 && c.startsWith("57")) return `+57 ${c.slice(2,5)} ${c.slice(5,8)} ${c.slice(8)}`;
   return t;
 }
-function nom(p: Paciente) { return (p.perfil_paciente?.nombre as string) || tel(p) || p.alias; }
+function nom(p: Paciente) { const n = (p.perfil_paciente?.nombre as string) || tel(p); return n || 'Paciente nuevo'; }
 function sc(p: Paciente)  { return parseInt(String(p.perfil_paciente?.score ?? "0")) || 0; }
 function ec(p: Paciente)  { return (p.perfil_paciente?.estado_conv as string) || "nuevo"; }
 function srv(p: Paciente) { return (p.perfil_paciente?.servicio_interes as string) || null; }
