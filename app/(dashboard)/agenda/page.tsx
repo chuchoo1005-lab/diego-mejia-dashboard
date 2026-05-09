@@ -213,7 +213,14 @@ export default function AgendaPage() {
                   <p className="text-[9px] uppercase" style={{ color:"var(--text-3)" }}>{format(new Date(c.fecha_hora), "MMM", { locale: es })}</p>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate" style={{ color:"var(--text)" }}>{c.paciente_nombre}</p>
+                  <div className='flex items-center gap-2 flex-wrap'>
+                      <p className='text-sm font-semibold truncate' style={{ color:'var(--text)' }}>{c.paciente_nombre}</p>
+                      {(c as unknown as {origen?:string}).origen === 'agente_automatico' && (
+                        <span className='text-[9px] px-2 py-0.5 rounded-full font-bold' style={{ background:'rgba(6,182,212,0.15)', color:'var(--cyan)', border:'1px solid rgba(6,182,212,0.3)' }}>
+                          AUTO
+                        </span>
+                      )}
+                    </div>
                   <p className="text-xs" style={{ color:"var(--text-3)" }}>{format(new Date(c.fecha_hora), "HH:mm")} · {c.servicio ? (SRV[c.servicio] ?? c.servicio) : "Cita"}</p>
                 </div>
                 <span className={`badge ${ESTADO_COLOR[c.estado] ?? "badge-gray"}`}>{c.estado}</span>
