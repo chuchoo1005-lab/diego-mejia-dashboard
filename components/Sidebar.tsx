@@ -5,7 +5,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, CalendarDays, Users, Bell, BarChart3, Menu, X, Settings, Video, LogOut, Cpu, MessageCircle, Download } from "lucide-react";
+import { LayoutDashboard, CalendarDays, Users, Bell, BarChart3, Menu, X, Settings, Video, LogOut, Cpu, MessageCircle, Download, Calendar, UserCheck } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -16,7 +16,9 @@ const nav = [
   { href: "/notificaciones", label: "Actividad",         icon: Bell,            desc: "Feed en tiempo real" },
   { href: "/metricas",       label: "Métricas",          icon: BarChart3,       desc: "Análisis" },
   { href: "/recursos",       label: "Recursos",          icon: Video,           desc: "Videos clínica" },
-  { href: "/whatsapp",      label: "WhatsApp",          icon: MessageCircle,   desc: "Conexión y QR" },
+  { href: "/agenda",              label: "Agenda",            icon: Calendar,        desc: "Calendario de citas" },
+  { href: "/pacientes-invisalign",label: "Pacientes Invisalign",icon: UserCheck,     desc: "Base 55 pacientes" },
+  { href: "/whatsapp",            label: "WhatsApp",          icon: MessageCircle,   desc: "Conexión y QR" },
 ];
 
 export default function Sidebar() {
