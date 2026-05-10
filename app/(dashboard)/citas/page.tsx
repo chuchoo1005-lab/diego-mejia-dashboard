@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
-import { Phone, Search, RefreshCw, Clock, MapPin, Stethoscope, Brain, PauseCircle, PlayCircle, FileText, ChevronDown } from "lucide-react";
+import { Phone, Search, RefreshCw, Clock, MapPin, Stethoscope, Brain, FileText, ChevronDown } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Paciente {
@@ -40,7 +40,6 @@ function displayName(p: Paciente): string {
 function sc(p: Paciente) { return parseInt(String(p.perfil_paciente?.score ?? "0")) || 0; }
 function ec(p: Paciente) { return (p.perfil_paciente?.estado_conv as string) || "nuevo"; }
 function ua(p: Paciente) { const v = p.perfil_paciente?.ultima_actividad_at as string; return v ? new Date(v) : new Date(p.updated_at); }
-function modoHumano(p: Paciente): boolean { return !!(p.perfil_paciente?.modo_humano); }
 function resultadoLlamada(p: Paciente): string { return (p.perfil_paciente?.resultado_llamada as string) || ""; }
 function notasInternas(p: Paciente): string { return (p.perfil_paciente?.notas_internas as string) || ""; }
 
@@ -76,14 +75,6 @@ export default function CitasPage() {
     setSaving(null);
   };
 
-  const toggleHumano = (p: Paciente) => {
-    const nuevoEstado = !modoHumano(p);
-    updatePerfil(p.id, {
-      modo_humano: nuevoEstado,
-      modo_humano_at: nuevoEstado ? new Date().toISOString() : null,
-    });
-  };
-
   const setResultado = (p: Paciente, valor: string) => {
     updatePerfil(p.id, { resultado_llamada: valor, resultado_at: new Date().toISOString() });
   };
@@ -102,7 +93,6 @@ export default function CitasPage() {
       : filtro === "listos" ? estado === "entrega_premium"
       : filtro === "calientes" ? score >= 60
       : filtro === "calificados" ? p.calificado
-      : filtro === "pausados" ? modoHumano(p)
       : filtro === "con_resultado" ? !!res
       : true;
     return match && f;
@@ -111,8 +101,8 @@ export default function CitasPage() {
   const stats = {
     listos: leads.filter(p => ec(p) === "entrega_premium").length,
     calientes: leads.filter(p => sc(p) >= 60).length,
-    pausados: leads.filter(p => modoHumano(p)).length,
     agendados: leads.filter(p => resultadoLlamada(p) === "valoracion_agendada").length,
+    con_resultado: leads.filter(p => !!resultadoLlamada(p)).length,
   };
 
   // ─── Render ───────────────────────────────────────────────────────────────────
@@ -126,7 +116,7 @@ export default function CitasPage() {
           <h1 style={{ fontFamily:"var(--font-cormorant)", fontSize:"2rem", fontWeight:500, color:"var(--text)" }}>
             Leads para llamar
           </h1>
-          <p className="text-sm mt-1" style={{ color:"var(--text-3)" }}>Gestión de pacientes · Resultado de llamada · Modo humano</p>
+          <p className="text-sm mt-1" style={{ color:"var(--text-3)" }}>Gestión de pacientes · Resultado de llamada · Seguimiento</p>
         </div>
         <button onClick={load} className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl"
           style={{ background:"rgba(255,255,255,0.05)", border:"1px solid var(--border)", color:"var(--text-2)" }}>
@@ -137,10 +127,10 @@ export default function CitasPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label:"Listos para llamar", value:stats.listos,    color:"var(--green)" },
-          { label:"Leads calientes",    value:stats.calientes, color:"var(--cyan)" },
-          { label:"IA pausada",         value:stats.pausados,  color:"var(--amber)" },
-          { label:"Valoración agendada",value:stats.agendados, color:"#A78BFA" },
+          { label:"Listos para llamar",  value:stats.listos,       color:"var(--green)" },
+          { label:"Leads calientes",     value:stats.calientes,    color:"var(--cyan)" },
+          { label:"Valoración agendada", value:stats.agendados,    color:"#A78BFA" },
+          { label:"Con resultado",       value:stats.con_resultado, color:"var(--text-2)" },
         ].map(({ label, value, color }) => (
           <div key={label} className="dm-card p-4">
             <p className="text-2xl font-bold" style={{ color }}>{value}</p>
@@ -162,7 +152,6 @@ export default function CitasPage() {
             { key:"todos",         label:"Todos" },
             { key:"listos",        label:"Listos" },
             { key:"calientes",     label:"Calientes" },
-            { key:"pausados",      label:"IA pausada" },
             { key:"con_resultado", label:"Con resultado" },
           ].map(({ key, label }) => (
             <button key={key} onClick={() => setFiltro(key)}
@@ -195,7 +184,6 @@ export default function CitasPage() {
             const servicio = p.perfil_paciente?.servicio_interes as string;
             const resumen = p.perfil_paciente?.resumen_lead as string;
             const isListo = estado === "entrega_premium";
-            const isPausado = modoHumano(p);
             const resultado = resultadoLlamada(p);
             const notas = notasInternas(p);
             const isExp = expanded.has(p.id);
@@ -203,20 +191,19 @@ export default function CitasPage() {
             const isSaving = saving === p.id;
 
             return (
-              <div key={p.id} className="dm-card overflow-hidden" style={isPausado ? { borderColor:"rgba(245,158,11,0.25)" } : isListo ? { borderColor:"rgba(16,185,129,0.2)" } : {}}>
+              <div key={p.id} className="dm-card overflow-hidden" style={isListo ? { borderColor:"rgba(16,185,129,0.2)" } : {}}>
 
                 {/* ── Card header ── */}
                 <div className="flex items-center gap-3 p-4">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-xs font-black"
-                    style={{ background:isPausado?"rgba(245,158,11,0.1)":"rgba(6,182,212,0.1)", color:isPausado?"var(--amber)":"var(--cyan)", border:`1px solid ${isPausado?"rgba(245,158,11,0.2)":"rgba(6,182,212,0.15)"}` }}>
+                    style={{ background:"rgba(6,182,212,0.1)", color:"var(--cyan)", border:"1px solid rgba(6,182,212,0.15)" }}>
                     {nombre.slice(0,2).toUpperCase()}
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-0.5">
                       <span className="font-bold text-sm" style={{ color:"var(--text)" }}>{rawNombre || nombre}</span>
-                      {isPausado && <span className="badge badge-amber"><PauseCircle className="w-2.5 h-2.5" /> IA pausada</span>}
-                      {isListo && !isPausado && <span className="badge badge-green">✓ Listo para llamar</span>}
+                      {isListo && <span className="badge badge-green">✓ Listo para llamar</span>}
                       {resultado && <span className="text-[11px] font-medium" style={{ color:resultadoCfg?.color ?? "var(--text-3)" }}>{resultadoCfg?.label}</span>}
                     </div>
                     <div className="flex flex-wrap gap-2 text-xs" style={{ color:"var(--text-3)" }}>
@@ -270,23 +257,6 @@ export default function CitasPage() {
                           </button>
                         ))}
                       </div>
-                    </div>
-
-                    {/* Modo humano */}
-                    <div className="flex items-center justify-between p-3 rounded-xl" style={{ background:"rgba(255,255,255,0.03)", border:"1px solid var(--border)" }}>
-                      <div>
-                        <p className="text-sm font-semibold" style={{ color:"var(--text)" }}>
-                          {isPausado ? "🟡 IA pausada — atención manual activa" : "🟢 IA activa — respondiendo automáticamente"}
-                        </p>
-                        <p className="text-xs mt-0.5" style={{ color:"var(--text-3)" }}>
-                          {isPausado ? "El agente no responde a este paciente. Tú estás atendiendo." : "El agente responde automáticamente. Pausar si vas a atender manualmente."}
-                        </p>
-                      </div>
-                      <button onClick={() => toggleHumano(p)}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold ml-4 shrink-0 transition-all"
-                        style={{ background:isPausado?"rgba(16,185,129,0.12)":"rgba(245,158,11,0.12)", color:isPausado?"var(--green)":"var(--amber)", border:`1px solid ${isPausado?"rgba(16,185,129,0.2)":"rgba(245,158,11,0.2)"}` }}>
-                        {isPausado ? <><PlayCircle className="w-4 h-4" /> Reactivar IA</> : <><PauseCircle className="w-4 h-4" /> Pausar IA</>}
-                      </button>
                     </div>
 
                     {/* Resumen IA */}
