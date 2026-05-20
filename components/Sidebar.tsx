@@ -5,13 +5,14 @@ interface BeforeInstallPromptEvent extends Event {
 }
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, CalendarDays, Users, Bell, BarChart3, Menu, X, LogOut, Calendar, UserCheck, TrendingUp, Download } from "lucide-react";
+import { LayoutDashboard, CalendarDays, Users, Bell, BarChart3, Menu, X, LogOut, Calendar, UserCheck, TrendingUp, Download, MessageSquare } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
 const nav = [
   { href: "/",               label: "Panel Principal",     icon: LayoutDashboard, desc: "Centro de admisiones" },
   { href: "/citas",          label: "Leads para llamar",   icon: CalendarDays,    desc: "Listos para contactar" },
+  { href: "/conversaciones", label: "Conversaciones",      icon: MessageSquare,   desc: "WhatsApp · Bandeja de entrada" },
   { href: "/agenda",         label: "Agenda",              icon: Calendar,        desc: "Calendario de citas" },
   { href: "/pacientes",      label: "Pacientes",           icon: Users,           desc: "Base de datos" },
   { href: "/pacientes-invisalign", label: "Invisalign",    icon: UserCheck,       desc: "55 pacientes activos" },
@@ -95,7 +96,7 @@ export default function Sidebar() {
         <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
           <p className="section-label px-3 pb-2 pt-1">Navegación</p>
           {nav.map(({ href, label, icon: Icon, desc }) => {
-            const active = pathname === href;
+            const active = pathname === href || (href !== "/" && pathname.startsWith(href));
             return (
               <Link key={href} href={href} onClick={() => setOpen(false)}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-150"
@@ -142,7 +143,7 @@ export default function Sidebar() {
           </button>
         </div>
 
-        {/* Footer — muy discreto */}
+        {/* Footer */}
         <div className="px-5 py-3" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
           <p className="text-[8px] tracking-[0.15em] uppercase" style={{ color: "rgba(255,255,255,0.1)" }}>
             flowlution · sistema privado
