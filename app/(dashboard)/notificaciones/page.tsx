@@ -1,6 +1,28 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
+
+function playAlarmSound() {
+  try {
+    const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const ctx = new Ctx();
+    const play = (freq: number, start: number, dur: number, vol = 0.4) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = "sine"; osc.frequency.value = freq;
+      gain.gain.setValueAtTime(vol, ctx.currentTime + start);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
+      osc.start(ctx.currentTime + start); osc.stop(ctx.currentTime + start + dur);
+    };
+    // Acorde ascendente tipo "¡atención!"
+    play(523, 0.00, 0.18);   // Do
+    play(659, 0.20, 0.18);   // Mi
+    play(784, 0.40, 0.18);   // Sol
+    play(1047, 0.60, 0.35);  // Do alta
+    setTimeout(() => ctx.close(), 2000);
+  } catch { /* navegador bloqueó audio */ }
+}
 import { formatDistanceToNow, format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Bell, MessageSquare, RefreshCw, TrendingUp, ArrowRight, Clock, Phone, Calendar } from "lucide-react";
@@ -64,6 +86,26 @@ export default function NotificacionesPage() {
   }, []);
 
   useEffect(() => { load(); const t = setInterval(load, 30000); return () => clearInterval(t); }, [load]);
+
+  // IDs ya vistos como entrega_premium para no repetir la alarma
+  const yaAlarmados = useRef(new Set<string>());
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("dm_valoracion_alarm")
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "pacientes" }, (payload) => {
+        const rec = payload.new as { id: string; perfil_paciente?: { estado_conv?: string; notificado_asesora?: boolean } };
+        const estado = rec.perfil_paciente?.estado_conv;
+        const notificado = rec.perfil_paciente?.notificado_asesora;
+        if ((estado === "entrega_premium" || notificado === true) && !yaAlarmados.current.has(rec.id)) {
+          yaAlarmados.current.add(rec.id);
+          playAlarmSound();
+          load();
+        }
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [load]);
 
   const TIPO: Record<string, { label: string; color: string; border: string }> = {
     lead_listo: { label: "Listo para llamar", color: "var(--green)", border: "rgba(16,185,129,0.3)" },
