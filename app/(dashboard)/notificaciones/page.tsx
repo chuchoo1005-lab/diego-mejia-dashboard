@@ -15,20 +15,32 @@ function playAlarmSound() {
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
       osc.start(ctx.currentTime + start); osc.stop(ctx.currentTime + start + dur);
     };
-    // Acorde ascendente tipo "¡atención!"
-    play(523, 0.00, 0.18);   // Do
-    play(659, 0.20, 0.18);   // Mi
-    play(784, 0.40, 0.18);   // Sol
-    play(1047, 0.60, 0.35);  // Do alta
+    play(523, 0.00, 0.18);
+    play(659, 0.20, 0.18);
+    play(784, 0.40, 0.18);
+    play(1047, 0.60, 0.35);
     setTimeout(() => ctx.close(), 2000);
   } catch { /* navegador bloqueó audio */ }
+}
+
+// Funciona aunque la pestaña esté en segundo plano
+function dispararAlarma(nombre?: string) {
+  playAlarmSound();
+  if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+    new Notification("🦷 Valoración solicitada", {
+      body: nombre ? `${nombre} quiere agendar su valoración` : "Un paciente quiere agendar su valoración",
+      icon: "/apple-icon.png",
+      tag: "valoracion-dm",
+      requireInteraction: true,
+    });
+  }
 }
 import { formatDistanceToNow, format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Bell, MessageSquare, RefreshCw, TrendingUp, ArrowRight, Clock, Phone, Calendar } from "lucide-react";
 
 interface Conv { id: string; paciente_id: string; direccion: string; mensaje_encriptado: string; timestamp: string; }
-interface Alerta { tipo: string; alias: string; nombre: string; tel: string; descripcion: string; score: number; timestamp: string; urgencia: number; }
+interface Alerta { tipo: string; alias: string; nombre: string; tel: string; descripcion: string; score: number; timestamp: string; urgencia: number; servicio: string | null; horario: string | null; ciudad: string | null; }
 interface Seguimiento { alias: string; nombre: string; tel: string; horas: number; score: number; servicio: string | null; }
 
 function formatTel(t: string | null): string {
@@ -44,6 +56,21 @@ export default function NotificacionesPage() {
   const [seguimientos, setSeguimientos] = useState<Seguimiento[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"seguimientos" | "alertas" | "actividad">("seguimientos");
+  const [notifPermiso, setNotifPermiso] = useState<NotificationPermission>("default");
+
+  // Solicitar permiso de notificaciones al abrir la página
+  useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setNotifPermiso(Notification.permission);
+      if (Notification.permission === "default") {
+        Notification.requestPermission().then(p => setNotifPermiso(p));
+      }
+    }
+  }, []);
+
+  // Pacientes ya conocidos como entrega_premium al cargar — evita falsos disparos
+  const yaAlarmados = useRef(new Set<string>());
+  const seeded = useRef(false);
 
   const load = useCallback(async () => {
     const [{ data: convData }, { data: pacData }] = await Promise.all([
@@ -61,18 +88,36 @@ export default function NotificacionesPage() {
       const score = parseInt(String(perf.score ?? "0")) || 0;
       const ec = (perf.estado_conv as string) || "nuevo";
       const tel = formatTel(p.telefono_encriptado);
-      const nombre = (perf.nombre as string) || tel || p.alias;
+      const nombreReal = (perf.nombre as string) || null;
+      const nombre = nombreReal || p.alias;
       const ua = perf.ultima_actividad_at ? new Date(perf.ultima_actividad_at as string) : new Date(p.updated_at);
       const hrs = (now - ua.getTime()) / 3600000;
       const ti = perf.tipo_intencion as string;
       const servicio = perf.servicio_interes as string | null;
+      const horario = (perf.horario_contacto as string) || null;
+      const ciudad = (perf.ciudad as string) || null;
+
+      const svcLabel = servicio === "ortodoncia" || servicio === "invisalign" ? "Ortodoncia / Invisalign"
+        : servicio === "diseno" ? "Diseño de sonrisa"
+        : servicio === "implantes" ? "Implantes"
+        : servicio === "blanqueamiento" ? "Blanqueamiento"
+        : servicio ? servicio.charAt(0).toUpperCase() + servicio.slice(1)
+        : null;
+
+      // Registrar pacientes ya conocidos al primer load para no re-alarmar
+      if (!seeded.current && (ec === "entrega_premium" || perf.notificado_asesora === true)) {
+        yaAlarmados.current.add(p.id);
+      }
 
       if (ec === "entrega_premium") {
-        newAlertas.push({ tipo: "lead_listo", alias: p.alias, nombre, tel, descripcion: "Datos completos — listo para llamar", score, timestamp: ua.toISOString(), urgencia: 100 });
+        const desc = [svcLabel, horario ? `Horario: ${horario}` : null, ciudad].filter(Boolean).join(" · ") || "Datos completos";
+        newAlertas.push({ tipo: "lead_listo", alias: p.alias, nombre, tel, descripcion: desc, score, timestamp: ua.toISOString(), urgencia: 100, servicio: svcLabel, horario, ciudad });
       } else if (ti === "referido") {
-        newAlertas.push({ tipo: "referido", alias: p.alias, nombre, tel, descripcion: "Referido nuevo registrado", score, timestamp: ua.toISOString(), urgencia: 90 });
+        const desc = [svcLabel, ciudad].filter(Boolean).join(" · ") || "Referido nuevo";
+        newAlertas.push({ tipo: "referido", alias: p.alias, nombre, tel, descripcion: desc, score, timestamp: ua.toISOString(), urgencia: 90, servicio: svcLabel, horario, ciudad });
       } else if (score >= 70) {
-        newAlertas.push({ tipo: "caliente", alias: p.alias, nombre, tel, descripcion: `Score alto (${score}) — contactar pronto`, score, timestamp: ua.toISOString(), urgencia: 80 });
+        const desc = [svcLabel, horario ? `Horario: ${horario}` : null].filter(Boolean).join(" · ") || `Score ${score}`;
+        newAlertas.push({ tipo: "caliente", alias: p.alias, nombre, tel, descripcion: desc, score, timestamp: ua.toISOString(), urgencia: 80, servicio: svcLabel, horario, ciudad });
       }
 
       if (hrs > 2 && hrs < 120 && score >= 20 && ec !== "entrega_premium" && ec !== "nuevo") {
@@ -80,6 +125,7 @@ export default function NotificacionesPage() {
       }
     });
 
+    if (!seeded.current) seeded.current = true;
     setAlertas(newAlertas.sort((a, b) => b.urgencia - a.urgencia));
     setSeguimientos(newSeg.sort((a, b) => b.score - a.score));
     setLoading(false);
@@ -87,9 +133,7 @@ export default function NotificacionesPage() {
 
   useEffect(() => { load(); const t = setInterval(load, 30000); return () => clearInterval(t); }, [load]);
 
-  // IDs ya vistos como entrega_premium para no repetir la alarma
-  const yaAlarmados = useRef(new Set<string>());
-
+  // Realtime: dispara sonido solo para pacientes NUEVOS en entrega_premium
   useEffect(() => {
     const channel = supabase
       .channel("dm_valoracion_alarm")
@@ -99,7 +143,8 @@ export default function NotificacionesPage() {
         const notificado = rec.perfil_paciente?.notificado_asesora;
         if ((estado === "entrega_premium" || notificado === true) && !yaAlarmados.current.has(rec.id)) {
           yaAlarmados.current.add(rec.id);
-          playAlarmSound();
+          const nombre = (rec.perfil_paciente as Record<string, unknown> | undefined)?.nombre as string | undefined;
+          dispararAlarma(nombre);
           load();
         }
       })
@@ -121,10 +166,26 @@ export default function NotificacionesPage() {
           <h1 style={{ fontFamily:"var(--font-cormorant)", fontSize:"2rem", fontWeight:500, color:"var(--text)" }}>Actividad</h1>
           <p className="text-sm mt-1" style={{ color:"var(--text-3)" }}>Seguimientos · Alertas · Conversaciones · Actualización cada 30s</p>
         </div>
-        <button onClick={load} className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl"
-          style={{ background:"rgba(255,255,255,0.05)", border:"1px solid var(--border)", color:"var(--text-2)" }}>
-          <RefreshCw className="w-3.5 h-3.5" /> Actualizar
-        </button>
+        <div className="flex items-center gap-2">
+          {notifPermiso !== "granted" && (
+            <button onClick={() => Notification.requestPermission().then(p => setNotifPermiso(p))}
+              className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl"
+              style={{ background:"rgba(239,68,68,0.12)", border:"1px solid rgba(239,68,68,0.3)", color:"var(--red)" }}>
+              <Bell className="w-3.5 h-3.5" /> Activar alertas
+            </button>
+          )}
+          {notifPermiso === "granted" && (
+            <button onClick={() => dispararAlarma("Prueba")}
+              className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl"
+              style={{ background:"rgba(16,185,129,0.1)", border:"1px solid rgba(16,185,129,0.25)", color:"var(--green)" }}>
+              <Bell className="w-3.5 h-3.5" /> Probar sonido
+            </button>
+          )}
+          <button onClick={load} className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl"
+            style={{ background:"rgba(255,255,255,0.05)", border:"1px solid var(--border)", color:"var(--text-2)" }}>
+            <RefreshCw className="w-3.5 h-3.5" /> Actualizar
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
