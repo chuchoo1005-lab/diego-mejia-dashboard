@@ -26,7 +26,7 @@ function formatTel(t: string | null): string {
   return t;
 }
 function displayName(p: Paciente): string {
-  return (p.perfil_paciente?.nombre as string) || formatTel(p.telefono_encriptado) || 'Paciente nuevo';
+  return (p.perfil_paciente?.nombre as string) || (p.perfil_paciente?.nombre_whatsapp as string) || formatTel(p.telefono_encriptado) || 'Paciente nuevo';
 }
 function sc(p: Paciente) { return parseInt(String(p.perfil_paciente?.score ?? "0")) || 0; }
 function ec(p: Paciente) { return (p.perfil_paciente?.estado_conv as string) || "nuevo"; }
