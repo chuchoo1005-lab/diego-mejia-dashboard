@@ -5,7 +5,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, CalendarDays, Users, Bell, BarChart3, Menu, X, LogOut, Calendar, UserCheck, TrendingUp, Download } from "lucide-react";
+import { LayoutDashboard, CalendarDays, Users, Bell, BarChart3, Menu, X, LogOut, Calendar, UserCheck, TrendingUp, Download, Activity } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -14,6 +14,7 @@ const nav = [
   { href: "/citas",          label: "Leads para llamar",   icon: CalendarDays,    desc: "Listos para contactar" },
   { href: "/agenda",         label: "Agenda",              icon: Calendar,        desc: "Calendario de citas" },
   { href: "/pacientes",      label: "Pacientes",           icon: Users,           desc: "Base de datos" },
+  { href: "/seguimientos",   label: "Seguimientos",        icon: Activity,        desc: "Pipeline de conversión" },
   { href: "/pacientes-invisalign", label: "Invisalign",    icon: UserCheck,       desc: "55 pacientes activos" },
   { href: "/notificaciones", label: "Actividad",           icon: Bell,            desc: "Feed en tiempo real" },
   { href: "/metricas",       label: "Métricas",            icon: BarChart3,       desc: "Análisis" },
