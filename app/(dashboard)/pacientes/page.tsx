@@ -12,10 +12,10 @@ interface Paciente {
 }
 
 const SRV: Record<string, string> = { ortodoncia: "Ortodoncia", diseno: "Diseño de sonrisa", general: "Odontología general" };
-const NIVEL: Record<string, { label: string; cls: string }> = {
-  alto:  { label: "Alto",  cls: "badge badge-green" },
-  medio: { label: "Medio", cls: "badge badge-yellow" },
-  bajo:  { label: "Bajo",  cls: "badge badge-gray" },
+const NIVEL: Record<string, { label: string; cls: string; emoji: string }> = {
+  alto:  { label: "Interesado",  cls: "badge badge-green",  emoji: "🔥" },
+  medio: { label: "Evaluando",   cls: "badge badge-yellow", emoji: "🤔" },
+  bajo:  { label: "Indeciso",    cls: "badge badge-gray",   emoji: "💤" },
 };
 
 function formatTel(t: string | null): string {
@@ -33,6 +33,9 @@ function ec(p: Paciente) { return (p.perfil_paciente?.estado_conv as string) || 
 function srv(p: Paciente) { return (p.perfil_paciente?.servicio_interes as string) || null; }
 function niv(p: Paciente) { return (p.perfil_paciente?.nivel_interes as string) || "bajo"; }
 function ua(p: Paciente) { const v = p.perfil_paciente?.ultima_actividad_at as string; return v ? new Date(v) : new Date(p.updated_at); }
+function telContacto(p: Paciente): string { return formatTel((p.perfil_paciente?.telefono_contacto as string) || null); }
+function horario(p: Paciente): string { return (p.perfil_paciente?.horario_contacto as string) || ""; }
+function ciudad(p: Paciente): string { return (p.perfil_paciente?.ciudad as string) || ""; }
 
 export default function PacientesPage() {
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
@@ -130,7 +133,7 @@ export default function PacientesPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr style={{ background: "#FAFAFA", borderBottom: "1px solid var(--border)" }}>
-                  {["Nombre / Teléfono", "Canal", "Estado conv.", "Servicio", "Nivel", "Score", "Calificado", "Registro"].map(h => (
+                  {["Nombre / Teléfono", "Canal", "Estado conv.", "Servicio / Descripción", "Nivel", "Score", "Calificado", "Registro"].map(h => (
                     <th key={h} className="text-left px-5 py-3 section-label">{h}</th>
                   ))}
                 </tr>
@@ -141,11 +144,13 @@ export default function PacientesPage() {
                   const nom = displayName(p); const tel = formatTel(p.telefono_encriptado);
                   const isListo = estado === "entrega_premium";
                   const nivelCfg = NIVEL[nivel] ?? NIVEL.bajo;
+                  const telC = telContacto(p); const hor = horario(p); const ciu = ciudad(p);
                   return (
                     <tr key={p.id} className="table-row-hover" style={{ borderBottom: "1px solid #F3F4F6" }}>
                       <td className="px-5 py-3.5">
                         <p className="font-semibold" style={{ color: "var(--text)" }}>{nom}</p>
-                        {tel && <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{tel}</p>}
+                        {telC && <p className="text-xs mt-0.5 font-medium" style={{ color: "#059669" }}>📞 {telC}</p>}
+                        {tel && tel !== telC && <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>WA: {tel}</p>}
                         <p className="text-[10px] mt-0.5" style={{ color: "#D1D5DB" }}>{p.alias}</p>
                       </td>
                       <td className="px-5 py-3.5">
@@ -158,10 +163,12 @@ export default function PacientesPage() {
                         </span>
                       </td>
                       <td className="px-5 py-3.5 text-sm" style={{ color: "var(--text-secondary)" }}>
-                        {serv ? (SRV[serv] ?? serv) : "—"}
+                        <p>{serv ? (SRV[serv] ?? serv) : "—"}</p>
+                        {hor && <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>🕐 {hor}</p>}
+                        {ciu && <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>📍 {ciu}</p>}
                       </td>
                       <td className="px-5 py-3.5">
-                        <span className={nivelCfg.cls}>{nivelCfg.label}</span>
+                        <span className={nivelCfg.cls}>{nivelCfg.emoji} {nivelCfg.label}</span>
                       </td>
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-2">
@@ -195,17 +202,21 @@ export default function PacientesPage() {
             {filtrados.map(p => {
               const score = sc(p); const serv = srv(p); const estado = ec(p);
               const nom = displayName(p); const tel = formatTel(p.telefono_encriptado);
+              const telC = telContacto(p); const hor = horario(p); const ciu = ciudad(p);
               return (
                 <div key={p.id} className="dm-card p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div>
                       <p className="font-semibold text-sm" style={{ color: "var(--text)" }}>{nom}</p>
-                      {tel && <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{tel}</p>}
+                      {telC && <p className="text-xs mt-0.5 font-medium" style={{ color: "#059669" }}>📞 {telC}</p>}
+                      {tel && tel !== telC && <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>WA: {tel}</p>}
                     </div>
                     <span className="text-lg font-bold" style={{ color: score >= 60 ? "#111827" : "#D1D5DB" }}>{score}</span>
                   </div>
                   <div className="flex flex-wrap gap-2 text-xs" style={{ color: "var(--text-secondary)" }}>
                     {serv && <span>{SRV[serv] ?? serv}</span>}
+                    {hor && <span>🕐 {hor}</span>}
+                    {ciu && <span>📍 {ciu}</span>}
                     <span className={`badge ${estado === "entrega_premium" ? "badge-green" : "badge-gray"}`} style={{ fontSize: "10px" }}>{estado}</span>
                     {p.calificado && <span className="text-emerald-600 font-medium">✓ Calificado</span>}
                   </div>
