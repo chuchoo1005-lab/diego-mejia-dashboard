@@ -35,8 +35,9 @@ function formatTel(t: string | null): string {
   return t;
 }
 function displayName(p: Paciente): string {
-  return (p.perfil_paciente?.nombre as string) || formatTel(p.telefono_encriptado) || 'Nuevo paciente';
+  return (p.perfil_paciente?.nombre as string) || (p.perfil_paciente?.nombre_whatsapp as string) || formatTel(p.telefono_encriptado) || 'Nuevo paciente';
 }
+function telContacto(p: Paciente): string { return formatTel((p.perfil_paciente?.telefono_contacto as string) || null); }
 function sc(p: Paciente) { return parseInt(String(p.perfil_paciente?.score ?? "0")) || 0; }
 function ec(p: Paciente) { return (p.perfil_paciente?.estado_conv as string) || "nuevo"; }
 function ua(p: Paciente) { const v = p.perfil_paciente?.ultima_actividad_at as string; return v ? new Date(v) : new Date(p.updated_at); }
@@ -178,9 +179,10 @@ export default function CitasPage() {
           {filtrados.map(p => {
             const score = sc(p); const estado = ec(p); const act = ua(p);
             const nombre = displayName(p); const telefono = formatTel(p.telefono_encriptado);
-            const rawNombre = p.perfil_paciente?.nombre as string;
+            const rawNombre = (p.perfil_paciente?.nombre as string) || (p.perfil_paciente?.nombre_whatsapp as string);
             const ciudad = p.perfil_paciente?.ciudad as string;
             const horario = p.perfil_paciente?.horario_contacto as string;
+            const telC = telContacto(p);
             const servicio = p.perfil_paciente?.servicio_interes as string;
             const resumen = p.perfil_paciente?.resumen_lead as string;
             const isListo = estado === "entrega_premium";
@@ -207,9 +209,11 @@ export default function CitasPage() {
                       {resultado && <span className="text-[11px] font-medium" style={{ color:resultadoCfg?.color ?? "var(--text-3)" }}>{resultadoCfg?.label}</span>}
                     </div>
                     <div className="flex flex-wrap gap-2 text-xs" style={{ color:"var(--text-3)" }}>
-                      {telefono && <span>{telefono}</span>}
+                      {telC && <span className="font-medium" style={{ color:"#059669" }}>📞 {telC}</span>}
+                      {telefono && telefono !== telC && <span>WA: {telefono}</span>}
                       {ciudad && <><span>·</span><span>{ciudad}</span></>}
                       {servicio && <><span>·</span><span>{SRV[servicio] ?? servicio}</span></>}
+                      {horario && <><span>·</span><span>🕐 {horario}</span></>}
                     </div>
                   </div>
 
@@ -221,8 +225,8 @@ export default function CitasPage() {
 
                   {/* Actions */}
                   <div className="flex flex-col gap-1.5 shrink-0">
-                    {telefono && (
-                      <a href={`tel:${p.telefono_encriptado}`}
+                    {(telC || telefono) && (
+                      <a href={`tel:${(p.perfil_paciente?.telefono_contacto as string) || p.telefono_encriptado}`}
                         className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold"
                         style={{ background:"var(--green)", color:"#000" }}>
                         <Phone className="w-3 h-3" /> Llamar
