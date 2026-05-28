@@ -28,10 +28,20 @@ export default function Sidebar() {
   const [installPrompt, setInstallPrompt] = useState<Event | null>(null);
   const [installed, setInstalled] = useState(false);
 
+  const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+
   useEffect(() => {
     const handler = (e: Event) => { e.preventDefault(); setInstallPrompt(e); };
     window.addEventListener("beforeinstallprompt", handler);
     window.addEventListener("appinstalled", () => setInstalled(true));
+
+    const standalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as { standalone?: boolean }).standalone === true;
+    setIsStandalone(standalone);
+
+    const ios = (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent))) && !(window as { MSStream?: unknown }).MSStream;
+    setIsIOS(ios);
+
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
 
@@ -122,15 +132,37 @@ export default function Sidebar() {
         <div className="px-3 pb-4">
           <div className="mx-2 mb-2" style={{ height: "1px", background: "rgba(255,255,255,0.05)" }} />
 
-          {installPrompt && !installed && (
-            <button onClick={handleInstall}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold mb-1 transition-all"
-              style={{ background: "rgba(6,182,212,0.1)", color: "var(--cyan)", border: "1px solid rgba(6,182,212,0.2)" }}>
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(6,182,212,0.15)" }}>
-                <Download className="w-3.5 h-3.5" />
+          {!isStandalone && !installed && (
+            isIOS ? (
+              <div className="mb-1 px-3 py-2.5 rounded-xl" style={{ background: "rgba(6,182,212,0.08)", border: "1px solid rgba(6,182,212,0.2)" }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <Download className="w-3.5 h-3.5" style={{ color: "var(--cyan)" }} />
+                  <span className="text-[12px] font-semibold" style={{ color: "var(--cyan)" }}>Instalar como app</span>
+                </div>
+                <p className="text-[10px] leading-snug" style={{ color: "rgba(255,255,255,0.4)" }}>
+                  Toca <span style={{ color: "var(--cyan)" }}>⎙ Compartir</span> en Safari y luego <span style={{ color: "var(--cyan)" }}>"Añadir a inicio"</span>
+                </p>
               </div>
-              Instalar como app
-            </button>
+            ) : installPrompt ? (
+              <button onClick={handleInstall}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold mb-1 transition-all"
+                style={{ background: "rgba(6,182,212,0.1)", color: "var(--cyan)", border: "1px solid rgba(6,182,212,0.2)" }}>
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(6,182,212,0.15)" }}>
+                  <Download className="w-3.5 h-3.5" />
+                </div>
+                Instalar como app
+              </button>
+            ) : (
+              <div className="mb-1 px-3 py-2.5 rounded-xl" style={{ background: "rgba(6,182,212,0.05)", border: "1px solid rgba(6,182,212,0.12)" }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <Download className="w-3.5 h-3.5" style={{ color: "var(--cyan)" }} />
+                  <span className="text-[12px] font-semibold" style={{ color: "var(--cyan)" }}>Instalar como app</span>
+                </div>
+                <p className="text-[10px] leading-snug" style={{ color: "rgba(255,255,255,0.4)" }}>
+                  En Chrome: menú <span style={{ color: "var(--cyan)" }}>⋮</span> → <span style={{ color: "var(--cyan)" }}>"Añadir a pantalla de inicio"</span>
+                </p>
+              </div>
+            )
           )}
 
           <button onClick={handleLogout}
