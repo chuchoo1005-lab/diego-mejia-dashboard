@@ -22,7 +22,15 @@ interface Conv {
 }
 
 // ─── Data helpers ─────────────────────────────────────────────────────────────
-const SRV: Record<string, string> = { ortodoncia: "Ortodoncia invisible", diseno: "Diseño de sonrisa", general: "Odontología general" };
+const SRV: Record<string, string> = { ortodoncia: "Ortodoncia invisible", invisalign: "Ortodoncia invisible", brackets: "Ortodoncia brackets", diseno: "Diseño de sonrisa", blanqueamiento: "Blanqueamiento", implantes: "Implantes", endodoncia: "Endodoncia", periodoncia: "Periodoncia", cirugia: "Cirugía oral", rehabilitacion: "Rehabilitación", odontopediatria: "Odontopediatría", ortopedia: "Ortopedia", general: "Odontología general" };
+function svcBadge(s: string | null): { label: string; bg: string; color: string } {
+  if (!s) return { label: "—", bg: "transparent", color: "var(--text-3)" };
+  const label = SRV[s] ?? s;
+  if (["ortodoncia","invisalign","brackets"].includes(s)) return { label, bg: "rgba(6,182,212,0.15)", color: "#06B6D4" };
+  if (["diseno","blanqueamiento"].includes(s)) return { label, bg: "rgba(168,85,247,0.15)", color: "#A855F7" };
+  if (["implantes","endodoncia","periodoncia","cirugia","rehabilitacion"].includes(s)) return { label, bg: "rgba(249,115,22,0.15)", color: "#F97316" };
+  return { label, bg: "rgba(16,185,129,0.12)", color: "#10B981" };
+}
 
 function tel(p: Paciente): string {
   const t = p.telefono_encriptado; if (!t) return "";
@@ -367,10 +375,10 @@ export default function Home() {
                             <span className={`badge ${badge.cls}`}>{badge.emoji} {badge.label}</span>
                             {emocion && <span className="text-[11px] font-medium" style={{ color:emocion.color }}>{emocion.emoji} {emocion.label}</span>}
                           </div>
-                          <div className="flex items-center gap-3 text-xs" style={{ color:"var(--text-3)" }}>
-                            {servicio && <span>{SRV[servicio] ?? servicio}</span>}
-                            {ciudad && <span>· {ciudad}</span>}
-                            {telefono && <span>· {telefono}</span>}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {servicio && (() => { const b = svcBadge(servicio); return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ background: b.bg, color: b.color }}>{b.label}</span>; })()}
+                            {ciudad && <span className="text-xs" style={{ color:"var(--text-3)" }}>📍 {ciudad}</span>}
+                            {telefono && <span className="text-xs" style={{ color:"var(--text-3)" }}>{telefono}</span>}
                           </div>
                         </div>
                         {/* Score */}

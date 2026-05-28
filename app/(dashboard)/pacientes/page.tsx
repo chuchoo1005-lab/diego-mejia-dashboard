@@ -11,7 +11,15 @@ interface Paciente {
   perfil_paciente: Record<string, unknown>; created_at: string; updated_at: string;
 }
 
-const SRV: Record<string, string> = { ortodoncia: "Ortodoncia", diseno: "Diseño de sonrisa", general: "Odontología general" };
+const SRV: Record<string, string> = { ortodoncia: "Ortodoncia invisible", invisalign: "Ortodoncia invisible", brackets: "Ortodoncia brackets", diseno: "Diseño de sonrisa", blanqueamiento: "Blanqueamiento", implantes: "Implantes", endodoncia: "Endodoncia", periodoncia: "Periodoncia", cirugia: "Cirugía oral", rehabilitacion: "Rehabilitación", odontopediatria: "Odontopediatría", ortopedia: "Ortopedia", general: "Odontología general" };
+function svcBadge(s: string | null): { label: string; bg: string; color: string } {
+  if (!s) return { label: "—", bg: "transparent", color: "var(--text-muted)" };
+  const label = SRV[s] ?? s;
+  if (["ortodoncia","invisalign","brackets"].includes(s)) return { label, bg: "rgba(6,182,212,0.12)", color: "#0891B2" };
+  if (["diseno","blanqueamiento"].includes(s)) return { label, bg: "rgba(168,85,247,0.12)", color: "#9333EA" };
+  if (["implantes","endodoncia","periodoncia","cirugia","rehabilitacion"].includes(s)) return { label, bg: "rgba(249,115,22,0.12)", color: "#EA580C" };
+  return { label, bg: "rgba(16,185,129,0.12)", color: "#059669" };
+}
 const NIVEL: Record<string, { label: string; cls: string; emoji: string }> = {
   alto:  { label: "Interesado",  cls: "badge badge-green",  emoji: "🔥" },
   medio: { label: "Evaluando",   cls: "badge badge-yellow", emoji: "🤔" },
@@ -162,9 +170,9 @@ export default function PacientesPage() {
                           {estado}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 text-sm" style={{ color: "var(--text-secondary)" }}>
-                        <p>{serv ? (SRV[serv] ?? serv) : "—"}</p>
-                        {hor && <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>🕐 {hor}</p>}
+                      <td className="px-5 py-3.5">
+                        {(() => { const b = svcBadge(serv); return serv ? <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold" style={{ background: b.bg, color: b.color }}>{b.label}</span> : <span className="text-sm" style={{ color: "var(--text-muted)" }}>—</span>; })()}
+                        {hor && <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>🕐 {hor}</p>}
                         {ciu && <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>📍 {ciu}</p>}
                       </td>
                       <td className="px-5 py-3.5">
@@ -214,7 +222,7 @@ export default function PacientesPage() {
                     <span className="text-lg font-bold" style={{ color: score >= 60 ? "#111827" : "#D1D5DB" }}>{score}</span>
                   </div>
                   <div className="flex flex-wrap gap-2 text-xs" style={{ color: "var(--text-secondary)" }}>
-                    {serv && <span>{SRV[serv] ?? serv}</span>}
+                    {serv && (() => { const b = svcBadge(serv); return <span className="px-2 py-0.5 rounded-full font-semibold" style={{ background: b.bg, color: b.color }}>{b.label}</span>; })()}
                     {hor && <span>🕐 {hor}</span>}
                     {ciu && <span>📍 {ciu}</span>}
                     <span className={`badge ${estado === "entrega_premium" ? "badge-green" : "badge-gray"}`} style={{ fontSize: "10px" }}>{estado}</span>
