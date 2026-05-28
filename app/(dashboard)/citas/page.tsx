@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Phone, Search, RefreshCw, Clock, MapPin, Stethoscope, Brain, FileText, ChevronDown, Flame } from "lucide-react";
 
@@ -11,7 +11,20 @@ interface Paciente {
   perfil_paciente: Record<string, unknown>; updated_at: string;
 }
 
-const SRV: Record<string, string> = { ortodoncia: "Ortodoncia invisible", diseno: "Diseño de sonrisa", general: "Odontología general" };
+const SRV: Record<string, string> = { ortodoncia: "Ortodoncia invisible", invisalign: "Ortodoncia invisible", brackets: "Ortodoncia brackets", diseno: "Diseño de sonrisa", blanqueamiento: "Blanqueamiento", implantes: "Implantes", endodoncia: "Endodoncia", periodoncia: "Periodoncia", cirugia: "Cirugía oral", rehabilitacion: "Rehabilitación", odontopediatria: "Odontopediatría", ortopedia: "Ortopedia", general: "Odontología general" };
+function svcBadge(s: string | null): { label: string; bg: string; color: string } {
+  if (!s) return { label: "—", bg: "transparent", color: "var(--text-3)" };
+  const label = SRV[s] ?? s;
+  if (["ortodoncia","invisalign","brackets"].includes(s)) return { label, bg: "rgba(6,182,212,0.12)", color: "#22D3EE" };
+  if (["diseno","blanqueamiento"].includes(s)) return { label, bg: "rgba(168,85,247,0.12)", color: "#C084FC" };
+  if (["implantes","endodoncia","periodoncia","cirugia","rehabilitacion"].includes(s)) return { label, bg: "rgba(249,115,22,0.12)", color: "#FB923C" };
+  return { label, bg: "rgba(16,185,129,0.12)", color: "#34D399" };
+}
+const NIVEL: Record<string, { label: string; color: string; bg: string }> = {
+  alto:  { label: "🔥 Muy interesado", color: "#F97316", bg: "rgba(249,115,22,0.12)" },
+  medio: { label: "🤔 Evaluando",      color: "#FBBF24", bg: "rgba(251,191,36,0.12)" },
+  bajo:  { label: "💤 Indeciso",       color: "var(--text-3)", bg: "rgba(255,255,255,0.05)" },
+};
 
 const RESULTADOS = [
   { value: "",                    label: "— Sin resultado —",        color: "var(--text-3)" },
@@ -107,6 +120,12 @@ export default function CitasPage() {
     const resultadoCfg = RESULTADOS.find(r => r.value === resultado);
     const isSaving = saving === p.id;
     const callTel = (p.perfil_paciente?.telefono_contacto as string) || p.telefono_encriptado;
+    const score = sc(p);
+    const nivel = (p.perfil_paciente?.nivel_interes as string) || "bajo";
+    const nivelCfg = NIVEL[nivel] ?? NIVEL.bajo;
+    const svc = servicio ? svcBadge(servicio) : null;
+    const tiempoAtras = formatDistanceToNow(ua(p), { locale: es, addSuffix: true });
+    const fechaRegistro = format(new Date(p.updated_at), "d MMM, HH:mm", { locale: es });
 
     return (
       <div className="overflow-hidden rounded-2xl" style={{ background: "rgba(16,185,129,0.05)", border: "1px solid rgba(16,185,129,0.25)", boxShadow: "0 0 20px rgba(16,185,129,0.06)" }}>
@@ -114,53 +133,76 @@ export default function CitasPage() {
         <div className="h-0.5 w-full" style={{ background: "linear-gradient(90deg, rgba(16,185,129,0.8), rgba(16,185,129,0.2))" }} />
 
         <div className="p-4">
-          {/* Top row: name + call button */}
-          <div className="flex items-start justify-between gap-3 mb-3">
+          {/* Top row: name + score + call button */}
+          <div className="flex items-start justify-between gap-3 mb-2">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap mb-1">
                 <span className="font-bold" style={{ color: "var(--text)", fontSize: "15px" }}>{nombre}</span>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(16,185,129,0.15)", color: "#10B981", border: "1px solid rgba(16,185,129,0.3)" }}>✓ LISTO PARA LLAMAR</span>
                 {resultado && <span className="text-[11px] font-medium" style={{ color: resultadoCfg?.color ?? "var(--text-3)" }}>{resultadoCfg?.label}</span>}
               </div>
-              {/* Teléfono de contacto — prominente */}
-              {telC && (
-                <p className="text-sm font-bold mb-1" style={{ color: "#10B981" }}>📞 {telC}</p>
-              )}
-              {telefono && telefono !== telC && (
-                <p className="text-xs" style={{ color: "var(--text-3)" }}>WA: {telefono}</p>
+              <p className="text-[10px]" style={{ color: "var(--text-3)" }}>{p.alias} · {tiempoAtras}</p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {/* Score circle */}
+              <div className="text-center px-2.5 py-1.5 rounded-xl" style={{ background: score >= 60 ? "rgba(16,185,129,0.12)" : score >= 30 ? "rgba(251,191,36,0.1)" : "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <p className="text-lg font-black leading-none" style={{ color: score >= 60 ? "#10B981" : score >= 30 ? "#FBBF24" : "var(--text-3)" }}>{score}</p>
+                <p className="text-[9px]" style={{ color: "var(--text-3)" }}>score</p>
+              </div>
+              {callTel && (
+                <a href={`tel:${callTel}`} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold"
+                  style={{ background: "#10B981", color: "#000" }}>
+                  <Phone className="w-4 h-4" /> Llamar
+                </a>
               )}
             </div>
-            {callTel && (
-              <a href={`tel:${callTel}`} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold shrink-0"
-                style={{ background: "#10B981", color: "#000" }}>
-                <Phone className="w-4 h-4" /> Llamar
-              </a>
-            )}
           </div>
 
-          {/* Info pills */}
-          <div className="flex flex-wrap gap-2 mb-3">
-            {servicio && (
-              <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.06)", color: "var(--text-2)", border: "1px solid var(--border)" }}>
-                <Stethoscope className="w-3 h-3" /> {SRV[servicio] ?? servicio}
+          {/* Teléfonos */}
+          <div className="mb-3">
+            {telC && <p className="text-sm font-bold" style={{ color: "#10B981" }}>📞 {telC}</p>}
+            {telefono && telefono !== telC && <p className="text-xs mt-0.5" style={{ color: "var(--text-3)" }}>WA: {telefono}</p>}
+          </div>
+
+          {/* Info pills row 1: servicio + nivel */}
+          <div className="flex flex-wrap gap-2 mb-2">
+            {svc && (
+              <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg font-semibold" style={{ background: svc.bg, color: svc.color }}>
+                <Stethoscope className="w-3 h-3" /> {svc.label}
               </span>
             )}
+            <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg font-medium" style={{ background: nivelCfg.bg, color: nivelCfg.color }}>
+              {nivelCfg.label}
+            </span>
             {horario && (
-              <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.06)", color: "var(--text-2)", border: "1px solid var(--border)" }}>
+              <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-2)", border: "1px solid var(--border)" }}>
                 <Clock className="w-3 h-3" /> {horario}
               </span>
             )}
             {ciudad && (
-              <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.06)", color: "var(--text-2)", border: "1px solid var(--border)" }}>
+              <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-2)", border: "1px solid var(--border)" }}>
                 <MapPin className="w-3 h-3" /> {ciudad}
               </span>
             )}
           </div>
 
+          {/* Resumen IA preview — siempre visible si existe */}
+          {resumen && (
+            <div className="mb-3 p-2.5 rounded-xl" style={{ background: "rgba(6,182,212,0.04)", border: "1px solid rgba(6,182,212,0.1)" }}>
+              <div className="flex items-center gap-1 mb-1">
+                <Brain className="w-3 h-3" style={{ color: "var(--cyan)" }} />
+                <span className="text-[10px] font-bold" style={{ color: "rgba(6,182,212,0.6)" }}>RESUMEN IA</span>
+              </div>
+              <p className="text-xs leading-relaxed" style={{ color: "var(--text-2)" }}>
+                {isExp ? resumen : resumen.length > 120 ? resumen.slice(0, 120) + "…" : resumen}
+              </p>
+            </div>
+          )}
+
           {/* Expand toggle */}
           <button onClick={() => toggleExp(p.id)} className="flex items-center gap-1 text-[11px]" style={{ color: "var(--text-3)" }}>
             <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isExp ? "rotate-180" : ""}`} />
-            {isExp ? "Ocultar detalles" : "Ver detalles"}
+            {isExp ? "Ocultar detalles" : "Ver resultado y notas"}
           </button>
         </div>
 
@@ -179,15 +221,6 @@ export default function CitasPage() {
                 ))}
               </div>
             </div>
-            {resumen && (
-              <div className="p-3 rounded-xl" style={{ background: "rgba(6,182,212,0.04)", border: "1px solid rgba(6,182,212,0.12)" }}>
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <Brain className="w-3.5 h-3.5" style={{ color: "var(--cyan)" }} />
-                  <span className="section-label" style={{ color: "rgba(6,182,212,0.5)" }}>Resumen IA</span>
-                </div>
-                <p className="text-xs leading-relaxed" style={{ color: "var(--text-2)" }}>{resumen}</p>
-              </div>
-            )}
             <div>
               <div className="flex items-center gap-1.5 mb-2">
                 <FileText className="w-3.5 h-3.5" style={{ color: "var(--text-3)" }} />
@@ -243,7 +276,7 @@ export default function CitasPage() {
             <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-xs" style={{ color: "var(--text-3)" }}>
               {telC && <span style={{ color: "#059669" }}>📞 {telC}</span>}
               {telefono && telefono !== telC && <span>WA: {telefono}</span>}
-              {servicio && <span>{SRV[servicio] ?? servicio}</span>}
+              {servicio && (() => { const b = svcBadge(servicio); return <span className="font-semibold" style={{ color: b.color }}>{b.label}</span>; })()}
               {horario && <span>🕐 {horario}</span>}
               {ciudad && <span>📍 {ciudad}</span>}
             </div>
