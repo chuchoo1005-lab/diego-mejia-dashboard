@@ -23,7 +23,10 @@ export default function InstallBanner() {
     // Ya la descartó en esta sesión
     if (sessionStorage.getItem("pwa-banner-dismissed")) return;
 
-    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as { MSStream?: unknown }).MSStream;
+    const ios =
+      (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent))) &&
+      !(window as { MSStream?: unknown }).MSStream;
     setIsIOS(ios);
 
     if (ios) {
