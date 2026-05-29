@@ -184,7 +184,7 @@ export default function Home() {
   const toggleExpanded = (id: string) => setExpanded(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
 
   const leadsTop = pacs.filter(p => sc(p) >= 40).sort((a,b) => sc(b)-sc(a)).slice(0,6);
-  const seguimientos = pacs.filter(p => { const h=(Date.now()-ua(p).getTime())/3600000; return h>12 && sc(p)>=20 && ec(p)!=="entrega_premium"; }).sort((a,b) => sc(b)-sc(a)).slice(0,4);
+  const seguimientos = pacs.filter(p => { const h=(Date.now()-ua(p).getTime())/3600000; return h>12 && ec(p)!=="entrega_premium"; }).sort((a,b) => sc(b)-sc(a)).slice(0,10);
   const alertasUrgentes = pacs.filter(p => { const h=(Date.now()-ua(p).getTime())/3600000; return (ec(p)==="entrega_premium" || (h>6 && sc(p)>=60)); }).slice(0,3);
   const insights = buildInsights(pacs);
   const funnel = [
@@ -633,26 +633,33 @@ export default function Home() {
                 {seguimientos.map(p => {
                   const hrs = Math.round((Date.now()-ua(p).getTime())/3600000);
                   const nombre = nom(p); const score = sc(p); const telefono = tel(p);
-                  const cierre = cierrePct(p); const rec = iaRecomendacion(p);
-                  const emocion = detectEmocion(p);
+                  const estado = ec(p); const servicio = srv(p);
+                  const rec = iaRecomendacion(p); const emocion = detectEmocion(p);
+                  const tieneNombre = !!(p.perfil_paciente?.nombre);
                   return (
                     <div key={p.id} className="p-3.5 rounded-xl" style={{ background:"rgba(245,158,11,0.04)", border:"1px solid rgba(245,158,11,0.12)" }}>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-bold text-sm" style={{ color:"var(--text)" }}>{nombre}</span>
-                        <span className="text-xs font-black" style={{ color: score>=60 ? "var(--cyan)" : "var(--amber)" }}>{score} pts</span>
+                      {/* Fila 1: identidad */}
+                      <div className="flex items-start justify-between gap-2 mb-1.5">
+                        <div className="min-w-0">
+                          <span className="font-bold text-sm block truncate" style={{ color:"var(--text)" }}>
+                            {tieneNombre ? nombre : <span style={{ color:"var(--text-3)", fontStyle:"italic" }}>Sin nombre · {telefono || p.alias}</span>}
+                          </span>
+                          {tieneNombre && telefono && <span className="text-[10px]" style={{ color:"var(--text-3)" }}>{telefono}</span>}
+                        </div>
+                        <span className="text-xs font-black shrink-0" style={{ color: score>=60 ? "var(--cyan)" : score>=20 ? "var(--amber)" : "var(--text-3)" }}>{score} pts</span>
                       </div>
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        <span className="badge badge-amber"><Clock className="w-2.5 h-2.5" /> {hrs}h sin responder</span>
+                      {/* Fila 2: estado + servicio */}
+                      <div className="flex flex-wrap gap-1.5 mb-2">
+                        <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background:"rgba(255,255,255,0.06)", color:"var(--text-3)" }}>{estado}</span>
+                        {servicio && (() => { const b = svcBadge(servicio); return <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background:b.bg, color:b.color }}>{b.label}</span>; })()}
+                        <span className="badge badge-amber"><Clock className="w-2.5 h-2.5" /> {hrs}h sin resp.</span>
                         {emocion && <span className="text-[11px]" style={{ color:emocion.color }}>{emocion.emoji} {emocion.label}</span>}
                       </div>
-                      <p className="text-[11px] mb-2.5" style={{ color:"var(--amber)" }}>{rec}</p>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-[10px]" style={{ color:"var(--text-3)" }}>Prob. cierre</p>
-                          <p className="text-sm font-bold" style={{ color: cierre>=70 ? "var(--green)" : "var(--amber)" }}>{cierre}%</p>
-                        </div>
+                      {/* Fila 3: recomendación + llamar */}
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[11px] leading-snug" style={{ color:"var(--amber)" }}>{rec}</p>
                         {telefono && (
-                          <a href={`tel:${p.telefono_encriptado}`} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold"
+                          <a href={`tel:${p.telefono_encriptado}`} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold shrink-0"
                             style={{ background:"var(--amber)", color:"#000" }}>
                             <Phone className="w-3 h-3" /> Llamar
                           </a>
