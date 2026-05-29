@@ -43,7 +43,7 @@ function sc(p: Paciente)  { return parseInt(String(p.perfil_paciente?.score ?? "
 function ec(p: Paciente)  { return (p.perfil_paciente?.estado_conv as string) || "nuevo"; }
 function srv(p: Paciente) { return (p.perfil_paciente?.servicio_interes as string) || null; }
 function niv(p: Paciente) { return (p.perfil_paciente?.nivel_interes as string) || "bajo"; }
-function ua(p: Paciente)  { const v = p.perfil_paciente?.ultima_actividad_at as string; return v ? new Date(v) : new Date(p.updated_at); }
+function ua(p: Paciente)  { const v = p.perfil_paciente?.ultima_actividad_at as string; return v ? new Date(v) : new Date(p.created_at); }
 function resumen(p: Paciente) { return (p.perfil_paciente?.resumen_lead as string) || ""; }
 function razon(p: Paciente)   { return (p.perfil_paciente?.razon_score as string) || ""; }
 
@@ -253,16 +253,20 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { label:"Mensajes hoy",  value:kpis.convsHoy, icon:MessageSquare, color:"var(--cyan)" },
-              { label:"Leads 🔥",      value:kpis.calientes, icon:Flame,  color:"#F97316" },
-              { label:"Seguimientos",  value:seguimientos.length, icon:Clock, color:"#A78BFA" },
-              { label:"Para llamar",   value:kpis.listos, icon:Phone, color:"var(--green)" },
-            ].map(({ label, value, icon:Icon, color }) => (
-              <div key={label} className="text-center px-3 py-3 rounded-xl" style={{ background:"rgba(255,255,255,0.03)", border:"1px solid var(--border)" }}>
+              { label:"Mensajes hoy",  value:kpis.convsHoy,       icon:MessageSquare, color:"var(--cyan)",  href:"/conversaciones" },
+              { label:"Leads 🔥",      value:kpis.calientes,       icon:Flame,         color:"#F97316",      href:"/citas" },
+              { label:"Seguimientos",  value:seguimientos.length,  icon:Clock,         color:"#A78BFA",      href:"/seguimientos" },
+              { label:"Para llamar",   value:kpis.listos,          icon:Phone,         color:"var(--green)", href:"/citas" },
+            ].map(({ label, value, icon:Icon, color, href }) => (
+              <a key={label} href={href}
+                className="text-center px-3 py-3 rounded-xl block transition-all active:scale-95"
+                style={{ background:"rgba(255,255,255,0.03)", border:"1px solid var(--border)", textDecoration:"none", cursor:"pointer", WebkitTapHighlightColor:"transparent" }}
+                onMouseEnter={e => { const el = e.currentTarget; el.style.background="rgba(255,255,255,0.07)"; el.style.borderColor=color; }}
+                onMouseLeave={e => { const el = e.currentTarget; el.style.background="rgba(255,255,255,0.03)"; el.style.borderColor="var(--border)"; }}>
                 <Icon className="w-4 h-4 mx-auto mb-1" style={{ color }} />
                 <p className="text-2xl font-black" style={{ color }}>{value}</p>
                 <p className="text-[10px] leading-tight" style={{ color:"var(--text-3)" }}>{label}</p>
-              </div>
+              </a>
             ))}
           </div>
         </div>
