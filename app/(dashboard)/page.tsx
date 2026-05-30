@@ -430,23 +430,14 @@ export default function Home() {
                             {razonScore && <p className="text-[11px] mt-1" style={{ color:"var(--text-3)" }}>Razón score: {razonScore}</p>}
                           </div>
 
-                          {/* Datos + Probabilidad */}
-                          <div className="grid grid-cols-2 gap-2">
-                            <div className="p-3 rounded-lg" style={{ background:"rgba(255,255,255,0.03)", border:"1px solid var(--border)" }}>
-                              <p className="section-label mb-2">Datos capturados</p>
-                              <div className="space-y-1 text-xs" style={{ color:"var(--text-2)" }}>
-                                {ciudad   && <p>📍 {ciudad}</p>}
-                                {horario  && <p>⏰ {horario}</p>}
-                                {telefono && <p>📱 {telefono}</p>}
-                                {!ciudad && !horario && <p style={{ color:"var(--text-3)" }}>En proceso de captura</p>}
-                              </div>
-                            </div>
-                            <div className="p-3 rounded-lg" style={{ background:"rgba(255,255,255,0.03)", border:"1px solid var(--border)" }}>
-                              <p className="section-label mb-2">Probabilidad de cierre</p>
-                              <p className="text-2xl font-black mb-1" style={{ color: cierre >= 70 ? "var(--green)" : cierre >= 40 ? "var(--amber)" : "var(--text-3)" }}>
-                                {cierre}%
-                              </p>
-                              <div className="score-bar"><div className="score-bar-fill" style={{ width:`${cierre}%`, background: cierre >= 70 ? "var(--green)" : "var(--amber)" }} /></div>
+                          {/* Datos capturados */}
+                          <div className="p-3 rounded-lg" style={{ background:"rgba(255,255,255,0.03)", border:"1px solid var(--border)" }}>
+                            <p className="section-label mb-2">Datos capturados</p>
+                            <div className="space-y-1 text-xs" style={{ color:"var(--text-2)" }}>
+                              {ciudad   && <p>📍 {ciudad}</p>}
+                              {horario  && <p>⏰ {horario}</p>}
+                              {telefono && <p>📱 {telefono}</p>}
+                              {!ciudad && !horario && <p style={{ color:"var(--text-3)" }}>En proceso de captura</p>}
                             </div>
                           </div>
 
