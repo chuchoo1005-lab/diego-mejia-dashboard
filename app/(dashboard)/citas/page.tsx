@@ -7,7 +7,7 @@ import { Phone, Search, RefreshCw, Clock, MapPin, Stethoscope, Brain, FileText, 
 
 interface Paciente {
   id: string; alias: string; calificado: boolean;
-  telefono_encriptado: string | null;
+  telefono_encriptado: string | null; modo_humano: boolean;
   perfil_paciente: Record<string, unknown>; updated_at: string;
 }
 
@@ -65,7 +65,7 @@ export default function CitasPage() {
   const load = useCallback(async () => {
     const { data } = await supabase
       .from("pacientes")
-      .select("id,alias,calificado,telefono_encriptado,perfil_paciente,updated_at")
+      .select("id,alias,calificado,telefono_encriptado,perfil_paciente,updated_at,modo_humano")
       .eq("estado", "activo").order("updated_at", { ascending: false }).limit(100);
     setLeads((data || []) as Paciente[]);
     setLoading(false);
@@ -85,6 +85,14 @@ export default function CitasPage() {
 
   const setResultado = (p: Paciente, valor: string) => updatePerfil(p.id, { resultado_llamada: valor, resultado_at: new Date().toISOString() });
   const guardarNotas = (p: Paciente) => { const nota = notasTemp[p.id] ?? notasInternas(p); updatePerfil(p.id, { notas_internas: nota }); };
+
+  const toggleCandado = async (p: Paciente) => {
+    const nuevo = !p.modo_humano;
+    setSaving(p.id);
+    await supabase.from("pacientes").update({ modo_humano: nuevo, modo_humano_at: nuevo ? new Date().toISOString() : null }).eq("id", p.id);
+    setLeads(prev => prev.map(x => x.id === p.id ? { ...x, modo_humano: nuevo } : x));
+    setSaving(null);
+  };
 
   const match = (p: Paciente) => {
     if (!busqueda) return true;
@@ -122,6 +130,7 @@ export default function CitasPage() {
     const callTel = (p.perfil_paciente?.telefono_contacto as string) || p.telefono_encriptado;
     const score = sc(p);
     const nivel = (p.perfil_paciente?.nivel_interes as string) || "bajo";
+    const botActivo = !p.modo_humano;
     const nivelCfg = NIVEL[nivel] ?? NIVEL.bajo;
     const svc = servicio ? svcBadge(servicio) : null;
     const tiempoAtras = formatDistanceToNow(ua(p), { locale: es, addSuffix: true });
@@ -149,6 +158,11 @@ export default function CitasPage() {
                 <p className="text-lg font-black leading-none" style={{ color: score >= 60 ? "#10B981" : score >= 30 ? "#FBBF24" : "var(--text-3)" }}>{score}</p>
                 <p className="text-[9px]" style={{ color: "var(--text-3)" }}>score</p>
               </div>
+              <button onClick={() => toggleCandado(p)} title={botActivo ? "Bot activo — click para pausar" : "Bot pausado — click para activar"}
+                className="flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-bold transition-all"
+                style={{ background: botActivo ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.12)", color: botActivo ? "#10B981" : "#EF4444", border: `1px solid ${botActivo ? "rgba(16,185,129,0.3)" : "rgba(239,68,68,0.3)"}` }}>
+                {botActivo ? "🤖" : "🔒"}
+              </button>
               {callTel && (
                 <a href={`tel:${callTel}`} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold"
                   style={{ background: "#10B981", color: "#000" }}>
@@ -258,6 +272,7 @@ export default function CitasPage() {
     const isSaving = saving === p.id;
     const callTel = (p.perfil_paciente?.telefono_contacto as string) || p.telefono_encriptado;
     const resumen = p.perfil_paciente?.resumen_lead as string;
+    const botActivo = !p.modo_humano;
     const borderColor = accent ? "rgba(6,182,212,0.2)" : "var(--border)";
     const accentColor = accent ? "var(--cyan)" : "var(--text-3)";
 
@@ -286,6 +301,11 @@ export default function CitasPage() {
               <p className="text-base font-black" style={{ color: score >= 60 ? "var(--cyan)" : score >= 30 ? "var(--amber)" : "var(--text-3)" }}>{score}</p>
               <p className="text-[9px]" style={{ color: "var(--text-3)" }}>score</p>
             </div>
+            <button onClick={() => toggleCandado(p)} title={botActivo ? "Bot activo — click para pausar" : "Bot pausado — click para activar"}
+              className="flex items-center justify-center w-7 h-7 rounded-lg text-sm transition-all"
+              style={{ background: botActivo ? "rgba(16,185,129,0.08)" : "rgba(239,68,68,0.1)", color: botActivo ? "#10B981" : "#EF4444", border: `1px solid ${botActivo ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.25)"}` }}>
+              {botActivo ? "🤖" : "🔒"}
+            </button>
             {(telC || telefono) && (
               <a href={`tel:${callTel}`} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold"
                 style={{ background: "rgba(16,185,129,0.12)", color: "#10B981", border: "1px solid rgba(16,185,129,0.25)" }}>
