@@ -275,19 +275,19 @@ export default function Home() {
       {/* ══ AGENDA HOY / SEMANA ═══════════════════════════════════════ */}
       <div className="dm-card p-5">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background:"rgba(6,182,212,0.1)", border:"1px solid rgba(6,182,212,0.15)" }}>
+          <a href="/agenda" className="flex items-center gap-2.5 flex-1 min-w-0 active:opacity-70 transition-opacity" style={{ textDecoration:"none", WebkitTapHighlightColor:"transparent" }}>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background:"rgba(6,182,212,0.1)", border:"1px solid rgba(6,182,212,0.15)" }}>
               <CalendarDays className="w-4 h-4" style={{ color:"var(--cyan)" }} />
             </div>
             <div>
               <p className="section-label">Esta semana</p>
-              <h2 className="text-sm font-bold" style={{ color:"var(--text)" }}>Agenda de citas</h2>
+              <h2 className="text-sm font-bold flex items-center gap-1" style={{ color:"var(--text)" }}>Agenda de citas <ArrowRight className="w-3.5 h-3.5" style={{ color:"var(--text-3)" }} /></h2>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
+          </a>
+          <div className="flex items-center gap-2 shrink-0">
             <span className="badge badge-cyan">{citas.length} citas</span>
-            <a href="/agenda" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-              style={{ background:"rgba(6,182,212,0.1)", color:"var(--cyan)", border:"1px solid rgba(6,182,212,0.2)" }}>
+            <a href="/agenda" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-95"
+              style={{ background:"rgba(6,182,212,0.1)", color:"var(--cyan)", border:"1px solid rgba(6,182,212,0.2)", WebkitTapHighlightColor:"transparent" }}>
               <Plus className="w-3 h-3" /> Nueva cita
             </a>
           </div>
@@ -467,15 +467,15 @@ export default function Home() {
           {/* CONVERSACIONES */}
           <div className="dm-card p-5">
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background:"rgba(6,182,212,0.1)", border:"1px solid rgba(6,182,212,0.15)" }}>
+              <a href="/conversaciones" className="flex items-center gap-2.5 active:opacity-70 transition-opacity" style={{ textDecoration:"none", WebkitTapHighlightColor:"transparent" }}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background:"rgba(6,182,212,0.1)", border:"1px solid rgba(6,182,212,0.15)" }}>
                   <MessageSquare className="w-4 h-4" style={{ color:"var(--cyan)" }} />
                 </div>
                 <div>
                   <p className="section-label">WhatsApp · CRM · IA</p>
-                  <h2 className="text-sm font-bold" style={{ color:"var(--text)" }}>Conversaciones recientes</h2>
+                  <h2 className="text-sm font-bold flex items-center gap-1" style={{ color:"var(--text)" }}>Conversaciones recientes <ArrowRight className="w-3.5 h-3.5" style={{ color:"var(--text-3)" }} /></h2>
                 </div>
-              </div>
+              </a>
               <span className="badge badge-cyan">{kpis.convsHoy} hoy</span>
             </div>
             <div className="space-y-1">
@@ -513,14 +513,17 @@ export default function Home() {
 
           {/* EMBUDO */}
           <div className="dm-card p-5">
-            <div className="flex items-center gap-2.5 mb-5">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background:"rgba(167,139,250,0.1)", border:"1px solid rgba(167,139,250,0.15)" }}>
-                <TrendingUp className="w-4 h-4" style={{ color:"#A78BFA" }} />
-              </div>
-              <div>
-                <p className="section-label">Proceso de admisión</p>
-                <h2 className="text-sm font-bold" style={{ color:"var(--text)" }}>Embudo de conversión</h2>
-              </div>
+            <div className="flex items-center justify-between mb-5">
+              <a href="/metricas" className="flex items-center gap-2.5 active:opacity-70 transition-opacity" style={{ textDecoration:"none", WebkitTapHighlightColor:"transparent" }}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background:"rgba(167,139,250,0.1)", border:"1px solid rgba(167,139,250,0.15)" }}>
+                  <TrendingUp className="w-4 h-4" style={{ color:"#A78BFA" }} />
+                </div>
+                <div>
+                  <p className="section-label">Proceso de admisión</p>
+                  <h2 className="text-sm font-bold flex items-center gap-1" style={{ color:"var(--text)" }}>Embudo de conversión <ArrowRight className="w-3.5 h-3.5" style={{ color:"var(--text-3)" }} /></h2>
+                </div>
+              </a>
+              <a href="/metricas" className="text-xs font-medium flex items-center gap-1" style={{ color:"var(--cyan)", WebkitTapHighlightColor:"transparent" }}>Ver métricas <ArrowRight className="w-3 h-3" /></a>
             </div>
             <div className="space-y-3">
               {funnel.map(({ label, value, color }, i) => {
@@ -606,14 +609,16 @@ export default function Home() {
 
           {/* SEGUIMIENTOS PREMIUM */}
           <div className="dm-card p-5">
-            <div className="flex items-center gap-2.5 mb-4">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background:"rgba(245,158,11,0.1)", border:"1px solid rgba(245,158,11,0.15)" }}>
-                <Clock className="w-4 h-4" style={{ color:"var(--amber)" }} />
-              </div>
-              <div>
-                <p className="section-label">Pendientes de acción</p>
-                <h2 className="text-sm font-bold" style={{ color:"var(--text)" }}>Seguimientos</h2>
-              </div>
+            <div className="flex items-center justify-between mb-4">
+              <a href="/seguimientos" className="flex items-center gap-2.5 active:opacity-70 transition-opacity" style={{ textDecoration:"none", WebkitTapHighlightColor:"transparent" }}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background:"rgba(245,158,11,0.1)", border:"1px solid rgba(245,158,11,0.15)" }}>
+                  <Clock className="w-4 h-4" style={{ color:"var(--amber)" }} />
+                </div>
+                <div>
+                  <p className="section-label">Pendientes de acción</p>
+                  <h2 className="text-sm font-bold flex items-center gap-1" style={{ color:"var(--text)" }}>Seguimientos <ArrowRight className="w-3.5 h-3.5" style={{ color:"var(--text-3)" }} /></h2>
+                </div>
+              </a>
             </div>
             {seguimientos.length === 0 ? (
               <div className="text-center py-6">
@@ -665,9 +670,11 @@ export default function Home() {
 
           {/* MÉTRICAS ESTRATÉGICAS */}
           <div className="dm-card p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <Users className="w-4 h-4" style={{ color:"var(--text-3)" }} />
-              <h2 className="text-sm font-bold" style={{ color:"var(--text)" }}>Métricas estratégicas</h2>
+            <div className="flex items-center justify-between mb-4">
+              <a href="/metricas" className="flex items-center gap-2 active:opacity-70 transition-opacity" style={{ textDecoration:"none", WebkitTapHighlightColor:"transparent" }}>
+                <Users className="w-4 h-4" style={{ color:"var(--text-3)" }} />
+                <h2 className="text-sm font-bold flex items-center gap-1" style={{ color:"var(--text)" }}>Métricas estratégicas <ArrowRight className="w-3.5 h-3.5" style={{ color:"var(--text-3)" }} /></h2>
+              </a>
             </div>
             <div className="space-y-3">
               {[
