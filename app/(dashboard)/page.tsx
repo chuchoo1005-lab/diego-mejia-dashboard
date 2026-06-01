@@ -208,114 +208,57 @@ export default function Home() {
 
       {/* ══ ALERTAS URGENTES ══════════════════════════════════════════ */}
       {alertasUrgentes.length > 0 && (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {alertasUrgentes.map(p => {
-            const hrs = Math.round((Date.now()-ua(p).getTime())/3600000);
             const telefono = tel(p); const nombre = nom(p);
             const isListo = ec(p) === "entrega_premium";
-            const servicio = srv(p); const score = sc(p);
-            const ciudad = p.perfil_paciente?.ciudad as string;
+            const servicio = srv(p);
             const horario = p.perfil_paciente?.horario_contacto as string;
             const waNum = (p.perfil_paciente?.telefono_contacto as string) || p.telefono_encriptado || "";
             const waClean = waNum.replace(/\D/g,"");
             const waLink = waClean ? `https://wa.me/${waClean.startsWith("57") ? waClean : "57"+waClean}` : null;
             const svc = servicio ? svcBadge(servicio) : null;
             const tiempoRegistro = formatDistanceToNow(ua(p), { locale:es, addSuffix:true });
+            const horarioCorto = horario ? (horario.length > 20 ? horario.slice(0,20)+"…" : horario) : null;
 
             return (
-              <div key={p.id} className="overflow-hidden rounded-2xl animate-fade-up"
+              <div key={p.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl animate-fade-up"
                 style={{
                   background: isListo ? "rgba(16,185,129,0.06)" : "rgba(239,68,68,0.05)",
-                  border: `1px solid ${isListo ? "rgba(16,185,129,0.3)" : "rgba(239,68,68,0.25)"}`,
-                  boxShadow: isListo ? "0 0 24px rgba(16,185,129,0.08)" : "0 0 24px rgba(239,68,68,0.06)",
+                  border: `1px solid ${isListo ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.15)"}`,
                 }}>
-                {/* Barra superior animada */}
-                <div className="h-0.5 w-full" style={{
-                  background: isListo
-                    ? "linear-gradient(90deg, #10B981, rgba(16,185,129,0.3), #10B981)"
-                    : "linear-gradient(90deg, #EF4444, rgba(239,68,68,0.3), #EF4444)",
-                  backgroundSize: "200% 100%",
-                  animation: "pulse 2s ease-in-out infinite",
-                }} />
+                {/* Dot */}
+                <div className="w-2 h-2 rounded-full shrink-0" style={{ background: isListo ? "#10B981" : "#EF4444", boxShadow:`0 0 6px ${isListo ? "#10B981" : "#EF4444"}` }} />
 
-                <div className="p-4">
-                  <div className="flex items-start gap-3">
-                    {/* Ícono de estado */}
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{
-                      background: isListo ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.12)",
-                      border: `1px solid ${isListo ? "rgba(16,185,129,0.4)" : "rgba(239,68,68,0.3)"}`,
-                    }}>
-                      {isListo
-                        ? <CheckCircle className="w-5 h-5" style={{ color:"#10B981" }} />
-                        : <AlertTriangle className="w-5 h-5" style={{ color:"#EF4444" }} />}
-                    </div>
-
-                    {/* Info principal */}
-                    <div className="flex-1 min-w-0">
-                      {/* Badge de estado */}
-                      <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full" style={{
-                          background: isListo ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.12)",
-                          color: isListo ? "#10B981" : "#EF4444",
-                          border: `1px solid ${isListo ? "rgba(16,185,129,0.4)" : "rgba(239,68,68,0.3)"}`,
-                        }}>
-                          {isListo ? "✓ LISTO PARA LLAMAR" : `⚡ URGENTE · ${hrs}h sin respuesta`}
-                        </span>
-                        <span className="text-[10px]" style={{ color:"var(--text-3)" }}>{tiempoRegistro}</span>
-                      </div>
-
-                      {/* Nombre */}
-                      <p className="text-base font-black mb-1.5" style={{ color:"var(--text)" }}>{nombre}</p>
-
-                      {/* Chips de info */}
-                      <div className="flex flex-wrap gap-1.5 mb-1.5">
-                        {svc && (
-                          <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg font-semibold" style={{ background:svc.bg, color:svc.color }}>
-                            <Stethoscope className="w-3 h-3" /> {svc.label}
-                          </span>
-                        )}
-                        {horario && (
-                          <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg" style={{ background:"rgba(255,255,255,0.06)", color:"var(--text-2)", border:"1px solid var(--border)" }}>
-                            <Clock className="w-3 h-3" /> {horario}
-                          </span>
-                        )}
-                        {ciudad && (
-                          <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg" style={{ background:"rgba(255,255,255,0.06)", color:"var(--text-2)", border:"1px solid var(--border)" }}>
-                            <MapPin className="w-3 h-3" /> {ciudad}
-                          </span>
-                        )}
-                        <span className="text-[11px] px-2 py-0.5 rounded-lg font-bold" style={{ background:"rgba(255,255,255,0.06)", color: score>=60 ? "var(--cyan)" : "var(--amber)", border:"1px solid var(--border)" }}>
-                          {score} pts
-                        </span>
-                      </div>
-
-                      {/* Teléfono */}
-                      {telefono && <p className="text-xs font-semibold" style={{ color: isListo ? "#10B981" : "var(--text-2)" }}>📞 {telefono}</p>}
-                    </div>
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-bold truncate" style={{ color:"var(--text)" }}>{nombre}</span>
+                    {svc && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded" style={{ background:svc.bg, color:svc.color }}>{svc.label}</span>}
+                    {horarioCorto && <span className="text-[10px] flex items-center gap-0.5" style={{ color:"var(--text-3)" }}><Clock className="w-2.5 h-2.5" />{horarioCorto}</span>}
                   </div>
+                  <p className="text-[10px] mt-0.5" style={{ color: isListo ? "#10B981" : "var(--red)" }}>
+                    {isListo ? "✓ Listo para llamar" : "⚡ Urgente"} · {tiempoRegistro}
+                    {telefono && <span style={{ color:"var(--text-3)" }}> · {telefono}</span>}
+                  </p>
+                </div>
 
-                  {/* Botones de acción */}
-                  <div className="flex gap-2 mt-3">
-                    {telefono && (
-                      <a href={`tel:${p.telefono_encriptado}`}
-                        className="flex items-center justify-center gap-2 flex-1 py-2.5 rounded-xl text-sm font-black transition-all active:scale-95"
-                        style={{ background: isListo ? "#10B981" : "#EF4444", color:"#000", WebkitTapHighlightColor:"transparent" }}>
-                        <Phone className="w-4 h-4" /> Llamar ahora
-                      </a>
-                    )}
-                    {waLink && (
-                      <a href={waLink} target="_blank" rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-2 flex-1 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95"
-                        style={{ background:"rgba(37,211,102,0.15)", color:"#25D366", border:"1px solid rgba(37,211,102,0.3)", WebkitTapHighlightColor:"transparent" }}>
-                        💬 WhatsApp
-                      </a>
-                    )}
-                    <a href="/citas"
-                      className="flex items-center justify-center px-3 py-2.5 rounded-xl text-sm transition-all active:scale-95"
-                      style={{ background:"rgba(255,255,255,0.05)", color:"var(--text-2)", border:"1px solid var(--border)", WebkitTapHighlightColor:"transparent" }}>
-                      <ArrowRight className="w-4 h-4" />
+                {/* Acciones */}
+                <div className="flex gap-1.5 shrink-0">
+                  {telefono && (
+                    <a href={`tel:${p.telefono_encriptado}`}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold active:scale-95 transition-all"
+                      style={{ background: isListo ? "#10B981" : "#EF4444", color:"#000", WebkitTapHighlightColor:"transparent" }}>
+                      <Phone className="w-3 h-3" /> Llamar
                     </a>
-                  </div>
+                  )}
+                  {waLink && (
+                    <a href={waLink} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center justify-center w-8 h-8 rounded-lg text-sm active:scale-95 transition-all"
+                      style={{ background:"rgba(37,211,102,0.12)", color:"#25D366", border:"1px solid rgba(37,211,102,0.25)", WebkitTapHighlightColor:"transparent" }}>
+                      💬
+                    </a>
+                  )}
                 </div>
               </div>
             );
