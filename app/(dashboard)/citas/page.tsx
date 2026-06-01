@@ -81,6 +81,8 @@ function CardListo({ p, h }: { p: Paciente; h: CardHandlers }) {
   const resultadoCfg = RESULTADOS.find(r => r.value === resultado);
   const isSaving = h.saving === p.id;
   const callTel = (p.perfil_paciente?.telefono_contacto as string) || p.telefono_encriptado;
+  const waNum = ((p.perfil_paciente?.telefono_contacto as string) || p.telefono_encriptado || "").replace(/\D/g,"");
+  const waLink = waNum ? `https://wa.me/${waNum.startsWith("57") ? waNum : "57"+waNum}` : null;
   const score = sc(p);
   const nivel = (p.perfil_paciente?.nivel_interes as string) || "bajo";
   const botActivo = !p.modo_humano;
@@ -116,6 +118,13 @@ function CardListo({ p, h }: { p: Paciente; h: CardHandlers }) {
               <a href={`tel:${callTel}`} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold"
                 style={{ background: "#10B981", color: "#000" }}>
                 <Phone className="w-4 h-4" /> Llamar
+              </a>
+            )}
+            {waLink && (
+              <a href={waLink} target="_blank" rel="noopener noreferrer"
+                className="flex items-center justify-center w-10 h-10 rounded-xl text-base transition-all active:scale-95"
+                style={{ background:"rgba(37,211,102,0.12)", color:"#25D366", border:"1px solid rgba(37,211,102,0.25)", WebkitTapHighlightColor:"transparent" }}>
+                💬
               </a>
             )}
           </div>
@@ -216,6 +225,8 @@ function CardOtro({ p, accent, h }: { p: Paciente; accent?: boolean; h: CardHand
   const resultadoCfg = RESULTADOS.find(r => r.value === resultado);
   const isSaving = h.saving === p.id;
   const callTel = (p.perfil_paciente?.telefono_contacto as string) || p.telefono_encriptado;
+  const waNum = ((p.perfil_paciente?.telefono_contacto as string) || p.telefono_encriptado || "").replace(/\D/g,"");
+  const waLink = waNum ? `https://wa.me/${waNum.startsWith("57") ? waNum : "57"+waNum}` : null;
   const resumen = p.perfil_paciente?.resumen_lead as string;
   const botActivo = !p.modo_humano;
   const borderColor = accent ? "rgba(6,182,212,0.2)" : "var(--border)";
@@ -255,6 +266,13 @@ function CardOtro({ p, accent, h }: { p: Paciente; accent?: boolean; h: CardHand
             <a href={`tel:${callTel}`} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold"
               style={{ background: "rgba(16,185,129,0.12)", color: "#10B981", border: "1px solid rgba(16,185,129,0.25)" }}>
               <Phone className="w-3 h-3" /> Llamar
+            </a>
+          )}
+          {waLink && (
+            <a href={waLink} target="_blank" rel="noopener noreferrer"
+              className="flex items-center justify-center w-7 h-7 rounded-lg text-sm transition-all active:scale-95"
+              style={{ background:"rgba(37,211,102,0.1)", color:"#25D366", border:"1px solid rgba(37,211,102,0.2)", WebkitTapHighlightColor:"transparent" }}>
+              💬
             </a>
           )}
           <button onClick={() => h.toggleExp(p.id)} className="flex items-center justify-center w-7 h-7 rounded-lg"

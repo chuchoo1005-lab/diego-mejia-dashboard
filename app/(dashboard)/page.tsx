@@ -208,8 +208,8 @@ export default function Home() {
 
       {/* ══ ALERTAS URGENTES ══════════════════════════════════════════ */}
       {alertasUrgentes.length > 0 && (
-        <div className="space-y-2">
-          {alertasUrgentes.map(p => {
+        <div className="space-y-1.5">
+          {alertasUrgentes.slice(0, 3).map(p => {
             const telefono = tel(p); const nombre = nom(p);
             const isListo = ec(p) === "entrega_premium";
             const servicio = srv(p);
@@ -222,11 +222,8 @@ export default function Home() {
             const horarioCorto = horario ? (horario.length > 20 ? horario.slice(0,20)+"…" : horario) : null;
 
             return (
-              <div key={p.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl animate-fade-up"
-                style={{
-                  background: isListo ? "rgba(16,185,129,0.06)" : "rgba(239,68,68,0.05)",
-                  border: `1px solid ${isListo ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.15)"}`,
-                }}>
+              <div key={p.id} className="flex items-center gap-2.5 px-3 py-2 rounded-lg animate-fade-up"
+                style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)" }}>
                 {/* Dot */}
                 <div className="w-2 h-2 rounded-full shrink-0" style={{ background: isListo ? "#10B981" : "#EF4444", boxShadow:`0 0 6px ${isListo ? "#10B981" : "#EF4444"}` }} />
 
