@@ -11,7 +11,7 @@ interface Paciente {
   perfil_paciente: Record<string, unknown>; created_at: string; updated_at: string;
 }
 
-const SRV: Record<string, string> = { ortodoncia: "Ortodoncia invisible", invisalign: "Ortodoncia invisible", brackets: "Ortodoncia brackets", diseno: "Diseño de sonrisa", blanqueamiento: "Blanqueamiento", implantes: "Implantes", endodoncia: "Endodoncia", periodoncia: "Periodoncia", cirugia: "Cirugía oral", rehabilitacion: "Rehabilitación", odontopediatria: "Odontopediatría", ortopedia: "Ortopedia", general: "Odontología general" };
+const SRV: Record<string, string> = { ortodoncia: "Ortodoncia invisible", invisalign: "Ortodoncia invisible", brackets: "Ortodoncia brackets", diseno: "Diseño de sonrisa", diseño: "Diseño de sonrisa", blanqueamiento: "Blanqueamiento", implantes: "Implantes", endodoncia: "Endodoncia", periodoncia: "Periodoncia", cirugia: "Cirugía oral", rehabilitacion: "Rehabilitación", odontopediatria: "Odontopediatría", ortopedia: "Ortopedia", general: "Odontología general" };
 function svcBadge(s: string | null): { label: string; bg: string; color: string } {
   if (!s) return { label: "—", bg: "transparent", color: "var(--text-muted)" };
   const label = SRV[s] ?? s;

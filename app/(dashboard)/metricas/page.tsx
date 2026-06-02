@@ -8,7 +8,7 @@ import { RefreshCw, TrendingUp, MessageSquare, Users, Target, Clock, Phone } fro
 
 interface DayData { fecha: string; conversaciones: number; pacientes: number; }
 
-const SRV: Record<string, string> = { ortodoncia: "Ortodoncia invisible", invisalign: "Ortodoncia invisible", brackets: "Ortodoncia brackets", diseno: "Diseño de sonrisa", general: "Odontología general" };
+const SRV: Record<string, string> = { ortodoncia: "Ortodoncia invisible", invisalign: "Ortodoncia invisible", brackets: "Ortodoncia brackets", diseno: "Diseño de sonrisa", diseño: "Diseño de sonrisa", general: "Odontología general" };
 const COLORS = ["#06B6D4","#10B981","#F59E0B","#EF4444","#A78BFA"];
 
 const Tip = ({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number; color: string }[]; label?: string }) => {

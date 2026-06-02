@@ -13,7 +13,7 @@ interface Paciente {
 type Tab = "activos" | "convertidos" | "cancelados" | "completados";
 
 const SRV: Record<string, string> = {
-  ortodoncia: "Ortodoncia invisible", invisalign: "Ortodoncia invisible", brackets: "Ortodoncia brackets", diseno: "Diseño de sonrisa", general: "Odontología general", implantes: "Implantes", blanqueamiento: "Blanqueamiento",
+  ortodoncia: "Ortodoncia invisible", invisalign: "Ortodoncia invisible", brackets: "Ortodoncia brackets", diseno: "Diseño de sonrisa", diseño: "Diseño de sonrisa", general: "Odontología general", implantes: "Implantes", blanqueamiento: "Blanqueamiento",
   endodoncia: "Endodoncia", periodoncia: "Periodoncia", cirugia: "Cirugía oral",
   rehabilitacion: "Rehabilitación", odontopediatria: "Odontopediatría",
 };
