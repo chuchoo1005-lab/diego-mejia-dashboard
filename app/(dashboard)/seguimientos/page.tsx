@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
-import { Activity, RefreshCw } from "lucide-react";
+import { Activity, RefreshCw, Phone, MapPin } from "lucide-react";
 
 interface Paciente {
   id: string; alias: string; telefono_encriptado: string | null;
@@ -40,6 +40,24 @@ const servicio = (p: Paciente) => (p.perfil_paciente?.servicio_interes as string
 const ultimoSegAt = (p: Paciente) => {
   const v = p.perfil_paciente?.ultimo_seguimiento_at as string;
   return v ? new Date(v) : null;
+};
+const score = (p: Paciente) => parseInt(String(p.perfil_paciente?.score ?? "0")) || 0;
+const ciudad = (p: Paciente) => (p.perfil_paciente?.ciudad as string) || null;
+const nivel = (p: Paciente) => (p.perfil_paciente?.nivel_interes as string) || "bajo";
+const telContacto = (p: Paciente) => {
+  const t = (p.perfil_paciente?.telefono_contacto as string) || p.telefono_encriptado || "";
+  const c = t.replace(/\D/g, "");
+  if (c.length >= 10 && c.startsWith("57")) return `+57 ${c.slice(2,5)} ${c.slice(5,8)} ${c.slice(8)}`;
+  return t || null;
+};
+const waLink = (p: Paciente) => {
+  const t = ((p.perfil_paciente?.telefono_contacto as string) || p.telefono_encriptado || "").replace(/\D/g,"");
+  return t ? `https://wa.me/${t.startsWith("57") ? t : "57"+t}` : null;
+};
+const NIVEL_CFG: Record<string, { label: string; color: string; bg: string }> = {
+  alto:  { label: "🔥 Alto",   color: "#F97316", bg: "rgba(249,115,22,0.1)" },
+  medio: { label: "🤔 Medio",  color: "#FBBF24", bg: "rgba(251,191,36,0.1)" },
+  bajo:  { label: "💤 Bajo",   color: "#6B7280", bg: "rgba(107,114,128,0.08)" },
 };
 
 export default function SeguimientosPage() {
@@ -146,10 +164,8 @@ export default function SeguimientosPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr style={{ background: "#FAFAFA", borderBottom: "1px solid var(--border)" }}>
-                  {["Lead / Teléfono", "Servicio", "Seguimiento", "Progreso", "Último contacto",
-                    tab === "convertidos" ? "Conversión" : "Estado conv."
-                  ].map(h => (
-                    <th key={h} className="text-left px-5 py-3 section-label whitespace-nowrap">{h}</th>
+                  {["Lead", "Servicio · Ciudad", "Interés", "Seguimiento", "Progreso", "Último contacto", "Acciones"].map(h => (
+                    <th key={h} className="text-left px-4 py-3 section-label whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -160,40 +176,70 @@ export default function SeguimientosPage() {
                   const isConv = esConv(p) === "cita_agendada";
                   const pct = Math.min(Math.round((n / TOTAL) * 100), 100);
                   const barColor = isConv ? "#10B981" : esSeg(p) === "cancelado" ? "#EF4444" : activeTab.color;
+                  const sc = score(p); const ciu = ciudad(p); const niv = nivel(p);
+                  const telC = telContacto(p); const wa = waLink(p);
+                  const nivCfg = NIVEL_CFG[niv] ?? NIVEL_CFG.bajo;
                   return (
                     <tr key={p.id} className="table-row-hover" style={{ borderBottom: "1px solid #F3F4F6" }}>
-                      <td className="px-5 py-3.5">
-                        <p className="font-semibold" style={{ color: "var(--text)" }}>{nom}</p>
+                      {/* Lead */}
+                      <td className="px-4 py-3">
+                        <p className="font-semibold text-sm" style={{ color: "var(--text)" }}>{nom}</p>
                         {tel && <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{tel}</p>}
+                        <p className="text-[10px] mt-0.5 font-bold" style={{ color: sc >= 60 ? "var(--cyan)" : sc >= 30 ? "#FBBF24" : "var(--text-muted)" }}>
+                          {sc} pts
+                        </p>
                       </td>
-                      <td className="px-5 py-3.5 text-sm" style={{ color: "var(--text-secondary)" }}>
-                        {svc ? (SRV[svc] ?? svc) : <span style={{ color: "var(--text-muted)" }}>—</span>}
+                      {/* Servicio + Ciudad */}
+                      <td className="px-4 py-3">
+                        <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+                          {svc ? (SRV[svc] ?? svc) : <span style={{ color: "var(--text-muted)" }}>—</span>}
+                        </p>
+                        {ciu && (
+                          <p className="text-xs mt-0.5 flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
+                            <MapPin className="w-2.5 h-2.5" />{ciu}
+                          </p>
+                        )}
                       </td>
-                      <td className="px-5 py-3.5">
-                        <span className="font-bold" style={{ color: "var(--text)" }}>{n}</span>
+                      {/* Nivel */}
+                      <td className="px-4 py-3">
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: nivCfg.bg, color: nivCfg.color }}>
+                          {nivCfg.label}
+                        </span>
+                      </td>
+                      {/* Seguimiento */}
+                      <td className="px-4 py-3">
+                        <span className="font-bold text-sm" style={{ color: "var(--text)" }}>{n}</span>
                         <span className="text-xs ml-1" style={{ color: "var(--text-muted)" }}>/ {TOTAL}</span>
                       </td>
-                      <td className="px-5 py-3.5">
-                        <div className="w-28 h-1.5 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
+                      {/* Progreso */}
+                      <td className="px-4 py-3">
+                        <div className="w-24 h-1.5 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
                           <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: barColor }} />
                         </div>
                         <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>{pct}%</p>
                       </td>
-                      <td className="px-5 py-3.5 text-xs" style={{ color: "var(--text-muted)" }}>
+                      {/* Último contacto */}
+                      <td className="px-4 py-3 text-xs" style={{ color: "var(--text-muted)" }}>
                         {ul ? formatDistanceToNow(ul, { addSuffix: true, locale: es }) : "—"}
                       </td>
-                      <td className="px-5 py-3.5">
-                        {isConv ? (
-                          <span className="badge badge-green">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                            Cita agendada
-                          </span>
-                        ) : (
-                          <span className="badge badge-gray"
-                            style={esSeg(p) === "cancelado" ? { color: "#EF4444", borderColor: "rgba(239,68,68,0.3)" } : undefined}>
-                            {esSeg(p) === "cancelado" ? "No interesado" : esSeg(p) === "completado" ? "Ciclo completo" : esConv(p)}
-                          </span>
-                        )}
+                      {/* Acciones */}
+                      <td className="px-4 py-3">
+                        <div className="flex gap-1.5">
+                          {telC && (
+                            <a href={`tel:${telC.replace(/\s/g,"")}`}
+                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold"
+                              style={{ background:"rgba(16,185,129,0.1)", color:"#10B981", border:"1px solid rgba(16,185,129,0.25)" }}>
+                              <Phone className="w-3 h-3" /> Llamar
+                            </a>
+                          )}
+                          {wa && (
+                            <a href={wa} target="_blank" rel="noopener noreferrer"
+                              className="flex items-center justify-center w-7 h-7 rounded-lg text-sm"
+                              style={{ background:"rgba(37,211,102,0.1)", color:"#25D366", border:"1px solid rgba(37,211,102,0.2)" }}>
+                              💬
+                            </a>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
