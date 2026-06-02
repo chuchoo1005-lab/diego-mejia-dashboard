@@ -249,7 +249,7 @@ export default function NotificacionesPage() {
                     </div>
                     <p className="text-xs" style={{ color:"var(--text-3)" }}>
                       {s.tel && <>{s.tel} · </>}
-                      {s.servicio && <>{s.servicio === "ortodoncia" ? "Ortodoncia" : s.servicio === "diseno" ? "Diseño de sonrisa" : "General"} · </>}
+                      {s.servicio && <>{s.servicio === "ortodoncia" || s.servicio === "invisalign" ? "Ortodoncia invisible" : s.servicio === "brackets" ? "Ortodoncia brackets" : s.servicio === "diseno" ? "Diseño de sonrisa" : "General"} · </>}
                       Score: <strong style={{ color:"var(--text)" }}>{s.score}</strong>
                     </p>
                   </div>
