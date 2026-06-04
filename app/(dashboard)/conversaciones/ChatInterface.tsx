@@ -198,7 +198,8 @@ export default function ChatInterface() {
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2"
               style={{ background: 'rgba(0,0,0,0.2)' }}>
               {mensajes.filter(esMensajeVisible).map((msg: any) => {
-                const isOutgoing = msg.message_type === 1 || msg.message_type === 'outgoing'
+                // type 1 = agent outgoing, type 3 = template/bot automated
+                const isOutgoing = msg.message_type === 1 || msg.message_type === 3 || msg.message_type === 'outgoing'
                 return (
                   <div key={msg.id} className={`flex ${isOutgoing ? 'justify-end' : 'justify-start'}`}>
                     <div className="max-w-[75%] rounded-2xl px-3.5 py-2.5"

@@ -168,11 +168,18 @@ export default function Home() {
       // Contar chats únicos (pacientes distintos), no mensajes individuales
       const chatsUnicos = new Set((convsHoyData || []).map((c: {paciente_id: string}) => c.paciente_id)).size;
       setKpis({ total:total??0, hoy:hoy??0, convsHoy:chatsUnicos, listos:d.filter(p=>ec(p)==="entrega_premium").length, calientes:d.filter(p=>sc(p)>=60).length });
-      setPacs(d); setConvs(cv); setCitas((citasD || []) as CitaAgenda[]);
-      setFeedItems(cv.slice(0,10).map(c => {
-        const msg = c.direccion === "entrante"
-          ? (c.mensaje_encriptado?.length > 40 ? c.mensaje_encriptado.slice(0,40) + "..." : c.mensaje_encriptado) || "Nuevo mensaje"
-          : "Respuesta del asistente virtual enviada";
+      setPacs(d); setCitas((citasD || []) as CitaAgenda[]);
+      // Deduplicar: un mensaje por paciente (el más reciente entrante)
+      const cvAll = (convsD || []) as Conv[];
+      const seenPac = new Set<string>();
+      const cvUnicos = cvAll.filter(c => {
+        if (c.direccion !== "entrante") return false;
+        if (seenPac.has(c.paciente_id)) return false;
+        seenPac.add(c.paciente_id); return true;
+      });
+      setConvs(cvUnicos);
+      setFeedItems(cvUnicos.slice(0,8).map(c => {
+        const msg = (c.mensaje_encriptado?.length > 45 ? c.mensaje_encriptado.slice(0,45) + "..." : c.mensaje_encriptado) || "Nuevo mensaje";
         return { msg, time: new Date(c.timestamp), tipo: c.direccion };
       }));
       setLastUpdate(new Date());

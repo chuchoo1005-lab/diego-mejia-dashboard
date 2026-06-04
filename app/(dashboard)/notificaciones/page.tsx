@@ -131,9 +131,11 @@ export default function NotificacionesPage() {
   const now = Date.now();
   const esTerminal = (p: Paciente) => RESULTADOS_TERMINALES.includes(resultadoLlamada(p));
 
-  const alertasListos   = pacientes.filter(p => ec(p) === "entrega_premium" && !esTerminal(p));
-  const alertasCaliente = pacientes.filter(p => ec(p) !== "entrega_premium" && sc(p) >= 70 && !esTerminal(p));
-  const alertasReferido = pacientes.filter(p => (p.perfil_paciente?.tipo_intencion as string) === "referido" && ec(p) !== "entrega_premium" && !esTerminal(p));
+  // Sin resultado = aún no atendido. Cualquier resultado = ya fue al pipeline, no mostrar aquí.
+  const sinResultado = (p: Paciente) => !resultadoLlamada(p);
+  const alertasListos   = pacientes.filter(p => ec(p) === "entrega_premium" && sinResultado(p)).slice(0, 3);
+  const alertasCaliente = pacientes.filter(p => ec(p) !== "entrega_premium" && sc(p) >= 70 && sinResultado(p)).slice(0, 2);
+  const alertasReferido = pacientes.filter(p => (p.perfil_paciente?.tipo_intencion as string) === "referido" && ec(p) !== "entrega_premium" && sinResultado(p)).slice(0, 2);
   const totalAlertas = alertasListos.length + alertasCaliente.length + alertasReferido.length;
 
   const seguimientosPacs = pacientes.filter(p => {
