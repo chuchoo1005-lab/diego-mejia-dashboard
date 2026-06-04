@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Send, CheckCheck, Check, Clock, MessageSquare, RefreshCw, CheckCircle2, Phone, User } from 'lucide-react'
-import { getConversaciones, getMensajes, enviarMensaje, resolverConversacion } from './actions'
+import { CheckCheck, MessageSquare, RefreshCw, CheckCircle2 } from 'lucide-react'
+import { getConversaciones, getMensajes, resolverConversacion } from './actions'
 import { formatDistanceToNow, format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
@@ -16,16 +16,24 @@ function timeMsg(ts: number) {
   catch { return '' }
 }
 
+// Filtra mensajes de sistema/actividad de Chatwoot
+function esMensajeVisible(msg: any): boolean {
+  // message_type 2 = activity (ej: "Assigned to X by Y")
+  if (msg.message_type === 2 || msg.message_type === 'activity') return false
+  if (!msg.content) return false
+  // Filtro extra: mensajes de sistema en inglés de Chatwoot
+  const c = msg.content as string
+  if (c.startsWith('Assigned to') || c.startsWith('Conversation was')) return false
+  return true
+}
+
 export default function ChatInterface() {
   const [conversaciones, setConversaciones] = useState<any[]>([])
   const [convActiva, setConvActiva] = useState<any>(null)
   const [mensajes, setMensajes] = useState<any[]>([])
-  const [texto, setTexto] = useState('')
-  const [enviando, setEnviando] = useState(false)
   const [cargando, setCargando] = useState(true)
   const [filtro, setFiltro] = useState<'open' | 'resolved'>('open')
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLTextAreaElement>(null)
 
   const cargarConversaciones = useCallback(async () => {
     const data = await getConversaciones()
@@ -55,26 +63,6 @@ export default function ChatInterface() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [mensajes])
 
-  const handleSend = async () => {
-    if (!texto.trim() || !convActiva || enviando) return
-    const contenido = texto.trim()
-    setTexto('')
-    setEnviando(true)
-    // Optimistic update
-    setMensajes(prev => [...prev, {
-      id: Date.now(), content: contenido, message_type: 'outgoing',
-      created_at: Math.floor(Date.now() / 1000), status: 'sent'
-    }])
-    await enviarMensaje(convActiva.id, contenido)
-    await cargarMensajes(convActiva.id)
-    setEnviando(false)
-    inputRef.current?.focus()
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
-  }
-
   const handleResolver = async () => {
     if (!convActiva) return
     await resolverConversacion(convActiva.id)
@@ -92,7 +80,6 @@ export default function ChatInterface() {
       <div className={`flex flex-col ${convActiva ? 'hidden md:flex' : 'flex'} w-full md:w-[320px] shrink-0`}
         style={{ borderRight: '1px solid rgba(255,255,255,0.05)' }}>
 
-        {/* Header lista */}
         <div className="px-4 pt-4 pb-3 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
           <div className="flex items-center justify-between mb-3">
             <p className="font-bold text-white text-sm">WhatsApp</p>
@@ -101,7 +88,6 @@ export default function ChatInterface() {
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
           </div>
-          {/* Tabs */}
           <div className="flex gap-1 p-1 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)' }}>
             {(['open', 'resolved'] as const).map(f => (
               <button key={f} onClick={() => setFiltro(f)}
@@ -116,7 +102,6 @@ export default function ChatInterface() {
           </div>
         </div>
 
-        {/* Conversaciones */}
         <div className="flex-1 overflow-y-auto">
           {cargando ? (
             <div className="flex items-center justify-center h-32">
@@ -141,7 +126,6 @@ export default function ChatInterface() {
                     background: isActive ? 'rgba(6,182,212,0.08)' : 'transparent',
                     borderLeft: `2px solid ${isActive ? 'var(--cyan)' : 'transparent'}`,
                   }}>
-                  {/* Avatar */}
                   <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-sm font-bold"
                     style={{ background: 'rgba(6,182,212,0.12)', color: 'var(--cyan)' }}>
                     {(contact?.name ?? '?').charAt(0).toUpperCase()}
@@ -210,30 +194,29 @@ export default function ChatInterface() {
               </button>
             </div>
 
-            {/* Mensajes */}
-            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1.5"
+            {/* Mensajes — solo lectura */}
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2"
               style={{ background: 'rgba(0,0,0,0.2)' }}>
-              {mensajes.map((msg: any) => {
-                const isOutgoing = msg.message_type === 'outgoing'
-                if (!msg.content) return null
+              {mensajes.filter(esMensajeVisible).map((msg: any) => {
+                const isOutgoing = msg.message_type === 1 || msg.message_type === 'outgoing'
                 return (
                   <div key={msg.id} className={`flex ${isOutgoing ? 'justify-end' : 'justify-start'}`}>
-                    <div className="max-w-[75%] rounded-2xl px-3.5 py-2"
+                    <div className="max-w-[75%] rounded-2xl px-3.5 py-2.5"
                       style={{
-                        background: isOutgoing ? 'rgba(6,182,212,0.2)' : 'rgba(255,255,255,0.07)',
+                        background: isOutgoing ? 'rgba(6,182,212,0.22)' : 'rgba(255,255,255,0.11)',
                         borderTopRightRadius: isOutgoing ? '4px' : '16px',
                         borderTopLeftRadius: isOutgoing ? '16px' : '4px',
                       }}>
                       <p className="text-[13px] leading-relaxed whitespace-pre-wrap"
-                        style={{ color: isOutgoing ? 'rgba(6,182,212,0.95)' : 'rgba(255,255,255,0.85)' }}>
+                        style={{ color: isOutgoing ? 'rgba(200,240,255,0.95)' : 'rgba(255,255,255,0.92)' }}>
                         {msg.content}
                       </p>
                       <div className={`flex items-center gap-1 mt-1 ${isOutgoing ? 'justify-end' : 'justify-start'}`}>
-                        <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                        <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.3)' }}>
                           {timeMsg(msg.created_at)}
                         </span>
                         {isOutgoing && (
-                          <CheckCheck className="w-3 h-3" style={{ color: 'rgba(6,182,212,0.5)' }} />
+                          <CheckCheck className="w-3 h-3" style={{ color: 'rgba(6,182,212,0.6)' }} />
                         )}
                       </div>
                     </div>
@@ -243,40 +226,12 @@ export default function ChatInterface() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input */}
-            <div className="px-4 py-3 shrink-0" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-              <div className="flex items-end gap-2">
-                <textarea
-                  ref={inputRef}
-                  value={texto}
-                  onChange={e => setTexto(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Escribe un mensaje... (Enter para enviar)"
-                  rows={1}
-                  className="flex-1 resize-none rounded-xl px-4 py-3 text-sm outline-none transition-all"
-                  style={{
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    color: 'white',
-                    maxHeight: '120px',
-                  }}
-                  onInput={e => {
-                    const t = e.target as HTMLTextAreaElement
-                    t.style.height = 'auto'
-                    t.style.height = Math.min(t.scrollHeight, 120) + 'px'
-                  }}
-                />
-                <button
-                  onClick={handleSend}
-                  disabled={!texto.trim() || enviando}
-                  className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-all"
-                  style={{
-                    background: texto.trim() ? 'var(--cyan)' : 'rgba(255,255,255,0.06)',
-                    color: texto.trim() ? '#080C14' : 'rgba(255,255,255,0.2)',
-                  }}>
-                  <Send className="w-4 h-4" />
-                </button>
-              </div>
+            {/* Nota de solo lectura */}
+            <div className="px-4 py-2.5 shrink-0 flex items-center justify-center gap-2"
+              style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+              <p className="text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>
+                Vista de solo lectura · Las respuestas se envían desde WhatsApp
+              </p>
             </div>
           </>
         )}
