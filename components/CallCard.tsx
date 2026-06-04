@@ -32,22 +32,22 @@ export const NIVEL: Record<string, { label: string; color: string; bg: string }>
   bajo:  { label: "💤 Indeciso",       color: "var(--text-3)", bg: "rgba(255,255,255,0.05)" },
 };
 
+// 3 etapas de movimiento manual
 export const RESULTADOS = [
-  { value: "",                     label: "— Sin resultado —",       color: "var(--text-3)" },
-  { value: "interesado",           label: "✅ Interesado",            color: "var(--green)" },
-  { value: "valoracion_agendada",  label: "📅 Valoración agendada",  color: "var(--cyan)" },
-  { value: "seguimiento",          label: "🔄 En seguimiento",       color: "var(--amber)" },
-  { value: "no_respondio",         label: "📵 No respondió",         color: "var(--text-3)" },
-  { value: "no_interesado",        label: "❌ No interesado",        color: "var(--red)" },
-  { value: "paciente_activo",      label: "🦷 Paciente activo",      color: "var(--cyan)" },
-  { value: "tratamiento_iniciado", label: "💎 Tratamiento iniciado", color: "var(--green)" },
-  { value: "cerrado",              label: "🏆 Cerrado",              color: "var(--green)" },
+  { value: "proceso",       label: "En proceso",    color: "#FBBF24", icon: "🔄" },
+  { value: "cerrado",       label: "Cerrado",       color: "#10B981", icon: "🏆" },
+  { value: "no_interesado", label: "No interesado", color: "#EF4444", icon: "✕"  },
 ];
 
-// Resultados que marcan el lead como "resuelto" — lo sacan de alertas/seguimientos
-export const RESULTADOS_TERMINALES = [
-  "valoracion_agendada", "no_interesado", "paciente_activo", "tratamiento_iniciado", "cerrado",
-];
+// Compatibilidad con valores viejos de DB
+export const MAP_A_ETAPA: Record<string, string> = {
+  proceso: "proceso", interesado: "proceso", seguimiento: "proceso",
+  no_respondio: "proceso", valoracion_agendada: "cerrado",
+  cerrado: "cerrado", paciente_activo: "cerrado", tratamiento_iniciado: "cerrado",
+  no_interesado: "no_interesado",
+};
+
+export const RESULTADOS_TERMINALES = ["cerrado", "no_interesado"];
 
 export function formatTel(t: string | null): string {
   if (!t) return "";
@@ -187,21 +187,20 @@ export function CardListo({ p, h }: { p: Paciente; h: CardHandlers }) {
       {isExp && (
         <div className="px-4 pb-4 space-y-3" style={{ borderTop: "1px solid rgba(16,185,129,0.1)" }}>
           <div>
-            <p className="section-label mb-2 pt-3">Resultado de la llamada</p>
-            <div className="flex flex-wrap gap-2">
-              {RESULTADOS.filter(r => r.value !== "").map(r => {
-                const active = resultado === r.value;
+            <p className="section-label mb-2 pt-3">Mover a:</p>
+            <div className="flex gap-2">
+              {RESULTADOS.map(r => {
+                const active = MAP_A_ETAPA[resultado] === r.value;
                 return (
                   <button key={r.value} onClick={() => h.setResultado(p, r.value)}
-                    className="px-3 py-2 rounded-xl text-xs font-semibold transition-all"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all"
                     style={{
-                      background: active ? `color-mix(in srgb, ${r.color} 20%, transparent)` : "rgba(255,255,255,0.03)",
-                      color: active ? r.color : "rgba(255,255,255,0.4)",
-                      border: `1px solid ${active ? `color-mix(in srgb, ${r.color} 45%, transparent)` : "var(--border)"}`,
+                      background: active ? `${r.color}22` : "rgba(255,255,255,0.04)",
+                      color: active ? r.color : "rgba(255,255,255,0.35)",
+                      border: `1.5px solid ${active ? `${r.color}55` : "var(--border)"}`,
                       opacity: isSaving ? 0.6 : 1,
-                      transform: active ? "scale(1.02)" : "scale(1)",
                     }}>
-                    {r.label}
+                    <span>{r.icon}</span> {r.label}
                   </button>
                 );
               })}
@@ -304,21 +303,20 @@ export function CardOtro({ p, accent, h }: { p: Paciente; accent?: boolean; h: C
       {isExp && (
         <div className="px-4 pb-4 space-y-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
           <div>
-            <p className="section-label mb-2 pt-2">Resultado de la llamada</p>
-            <div className="flex flex-wrap gap-2">
-              {RESULTADOS.filter(r => r.value !== "").map(r => {
-                const active = resultado === r.value;
+            <p className="section-label mb-2 pt-2">Mover a:</p>
+            <div className="flex gap-2">
+              {RESULTADOS.map(r => {
+                const active = MAP_A_ETAPA[resultado] === r.value;
                 return (
                   <button key={r.value} onClick={() => h.setResultado(p, r.value)}
-                    className="px-3 py-2 rounded-xl text-xs font-semibold transition-all"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all"
                     style={{
-                      background: active ? `color-mix(in srgb, ${r.color} 20%, transparent)` : "rgba(255,255,255,0.03)",
-                      color: active ? r.color : "rgba(255,255,255,0.4)",
-                      border: `1px solid ${active ? `color-mix(in srgb, ${r.color} 45%, transparent)` : "var(--border)"}`,
+                      background: active ? `${r.color}22` : "rgba(255,255,255,0.04)",
+                      color: active ? r.color : "rgba(255,255,255,0.35)",
+                      border: `1.5px solid ${active ? `${r.color}55` : "var(--border)"}`,
                       opacity: isSaving ? 0.6 : 1,
-                      transform: active ? "scale(1.02)" : "scale(1)",
                     }}>
-                    {r.label}
+                    <span>{r.icon}</span> {r.label}
                   </button>
                 );
               })}

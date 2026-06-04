@@ -1,24 +1,20 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { Search, RefreshCw, Phone, Calendar, TrendingUp, XCircle, Trophy } from "lucide-react";
+import { Search, RefreshCw, Phone, TrendingUp, XCircle, Trophy } from "lucide-react";
 import {
   Paciente, CardListo, CardOtro, CardHandlers,
-  displayName, formatTel, sc, ec, resultadoLlamada,
+  displayName, formatTel, sc, ec, resultadoLlamada, MAP_A_ETAPA,
 } from "@/components/CallCard";
 
-type PipelineTab = "llamar" | "proceso" | "agendados" | "cerrados";
+type PipelineTab = "llamar" | "proceso" | "cerrados" | "no_interesado";
 
 const TABS: { key: PipelineTab; label: string; color: string; icon: React.ElementType }[] = [
-  { key: "llamar",    label: "Para llamar",  color: "#10B981",       icon: Phone },
-  { key: "proceso",   label: "En proceso",   color: "var(--amber)",  icon: TrendingUp },
-  { key: "agendados", label: "Agendados",    color: "var(--cyan)",   icon: Calendar },
-  { key: "cerrados",  label: "Cerrados",     color: "var(--text-3)", icon: Trophy },
+  { key: "llamar",        label: "Para llamar",   color: "#10B981", icon: Phone },
+  { key: "proceso",       label: "En proceso",    color: "#FBBF24", icon: TrendingUp },
+  { key: "cerrados",      label: "Cerrados",      color: "#22D3EE", icon: Trophy },
+  { key: "no_interesado", label: "No interesado", color: "#EF4444", icon: XCircle },
 ];
-
-const R_PROCESO   = ["interesado", "seguimiento", "no_respondio"];
-const R_AGENDADOS = ["valoracion_agendada"];
-const R_CERRADOS  = ["cerrado", "paciente_activo", "tratamiento_iniciado", "no_interesado"];
 
 export default function CitasPage() {
   const [leads, setLeads] = useState<Paciente[]>([]);
@@ -67,25 +63,29 @@ export default function CitasPage() {
     return nom.toLowerCase().includes(busqueda.toLowerCase()) || tel.includes(busqueda);
   };
 
-  const res = (p: Paciente) => resultadoLlamada(p);
+  // Etapa de cada lead según MAP_A_ETAPA
+  const etapa = (p: Paciente): PipelineTab => {
+    const r = resultadoLlamada(p);
+    if (!r) return "llamar";
+    return (MAP_A_ETAPA[r] as PipelineTab) ?? "llamar";
+  };
 
-  // Pipeline buckets
-  const paraLlamar  = leads.filter(p => !res(p) && (ec(p) === "entrega_premium" || sc(p) >= 60) && match(p));
-  const enProceso   = leads.filter(p => R_PROCESO.includes(res(p)) && match(p));
-  const agendados   = leads.filter(p => R_AGENDADOS.includes(res(p)) && match(p));
-  const cerrados    = leads.filter(p => R_CERRADOS.includes(res(p)) && match(p));
+  const paraLlamar    = leads.filter(p => etapa(p) === "llamar"        && match(p));
+  const enProceso     = leads.filter(p => etapa(p) === "proceso"       && match(p));
+  const cerrados      = leads.filter(p => etapa(p) === "cerrados"      && match(p));
+  const noInteresado  = leads.filter(p => etapa(p) === "no_interesado" && match(p));
 
   const counts: Record<PipelineTab, number> = {
     llamar: paraLlamar.length,
     proceso: enProceso.length,
-    agendados: agendados.length,
     cerrados: cerrados.length,
+    no_interesado: noInteresado.length,
   };
 
   const toggleExp = (id: string) => setExpanded(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
   const handlers: CardHandlers = { expanded, toggleExp, notasTemp, setNotasTemp, saving, setResultado, guardarNotas, toggleCandado };
 
-  const currentList = tab === "llamar" ? paraLlamar : tab === "proceso" ? enProceso : tab === "agendados" ? agendados : cerrados;
+  const currentList = { llamar: paraLlamar, proceso: enProceso, cerrados, no_interesado: noInteresado }[tab];
   const currentTab = TABS.find(t => t.key === tab)!;
 
   return (
@@ -110,7 +110,7 @@ export default function CitasPage() {
           const count = counts[key];
           return (
             <button key={key} onClick={() => setTab(key)}
-              className="flex flex-col items-center gap-1.5 px-3 py-3 rounded-2xl text-center transition-all"
+              className="flex flex-col items-center gap-1.5 px-2 py-3 rounded-2xl text-center transition-all"
               style={{
                 background: active ? `${color}18` : "rgba(255,255,255,0.03)",
                 border: `1px solid ${active ? `${color}40` : "var(--border)"}`,
@@ -131,7 +131,7 @@ export default function CitasPage() {
           style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", color: "var(--text)" }} />
       </div>
 
-      {/* Section title */}
+      {/* Section label */}
       <div className="flex items-center gap-2">
         <currentTab.icon className="w-4 h-4" style={{ color: currentTab.color }} />
         <h2 className="text-sm font-bold uppercase tracking-wide" style={{ color: currentTab.color }}>{currentTab.label}</h2>
@@ -146,14 +146,14 @@ export default function CitasPage() {
         <div className="dm-card p-10 text-center">
           <currentTab.icon className="w-8 h-8 mx-auto mb-3" style={{ color: "var(--text-3)" }} />
           <p className="font-medium" style={{ color: "var(--text-2)" }}>
-            {tab === "llamar" ? "Sin leads pendientes de llamar" :
-             tab === "proceso" ? "Sin leads en proceso" :
-             tab === "agendados" ? "Sin valoraciones agendadas" :
-             "Sin leads cerrados"}
+            {tab === "llamar" ? "Sin leads pendientes de llamar"
+            : tab === "proceso" ? "Sin leads en proceso"
+            : tab === "cerrados" ? "Sin leads cerrados"
+            : "Sin leads no interesados"}
           </p>
           {tab !== "llamar" && (
             <p className="text-sm mt-1" style={{ color: "var(--text-3)" }}>
-              Los leads llegan aquí cuando marcas un resultado en "Para llamar"
+              Mueve leads aquí desde "Para llamar"
             </p>
           )}
         </div>
@@ -169,7 +169,6 @@ export default function CitasPage() {
           }
         </div>
       )}
-
     </div>
   );
 }
