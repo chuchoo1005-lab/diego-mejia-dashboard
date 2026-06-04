@@ -244,56 +244,64 @@ export function CardOtro({ p, accent, h }: { p: Paciente; accent?: boolean; h: C
   const resumen = p.perfil_paciente?.resumen_lead as string;
   const botActivo = !p.modo_humano;
   const borderColor = accent ? "rgba(6,182,212,0.2)" : "var(--border)";
-  const accentColor = accent ? "var(--cyan)" : "var(--text-3)";
+  const svc = servicio ? svcBadge(servicio) : null;
+  const tiempoAtras = formatDistanceToNow(ua(p), { locale: es, addSuffix: true });
 
   return (
     <div className="dm-card overflow-hidden" style={{ borderColor }}>
-      <div className="flex items-center gap-3 p-4">
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-xs font-black"
-          style={{ background: accent ? "rgba(6,182,212,0.08)" : "rgba(255,255,255,0.04)", color: accentColor, border: `1px solid ${borderColor}` }}>
-          {nombre.slice(0, 2).toUpperCase()}
-        </div>
+
+      {/* ── Fila 1: nombre + botones ── */}
+      <div className="flex items-start justify-between gap-3 px-4 pt-4 pb-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-0.5">
-            <span className="font-semibold text-sm" style={{ color: "var(--text)" }}>{nombre}</span>
+            <span className="font-bold text-[15px]" style={{ color: "var(--text)" }}>{nombre}</span>
             {resultado && <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${etapa.color}20`, color: etapa.color, border: `1px solid ${etapa.color}40` }}>{etapa.icon} {etapa.label}</span>}
           </div>
-          <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-xs" style={{ color: "var(--text-3)" }}>
-            {telC && <span style={{ color: "#059669" }}>📞 {telC}</span>}
-            {telefono && telefono !== telC && <span>WA: {telefono}</span>}
-            {servicio && (() => { const b = svcBadge(servicio); return <span className="font-semibold" style={{ color: b.color }}>{b.label}</span>; })()}
-            {horario && <span>🕐 {horario}</span>}
-            {ciudad && <span>📍 {ciudad}</span>}
-          </div>
+          <p className="text-[10px]" style={{ color: "var(--text-3)" }}>{p.alias} · {tiempoAtras}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <div className="text-right mr-1">
-            <p className="text-base font-black" style={{ color: score >= 60 ? "var(--cyan)" : score >= 30 ? "var(--amber)" : "var(--text-3)" }}>{score}</p>
+          <div className="text-center px-2 py-1 rounded-xl" style={{ background: score >= 60 ? "rgba(16,185,129,0.12)" : score >= 30 ? "rgba(251,191,36,0.1)" : "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <p className="text-base font-black leading-none" style={{ color: score >= 60 ? "#10B981" : score >= 30 ? "#FBBF24" : "var(--text-3)" }}>{score}</p>
             <p className="text-[9px]" style={{ color: "var(--text-3)" }}>score</p>
           </div>
           <button onClick={() => h.toggleCandado(p)} title={botActivo ? "Bot activo" : "Bot pausado"}
-            className="flex items-center justify-center w-7 h-7 rounded-lg text-sm transition-all"
+            className="flex items-center justify-center w-8 h-8 rounded-xl text-sm transition-all"
             style={{ background: botActivo ? "rgba(16,185,129,0.08)" : "rgba(239,68,68,0.1)", color: botActivo ? "#10B981" : "#EF4444", border: `1px solid ${botActivo ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.25)"}` }}>
             {botActivo ? "🤖" : "🔒"}
           </button>
-          {(telC || telefono) && (
-            <a href={`tel:${callTel}`} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold"
-              style={{ background: "rgba(16,185,129,0.12)", color: "#10B981", border: "1px solid rgba(16,185,129,0.25)" }}>
-              <Phone className="w-3 h-3" /> Llamar
+          {callTel && (
+            <a href={`tel:${callTel}`} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold"
+              style={{ background: "#10B981", color: "#000" }}>
+              <Phone className="w-3.5 h-3.5" /> Llamar
             </a>
           )}
           {waLink && (
             <a href={waLink} target="_blank" rel="noopener noreferrer"
-              className="flex items-center justify-center w-7 h-7 rounded-lg text-sm transition-all active:scale-95"
+              className="flex items-center justify-center w-8 h-8 rounded-xl text-sm transition-all active:scale-95"
               style={{ background: "rgba(37,211,102,0.1)", color: "#25D366", border: "1px solid rgba(37,211,102,0.2)", WebkitTapHighlightColor: "transparent" }}>
               💬
             </a>
           )}
-          <button onClick={() => h.toggleExp(p.id)} className="flex items-center justify-center w-7 h-7 rounded-lg"
-            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", color: "var(--text-3)" }}>
-            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isExp ? "rotate-180" : ""}`} />
-          </button>
         </div>
+      </div>
+
+      {/* ── Fila 2: teléfonos ── */}
+      <div className="px-4 mb-2">
+        {telC && <p className="text-sm font-bold" style={{ color: "#10B981" }}>📞 {telC}</p>}
+        {telefono && telefono !== telC && <p className="text-xs mt-0.5" style={{ color: "var(--text-3)" }}>WA: {telefono}</p>}
+      </div>
+
+      {/* ── Fila 3: tags + expand ── */}
+      <div className="px-4 pb-3">
+        <div className="flex flex-wrap gap-2 mb-2">
+          {svc && <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg font-semibold" style={{ background: svc.bg, color: svc.color }}><Stethoscope className="w-3 h-3" /> {svc.label}</span>}
+          {horario && <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-2)", border: "1px solid var(--border)" }}><Clock className="w-3 h-3" /> {horario}</span>}
+          {ciudad && <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-2)", border: "1px solid var(--border)" }}><MapPin className="w-3 h-3" /> {ciudad}</span>}
+        </div>
+        <button onClick={() => h.toggleExp(p.id)} className="flex items-center gap-1 text-[11px]" style={{ color: "var(--text-3)" }}>
+          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isExp ? "rotate-180" : ""}`} />
+          {isExp ? "Ocultar" : "Registrar resultado"}
+        </button>
       </div>
       {isExp && (
         <div className="px-4 pb-4 space-y-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
