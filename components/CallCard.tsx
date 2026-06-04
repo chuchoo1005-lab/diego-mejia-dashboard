@@ -32,20 +32,13 @@ export const NIVEL: Record<string, { label: string; color: string; bg: string }>
   bajo:  { label: "💤 Indeciso",       color: "var(--text-3)", bg: "rgba(255,255,255,0.05)" },
 };
 
-// 4 opciones de movimiento (incluye volver a llamar)
+// Opciones de movimiento manual entre etapas
 export const RESULTADOS = [
   { value: "",              label: "Para llamar",   color: "#10B981", icon: "📞" },
   { value: "proceso",       label: "En proceso",    color: "#FBBF24", icon: "🔄" },
   { value: "cerrado",       label: "Cerrado",       color: "#22D3EE", icon: "🏆" },
   { value: "no_interesado", label: "No interesado", color: "#EF4444", icon: "✕"  },
 ];
-
-// Helper: info de etapa según resultado guardado
-export function etapaInfo(resultado: string) {
-  if (!resultado) return RESULTADOS[0];
-  const etapa = MAP_A_ETAPA[resultado];
-  return RESULTADOS.find(r => r.value === etapa) ?? RESULTADOS[0];
-}
 
 // Compatibilidad con valores viejos de DB → etapa del pipeline
 export const MAP_A_ETAPA: Record<string, string> = {
@@ -57,12 +50,20 @@ export const MAP_A_ETAPA: Record<string, string> = {
 
 export const RESULTADOS_TERMINALES = ["cerrados", "no_interesado"];
 
-// Helper: info de etapa según resultado guardado
+// Retorna la config de etapa según el valor guardado en DB
 export function etapaInfo(resultado: string) {
   if (!resultado) return RESULTADOS[0]; // Para llamar
   const etapa = MAP_A_ETAPA[resultado];
   if (etapa === "cerrados") return RESULTADOS.find(r => r.value === "cerrado")!;
   return RESULTADOS.find(r => r.value === etapa) ?? RESULTADOS[0];
+}
+
+// Determina si un botón de movimiento está activo
+function isActive(resultado: string, rValue: string): boolean {
+  if (rValue === "") return !resultado;
+  const etapa = MAP_A_ETAPA[resultado];
+  if (rValue === "cerrado") return etapa === "cerrados";
+  return etapa === rValue;
 }
 
 export function formatTel(t: string | null): string {
@@ -92,6 +93,32 @@ export interface CardHandlers {
   toggleCandado: (p: Paciente) => void;
 }
 
+/* ── Botones Mover a: (shared) ── */
+function MoverBotones({ resultado, isSaving, onMover }: { resultado: string; isSaving: boolean; onMover: (v: string) => void }) {
+  return (
+    <div>
+      <p className="section-label mb-2 pt-2">Mover a:</p>
+      <div className="grid grid-cols-2 gap-2">
+        {RESULTADOS.map(r => {
+          const active = isActive(resultado, r.value);
+          return (
+            <button key={r.value} onClick={() => onMover(r.value)}
+              className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all"
+              style={{
+                background: active ? `${r.color}22` : "rgba(255,255,255,0.04)",
+                color: active ? r.color : "rgba(255,255,255,0.35)",
+                border: `1.5px solid ${active ? `${r.color}55` : "var(--border)"}`,
+                opacity: isSaving ? 0.6 : 1,
+              }}>
+              <span>{r.icon}</span> {r.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 /* ── CardListo ── */
 export function CardListo({ p, h }: { p: Paciente; h: CardHandlers }) {
   const nombre = displayName(p);
@@ -119,7 +146,6 @@ export function CardListo({ p, h }: { p: Paciente; h: CardHandlers }) {
   return (
     <div className="overflow-hidden rounded-2xl" style={{ background: "rgba(16,185,129,0.05)", border: "1px solid rgba(16,185,129,0.25)", boxShadow: "0 0 20px rgba(16,185,129,0.06)" }}>
       <div className="h-0.5 w-full" style={{ background: "linear-gradient(90deg, rgba(16,185,129,0.8), rgba(16,185,129,0.2))" }} />
-
       <div className="p-4">
         <div className="flex items-start justify-between gap-3 mb-2">
           <div className="flex-1 min-w-0">
@@ -135,7 +161,7 @@ export function CardListo({ p, h }: { p: Paciente; h: CardHandlers }) {
               <p className="text-lg font-black leading-none" style={{ color: score >= 60 ? "#10B981" : score >= 30 ? "#FBBF24" : "var(--text-3)" }}>{score}</p>
               <p className="text-[9px]" style={{ color: "var(--text-3)" }}>score</p>
             </div>
-            <button onClick={() => h.toggleCandado(p)} title={botActivo ? "Bot activo — click para pausar" : "Bot pausado — click para activar"}
+            <button onClick={() => h.toggleCandado(p)} title={botActivo ? "Bot activo" : "Bot pausado"}
               className="flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-bold transition-all"
               style={{ background: botActivo ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.12)", color: botActivo ? "#10B981" : "#EF4444", border: `1px solid ${botActivo ? "rgba(16,185,129,0.3)" : "rgba(239,68,68,0.3)"}` }}>
               {botActivo ? "🤖" : "🔒"}
@@ -155,79 +181,33 @@ export function CardListo({ p, h }: { p: Paciente; h: CardHandlers }) {
             )}
           </div>
         </div>
-
         <div className="mb-3">
           {telC && <p className="text-sm font-bold" style={{ color: "#10B981" }}>📞 {telC}</p>}
           {telefono && telefono !== telC && <p className="text-xs mt-0.5" style={{ color: "var(--text-3)" }}>WA: {telefono}</p>}
         </div>
-
         <div className="flex flex-wrap gap-2 mb-2">
-          {svc && (
-            <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg font-semibold" style={{ background: svc.bg, color: svc.color }}>
-              <Stethoscope className="w-3 h-3" /> {svc.label}
-            </span>
-          )}
-          <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg font-medium" style={{ background: nivelCfg.bg, color: nivelCfg.color }}>
-            {nivelCfg.label}
-          </span>
-          {horario && (
-            <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-2)", border: "1px solid var(--border)" }}>
-              <Clock className="w-3 h-3" /> {horario}
-            </span>
-          )}
-          {ciudad && (
-            <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-2)", border: "1px solid var(--border)" }}>
-              <MapPin className="w-3 h-3" /> {ciudad}
-            </span>
-          )}
+          {svc && <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg font-semibold" style={{ background: svc.bg, color: svc.color }}><Stethoscope className="w-3 h-3" /> {svc.label}</span>}
+          <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg font-medium" style={{ background: nivelCfg.bg, color: nivelCfg.color }}>{nivelCfg.label}</span>
+          {horario && <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-2)", border: "1px solid var(--border)" }}><Clock className="w-3 h-3" /> {horario}</span>}
+          {ciudad && <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-2)", border: "1px solid var(--border)" }}><MapPin className="w-3 h-3" /> {ciudad}</span>}
         </div>
-
         {resumen && (
           <div className="mb-3 p-2.5 rounded-xl" style={{ background: "rgba(6,182,212,0.04)", border: "1px solid rgba(6,182,212,0.1)" }}>
-            <div className="flex items-center gap-1 mb-1">
-              <Brain className="w-3 h-3" style={{ color: "var(--cyan)" }} />
-              <span className="text-[10px] font-bold" style={{ color: "rgba(6,182,212,0.6)" }}>RESUMEN IA</span>
-            </div>
-            <p className="text-xs leading-relaxed" style={{ color: "var(--text-2)" }}>
-              {isExp ? resumen : resumen.length > 120 ? resumen.slice(0, 120) + "…" : resumen}
-            </p>
+            <div className="flex items-center gap-1 mb-1"><Brain className="w-3 h-3" style={{ color: "var(--cyan)" }} /><span className="text-[10px] font-bold" style={{ color: "rgba(6,182,212,0.6)" }}>RESUMEN IA</span></div>
+            <p className="text-xs leading-relaxed" style={{ color: "var(--text-2)" }}>{isExp ? resumen : resumen.length > 120 ? resumen.slice(0, 120) + "…" : resumen}</p>
           </div>
         )}
-
         <button onClick={() => h.toggleExp(p.id)} className="flex items-center gap-1 text-[11px]" style={{ color: "var(--text-3)" }}>
           <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isExp ? "rotate-180" : ""}`} />
-          {isExp ? "Ocultar detalles" : "Registrar resultado"}
+          {isExp ? "Ocultar" : "Registrar resultado"}
         </button>
       </div>
-
       {isExp && (
         <div className="px-4 pb-4 space-y-3" style={{ borderTop: "1px solid rgba(16,185,129,0.1)" }}>
+          <MoverBotones resultado={resultado} isSaving={isSaving} onMover={v => h.setResultado(p, v)} />
           <div>
-            <p className="section-label mb-2 pt-3">Mover a:</p>
-            <div className="grid grid-cols-2 gap-2">
-              {RESULTADOS.map(r => {
-                const active = r.value === "" ? !resultado : MAP_A_ETAPA[resultado] === (r.value === "cerrado" ? "cerrados" : r.value);
-                return (
-                  <button key={r.value} onClick={() => h.setResultado(p, r.value)}
-                    className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all"
-                    style={{
-                      background: active ? `${r.color}22` : "rgba(255,255,255,0.04)",
-                      color: active ? r.color : "rgba(255,255,255,0.35)",
-                      border: `1.5px solid ${active ? `${r.color}55` : "var(--border)"}`,
-                      opacity: isSaving ? 0.6 : 1,
-                    }}>
-                    <span>{r.icon}</span> {r.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5 mb-2">
-              <FileText className="w-3.5 h-3.5" style={{ color: "var(--text-3)" }} />
-              <p className="section-label">Notas del equipo</p>
-            </div>
-            <textarea rows={3} placeholder="Ej: Comparando con otra clínica. Interesado en financiación..."
+            <div className="flex items-center gap-1.5 mb-2"><FileText className="w-3.5 h-3.5" style={{ color: "var(--text-3)" }} /><p className="section-label">Notas del equipo</p></div>
+            <textarea rows={3} placeholder="Ej: Llamé, no contestó. Volver a llamar mañana..."
               value={h.notasTemp[p.id] ?? notas}
               onChange={e => h.setNotasTemp(prev => ({ ...prev, [p.id]: e.target.value }))}
               className="w-full text-sm rounded-xl px-3 py-2 resize-none"
@@ -291,7 +271,7 @@ export function CardOtro({ p, accent, h }: { p: Paciente; accent?: boolean; h: C
             <p className="text-base font-black" style={{ color: score >= 60 ? "var(--cyan)" : score >= 30 ? "var(--amber)" : "var(--text-3)" }}>{score}</p>
             <p className="text-[9px]" style={{ color: "var(--text-3)" }}>score</p>
           </div>
-          <button onClick={() => h.toggleCandado(p)} title={botActivo ? "Bot activo — click para pausar" : "Bot pausado — click para activar"}
+          <button onClick={() => h.toggleCandado(p)} title={botActivo ? "Bot activo" : "Bot pausado"}
             className="flex items-center justify-center w-7 h-7 rounded-lg text-sm transition-all"
             style={{ background: botActivo ? "rgba(16,185,129,0.08)" : "rgba(239,68,68,0.1)", color: botActivo ? "#10B981" : "#EF4444", border: `1px solid ${botActivo ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.25)"}` }}>
             {botActivo ? "🤖" : "🔒"}
@@ -315,29 +295,9 @@ export function CardOtro({ p, accent, h }: { p: Paciente; accent?: boolean; h: C
           </button>
         </div>
       </div>
-
       {isExp && (
         <div className="px-4 pb-4 space-y-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-          <div>
-            <p className="section-label mb-2 pt-2">Mover a:</p>
-            <div className="flex gap-2">
-              {RESULTADOS.map(r => {
-                const active = MAP_A_ETAPA[resultado] === r.value;
-                return (
-                  <button key={r.value} onClick={() => h.setResultado(p, r.value)}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all"
-                    style={{
-                      background: active ? `${r.color}22` : "rgba(255,255,255,0.04)",
-                      color: active ? r.color : "rgba(255,255,255,0.35)",
-                      border: `1.5px solid ${active ? `${r.color}55` : "var(--border)"}`,
-                      opacity: isSaving ? 0.6 : 1,
-                    }}>
-                    <span>{r.icon}</span> {r.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <MoverBotones resultado={resultado} isSaving={isSaving} onMover={v => h.setResultado(p, v)} />
           {resumen && (
             <div className="p-3 rounded-xl" style={{ background: "rgba(6,182,212,0.04)", border: "1px solid rgba(6,182,212,0.12)" }}>
               <div className="flex items-center gap-1.5 mb-1"><Brain className="w-3.5 h-3.5" style={{ color: "var(--cyan)" }} /><span className="section-label" style={{ color: "rgba(6,182,212,0.5)" }}>Resumen IA</span></div>
