@@ -1,16 +1,30 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { Search, RefreshCw, Phone, Flame } from "lucide-react";
+import { Search, RefreshCw, Phone, Calendar, TrendingUp, XCircle, Trophy } from "lucide-react";
 import {
   Paciente, CardListo, CardOtro, CardHandlers,
-  displayName, formatTel, sc, ec, resultadoLlamada, RESULTADOS_TERMINALES,
+  displayName, formatTel, sc, ec, resultadoLlamada,
 } from "@/components/CallCard";
+
+type PipelineTab = "llamar" | "proceso" | "agendados" | "cerrados";
+
+const TABS: { key: PipelineTab; label: string; color: string; icon: React.ElementType }[] = [
+  { key: "llamar",    label: "Para llamar",  color: "#10B981",       icon: Phone },
+  { key: "proceso",   label: "En proceso",   color: "var(--amber)",  icon: TrendingUp },
+  { key: "agendados", label: "Agendados",    color: "var(--cyan)",   icon: Calendar },
+  { key: "cerrados",  label: "Cerrados",     color: "var(--text-3)", icon: Trophy },
+];
+
+const R_PROCESO   = ["interesado", "seguimiento", "no_respondio"];
+const R_AGENDADOS = ["valoracion_agendada"];
+const R_CERRADOS  = ["cerrado", "paciente_activo", "tratamiento_iniciado", "no_interesado"];
 
 export default function CitasPage() {
   const [leads, setLeads] = useState<Paciente[]>([]);
   const [busqueda, setBusqueda] = useState("");
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<PipelineTab>("llamar");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState<string | null>(null);
   const [notasTemp, setNotasTemp] = useState<Record<string, string>>({});
@@ -19,7 +33,7 @@ export default function CitasPage() {
     const { data } = await supabase
       .from("pacientes")
       .select("id,alias,calificado,telefono_encriptado,perfil_paciente,updated_at,modo_humano")
-      .eq("estado", "activo").order("updated_at", { ascending: false }).limit(100);
+      .eq("estado", "activo").order("updated_at", { ascending: false }).limit(200);
     setLeads((data || []) as Paciente[]);
     setLoading(false);
   }, []);
@@ -53,28 +67,35 @@ export default function CitasPage() {
     return nom.toLowerCase().includes(busqueda.toLowerCase()) || tel.includes(busqueda);
   };
 
-  const noTerminal = (p: Paciente) => !RESULTADOS_TERMINALES.includes(resultadoLlamada(p));
-  const listos    = leads.filter(p => ec(p) === "entrega_premium" && noTerminal(p) && match(p));
-  const calientes = leads.filter(p => ec(p) !== "entrega_premium" && sc(p) >= 60 && noTerminal(p) && match(p));
-  const otros     = leads.filter(p => ec(p) !== "entrega_premium" && sc(p) < 60 && sc(p) >= 20 && noTerminal(p) && match(p));
+  const res = (p: Paciente) => resultadoLlamada(p);
 
-  const stats = {
-    listos: leads.filter(p => ec(p) === "entrega_premium").length,
-    calientes: leads.filter(p => sc(p) >= 60).length,
-    agendados: leads.filter(p => resultadoLlamada(p) === "valoracion_agendada").length,
+  // Pipeline buckets
+  const paraLlamar  = leads.filter(p => !res(p) && (ec(p) === "entrega_premium" || sc(p) >= 60) && match(p));
+  const enProceso   = leads.filter(p => R_PROCESO.includes(res(p)) && match(p));
+  const agendados   = leads.filter(p => R_AGENDADOS.includes(res(p)) && match(p));
+  const cerrados    = leads.filter(p => R_CERRADOS.includes(res(p)) && match(p));
+
+  const counts: Record<PipelineTab, number> = {
+    llamar: paraLlamar.length,
+    proceso: enProceso.length,
+    agendados: agendados.length,
+    cerrados: cerrados.length,
   };
 
   const toggleExp = (id: string) => setExpanded(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
   const handlers: CardHandlers = { expanded, toggleExp, notasTemp, setNotasTemp, saving, setResultado, guardarNotas, toggleCandado };
 
-  return (
-    <div className="space-y-6 animate-fade-in">
+  const currentList = tab === "llamar" ? paraLlamar : tab === "proceso" ? enProceso : tab === "agendados" ? agendados : cerrados;
+  const currentTab = TABS.find(t => t.key === tab)!;
 
+  return (
+    <div className="space-y-5 animate-fade-in">
+
+      {/* Header */}
       <div className="flex items-end justify-between">
         <div>
-          <p className="section-label mb-2">Centro operativo</p>
-          <h1 style={{ fontFamily: "var(--font-cormorant)", fontSize: "2rem", fontWeight: 500, color: "var(--text)" }}>Leads para llamar</h1>
-          <p className="text-sm mt-1" style={{ color: "var(--text-3)" }}>Actualización cada 30s</p>
+          <p className="section-label mb-2">CRM · Pipeline</p>
+          <h1 style={{ fontFamily: "var(--font-cormorant)", fontSize: "2rem", fontWeight: 500, color: "var(--text)" }}>Leads</h1>
         </div>
         <button onClick={load} className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl"
           style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", color: "var(--text-2)" }}>
@@ -82,19 +103,27 @@ export default function CitasPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { label: "Listos para llamar",      value: stats.listos,    color: "#10B981" },
-          { label: "Score alto (≥60)",         value: stats.calientes, color: "var(--cyan)" },
-          { label: "Valoraciones agendadas",   value: stats.agendados, color: "#A78BFA" },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="dm-card p-4">
-            <p className="text-2xl font-bold" style={{ color }}>{value}</p>
-            <p className="text-xs mt-1" style={{ color: "var(--text-3)" }}>{label}</p>
-          </div>
-        ))}
+      {/* Pipeline tabs */}
+      <div className="grid grid-cols-4 gap-2">
+        {TABS.map(({ key, label, color, icon: Icon }) => {
+          const active = tab === key;
+          const count = counts[key];
+          return (
+            <button key={key} onClick={() => setTab(key)}
+              className="flex flex-col items-center gap-1.5 px-3 py-3 rounded-2xl text-center transition-all"
+              style={{
+                background: active ? `${color}18` : "rgba(255,255,255,0.03)",
+                border: `1px solid ${active ? `${color}40` : "var(--border)"}`,
+              }}>
+              <Icon className="w-4 h-4" style={{ color: active ? color : "var(--text-3)" }} />
+              <span className="text-xl font-black leading-none" style={{ color: active ? color : "var(--text-2)" }}>{count}</span>
+              <span className="text-[10px] font-medium leading-tight" style={{ color: active ? color : "var(--text-3)" }}>{label}</span>
+            </button>
+          );
+        })}
       </div>
 
+      {/* Búsqueda */}
       <div className="relative">
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "var(--text-3)" }} />
         <input type="text" placeholder="Buscar por nombre o teléfono..." value={busqueda}
@@ -102,59 +131,45 @@ export default function CitasPage() {
           style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", color: "var(--text)" }} />
       </div>
 
+      {/* Section title */}
+      <div className="flex items-center gap-2">
+        <currentTab.icon className="w-4 h-4" style={{ color: currentTab.color }} />
+        <h2 className="text-sm font-bold uppercase tracking-wide" style={{ color: currentTab.color }}>{currentTab.label}</h2>
+        <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ background: `${currentTab.color}15`, color: currentTab.color }}>{currentList.length}</span>
+      </div>
+
       {loading ? (
         <div className="flex justify-center py-16">
           <div className="w-8 h-8 border-2 rounded-full animate-spin" style={{ borderColor: "rgba(6,182,212,0.2)", borderTopColor: "var(--cyan)" }} />
         </div>
+      ) : currentList.length === 0 ? (
+        <div className="dm-card p-10 text-center">
+          <currentTab.icon className="w-8 h-8 mx-auto mb-3" style={{ color: "var(--text-3)" }} />
+          <p className="font-medium" style={{ color: "var(--text-2)" }}>
+            {tab === "llamar" ? "Sin leads pendientes de llamar" :
+             tab === "proceso" ? "Sin leads en proceso" :
+             tab === "agendados" ? "Sin valoraciones agendadas" :
+             "Sin leads cerrados"}
+          </p>
+          {tab !== "llamar" && (
+            <p className="text-sm mt-1" style={{ color: "var(--text-3)" }}>
+              Los leads llegan aquí cuando marcas un resultado en "Para llamar"
+            </p>
+          )}
+        </div>
       ) : (
-        <div className="space-y-8">
-
-          <section>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-2 h-2 rounded-full" style={{ background: "#10B981", boxShadow: "0 0 6px #10B981" }} />
-              <h2 className="text-sm font-bold" style={{ color: "#10B981" }}>LISTOS PARA LLAMAR</h2>
-              <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ background: "rgba(16,185,129,0.12)", color: "#10B981" }}>{listos.length}</span>
-            </div>
-            {listos.length === 0 ? (
-              <div className="dm-card p-8 text-center">
-                <Phone className="w-7 h-7 mx-auto mb-2" style={{ color: "var(--text-3)" }} />
-                <p className="text-sm" style={{ color: "var(--text-3)" }}>Sin leads listos aún</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {listos.map(p => <CardListo key={p.id} p={p} h={handlers} />)}
-              </div>
-            )}
-          </section>
-
-          {calientes.length > 0 && (
-            <section>
-              <div className="flex items-center gap-2 mb-3">
-                <Flame className="w-3.5 h-3.5" style={{ color: "var(--cyan)" }} />
-                <h2 className="text-sm font-bold" style={{ color: "var(--cyan)" }}>LEADS CALIENTES</h2>
-                <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ background: "rgba(6,182,212,0.1)", color: "var(--cyan)" }}>{calientes.length}</span>
-              </div>
-              <div className="space-y-2">
-                {calientes.map(p => <CardOtro key={p.id} p={p} accent h={handlers} />)}
-              </div>
-            </section>
-          )}
-
-          {otros.length > 0 && (
-            <section>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-2 h-2 rounded-full" style={{ background: "var(--text-3)" }} />
-                <h2 className="text-sm font-bold" style={{ color: "var(--text-3)" }}>EN PROCESO</h2>
-                <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-3)" }}>{otros.length}</span>
-              </div>
-              <div className="space-y-2">
-                {otros.map(p => <CardOtro key={p.id} p={p} h={handlers} />)}
-              </div>
-            </section>
-          )}
-
+        <div className="space-y-3">
+          {tab === "llamar"
+            ? currentList.map(p =>
+                ec(p) === "entrega_premium"
+                  ? <CardListo key={p.id} p={p} h={handlers} />
+                  : <CardOtro key={p.id} p={p} accent={sc(p) >= 60} h={handlers} />
+              )
+            : currentList.map(p => <CardOtro key={p.id} p={p} h={handlers} />)
+          }
         </div>
       )}
+
     </div>
   );
 }
