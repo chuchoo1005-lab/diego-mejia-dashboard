@@ -184,7 +184,6 @@ export default function Home() {
   const toggleExpanded = (id: string) => setExpanded(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
 
   const leadsTop = pacs.filter(p => sc(p) >= 40).sort((a,b) => sc(b)-sc(a)).slice(0,6);
-  const seguimientos = pacs.filter(p => { const h=(Date.now()-ua(p).getTime())/3600000; return h>12 && ec(p)!=="entrega_premium"; }).sort((a,b) => sc(b)-sc(a)).slice(0,10);
   const alertasUrgentes = pacs.filter(p => { const h=(Date.now()-ua(p).getTime())/3600000; return (ec(p)==="entrega_premium" || (h>6 && sc(p)>=60)); }).slice(0,3);
   const insights = buildInsights(pacs);
   const funnel = [
@@ -283,7 +282,6 @@ export default function Home() {
             {[
               { label:"Mensajes hoy",  value:kpis.convsHoy,       icon:MessageSquare, color:"var(--cyan)",  href:"/conversaciones" },
               { label:"Leads 🔥",      value:kpis.calientes,       icon:Flame,         color:"#F97316",      href:"/citas" },
-              { label:"Seguimientos",  value:seguimientos.length,  icon:Clock,         color:"#A78BFA",      href:"/seguimientos" },
               { label:"Para llamar",   value:kpis.listos,          icon:Phone,         color:"var(--green)", href:"/citas" },
             ].map(({ label, value, icon:Icon, color, href }) => (
               <a key={label} href={href}
