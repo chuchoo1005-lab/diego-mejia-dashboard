@@ -175,12 +175,6 @@ export default function Sidebar() {
           </button>
         </div>
 
-        {/* Footer */}
-        <div className="px-5 py-3" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-          <p className="text-[8px] tracking-[0.15em] uppercase" style={{ color: "rgba(255,255,255,0.1)" }}>
-            flowlution · sistema privado
-          </p>
-        </div>
       </aside>
     </>
   );

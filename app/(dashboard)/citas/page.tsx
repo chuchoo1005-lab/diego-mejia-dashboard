@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { Search, RefreshCw, Phone, Flame } from "lucide-react";
 import {
   Paciente, CardListo, CardOtro, CardHandlers,
-  displayName, formatTel, sc, ec, resultadoLlamada,
+  displayName, formatTel, sc, ec, resultadoLlamada, RESULTADOS_TERMINALES,
 } from "@/components/CallCard";
 
 export default function CitasPage() {
@@ -53,9 +53,10 @@ export default function CitasPage() {
     return nom.toLowerCase().includes(busqueda.toLowerCase()) || tel.includes(busqueda);
   };
 
-  const listos    = leads.filter(p => ec(p) === "entrega_premium" && match(p));
-  const calientes = leads.filter(p => ec(p) !== "entrega_premium" && sc(p) >= 60 && match(p));
-  const otros     = leads.filter(p => ec(p) !== "entrega_premium" && sc(p) < 60 && sc(p) >= 20 && match(p));
+  const noTerminal = (p: Paciente) => !RESULTADOS_TERMINALES.includes(resultadoLlamada(p));
+  const listos    = leads.filter(p => ec(p) === "entrega_premium" && noTerminal(p) && match(p));
+  const calientes = leads.filter(p => ec(p) !== "entrega_premium" && sc(p) >= 60 && noTerminal(p) && match(p));
+  const otros     = leads.filter(p => ec(p) !== "entrega_premium" && sc(p) < 60 && sc(p) >= 20 && noTerminal(p) && match(p));
 
   const stats = {
     listos: leads.filter(p => ec(p) === "entrega_premium").length,
