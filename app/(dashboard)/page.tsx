@@ -635,67 +635,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* SEGUIMIENTOS PREMIUM */}
-          <div className="dm-card p-5">
-            <div className="flex items-center justify-between mb-4">
-              <a href="/seguimientos" className="flex items-center gap-2.5 active:opacity-70 transition-opacity" style={{ textDecoration:"none", WebkitTapHighlightColor:"transparent" }}>
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background:"rgba(245,158,11,0.1)", border:"1px solid rgba(245,158,11,0.15)" }}>
-                  <Clock className="w-4 h-4" style={{ color:"var(--amber)" }} />
-                </div>
-                <div>
-                  <p className="section-label">Pendientes de acción</p>
-                  <h2 className="text-sm font-bold flex items-center gap-1" style={{ color:"var(--text)" }}>Seguimientos <ArrowRight className="w-3.5 h-3.5" style={{ color:"var(--text-3)" }} /></h2>
-                </div>
-              </a>
-            </div>
-            {seguimientos.length === 0 ? (
-              <div className="text-center py-6">
-                <p className="text-xs" style={{ color:"var(--text-3)" }}>Sin seguimientos pendientes ✓</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {seguimientos.map(p => {
-                  const hrs = Math.round((Date.now()-ua(p).getTime())/3600000);
-                  const nombre = nom(p); const score = sc(p); const telefono = tel(p);
-                  const estado = ec(p); const servicio = srv(p);
-                  const rec = iaRecomendacion(p); const emocion = detectEmocion(p);
-                  const tieneNombre = !!(p.perfil_paciente?.nombre);
-                  return (
-                    <div key={p.id} className="p-3.5 rounded-xl" style={{ background:"rgba(245,158,11,0.04)", border:"1px solid rgba(245,158,11,0.12)" }}>
-                      {/* Fila 1: identidad */}
-                      <div className="flex items-start justify-between gap-2 mb-1.5">
-                        <div className="min-w-0">
-                          <span className="font-bold text-sm block truncate" style={{ color:"var(--text)" }}>
-                            {tieneNombre ? nombre : <span style={{ color:"var(--text-3)", fontStyle:"italic" }}>Sin nombre · {telefono || p.alias}</span>}
-                          </span>
-                          {tieneNombre && telefono && <span className="text-[10px]" style={{ color:"var(--text-3)" }}>{telefono}</span>}
-                        </div>
-                        <span className="text-xs font-black shrink-0" style={{ color: score>=60 ? "var(--cyan)" : score>=20 ? "var(--amber)" : "var(--text-3)" }}>{score} pts</span>
-                      </div>
-                      {/* Fila 2: estado + servicio */}
-                      <div className="flex flex-wrap gap-1.5 mb-2">
-                        <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background:"rgba(255,255,255,0.06)", color:"var(--text-3)" }}>{estado}</span>
-                        {servicio && (() => { const b = svcBadge(servicio); return <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background:b.bg, color:b.color }}>{b.label}</span>; })()}
-                        <span className="badge badge-amber"><Clock className="w-2.5 h-2.5" /> {hrs}h sin resp.</span>
-                        {emocion && <span className="text-[11px]" style={{ color:emocion.color }}>{emocion.emoji} {emocion.label}</span>}
-                      </div>
-                      {/* Fila 3: recomendación + llamar */}
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-[11px] leading-snug" style={{ color:"var(--amber)" }}>{rec}</p>
-                        {telefono && (
-                          <a href={`tel:${p.telefono_encriptado}`} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold shrink-0"
-                            style={{ background:"var(--amber)", color:"#000" }}>
-                            <Phone className="w-3 h-3" /> Llamar
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
           {/* MÉTRICAS ESTRATÉGICAS */}
           <div className="dm-card p-5">
             <div className="flex items-center justify-between mb-4">

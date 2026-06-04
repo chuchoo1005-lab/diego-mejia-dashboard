@@ -32,22 +32,38 @@ export const NIVEL: Record<string, { label: string; color: string; bg: string }>
   bajo:  { label: "💤 Indeciso",       color: "var(--text-3)", bg: "rgba(255,255,255,0.05)" },
 };
 
-// 3 etapas de movimiento manual
+// 4 opciones de movimiento (incluye volver a llamar)
 export const RESULTADOS = [
+  { value: "",              label: "Para llamar",   color: "#10B981", icon: "📞" },
   { value: "proceso",       label: "En proceso",    color: "#FBBF24", icon: "🔄" },
-  { value: "cerrado",       label: "Cerrado",       color: "#10B981", icon: "🏆" },
+  { value: "cerrado",       label: "Cerrado",       color: "#22D3EE", icon: "🏆" },
   { value: "no_interesado", label: "No interesado", color: "#EF4444", icon: "✕"  },
 ];
 
-// Compatibilidad con valores viejos de DB
+// Helper: info de etapa según resultado guardado
+export function etapaInfo(resultado: string) {
+  if (!resultado) return RESULTADOS[0];
+  const etapa = MAP_A_ETAPA[resultado];
+  return RESULTADOS.find(r => r.value === etapa) ?? RESULTADOS[0];
+}
+
+// Compatibilidad con valores viejos de DB → etapa del pipeline
 export const MAP_A_ETAPA: Record<string, string> = {
   proceso: "proceso", interesado: "proceso", seguimiento: "proceso",
-  no_respondio: "proceso", valoracion_agendada: "cerrado",
-  cerrado: "cerrado", paciente_activo: "cerrado", tratamiento_iniciado: "cerrado",
+  no_respondio: "proceso", valoracion_agendada: "cerrados",
+  cerrado: "cerrados", paciente_activo: "cerrados", tratamiento_iniciado: "cerrados",
   no_interesado: "no_interesado",
 };
 
-export const RESULTADOS_TERMINALES = ["cerrado", "no_interesado"];
+export const RESULTADOS_TERMINALES = ["cerrados", "no_interesado"];
+
+// Helper: info de etapa según resultado guardado
+export function etapaInfo(resultado: string) {
+  if (!resultado) return RESULTADOS[0]; // Para llamar
+  const etapa = MAP_A_ETAPA[resultado];
+  if (etapa === "cerrados") return RESULTADOS.find(r => r.value === "cerrado")!;
+  return RESULTADOS.find(r => r.value === etapa) ?? RESULTADOS[0];
+}
 
 export function formatTel(t: string | null): string {
   if (!t) return "";
@@ -88,7 +104,7 @@ export function CardListo({ p, h }: { p: Paciente; h: CardHandlers }) {
   const resultado = resultadoLlamada(p);
   const notas = notasInternas(p);
   const isExp = h.expanded.has(p.id);
-  const resultadoCfg = RESULTADOS.find(r => r.value === resultado);
+  const etapa = etapaInfo(resultado);
   const isSaving = h.saving === p.id;
   const callTel = (p.perfil_paciente?.telefono_contacto as string) || p.telefono_encriptado;
   const waNum = ((p.perfil_paciente?.telefono_contacto as string) || p.telefono_encriptado || "").replace(/\D/g, "");
@@ -110,7 +126,7 @@ export function CardListo({ p, h }: { p: Paciente; h: CardHandlers }) {
             <div className="flex items-center gap-2 flex-wrap mb-1">
               <span className="font-bold" style={{ color: "var(--text)", fontSize: "15px" }}>{nombre}</span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(16,185,129,0.15)", color: "#10B981", border: "1px solid rgba(16,185,129,0.3)" }}>✓ LISTO PARA LLAMAR</span>
-              {resultado && <span className="text-[11px] font-medium" style={{ color: resultadoCfg?.color ?? "var(--text-3)" }}>{resultadoCfg?.label}</span>}
+              {resultado && <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${etapa.color}20`, color: etapa.color, border: `1px solid ${etapa.color}40` }}>{etapa.icon} {etapa.label}</span>}
             </div>
             <p className="text-[10px]" style={{ color: "var(--text-3)" }}>{p.alias} · {tiempoAtras}</p>
           </div>
@@ -188,12 +204,12 @@ export function CardListo({ p, h }: { p: Paciente; h: CardHandlers }) {
         <div className="px-4 pb-4 space-y-3" style={{ borderTop: "1px solid rgba(16,185,129,0.1)" }}>
           <div>
             <p className="section-label mb-2 pt-3">Mover a:</p>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {RESULTADOS.map(r => {
-                const active = MAP_A_ETAPA[resultado] === r.value;
+                const active = r.value === "" ? !resultado : MAP_A_ETAPA[resultado] === (r.value === "cerrado" ? "cerrados" : r.value);
                 return (
                   <button key={r.value} onClick={() => h.setResultado(p, r.value)}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all"
+                    className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all"
                     style={{
                       background: active ? `${r.color}22` : "rgba(255,255,255,0.04)",
                       color: active ? r.color : "rgba(255,255,255,0.35)",
@@ -240,7 +256,7 @@ export function CardOtro({ p, accent, h }: { p: Paciente; accent?: boolean; h: C
   const resultado = resultadoLlamada(p);
   const notas = notasInternas(p);
   const isExp = h.expanded.has(p.id);
-  const resultadoCfg = RESULTADOS.find(r => r.value === resultado);
+  const etapa = etapaInfo(resultado);
   const isSaving = h.saving === p.id;
   const callTel = (p.perfil_paciente?.telefono_contacto as string) || p.telefono_encriptado;
   const waNum = ((p.perfil_paciente?.telefono_contacto as string) || p.telefono_encriptado || "").replace(/\D/g, "");
@@ -260,7 +276,7 @@ export function CardOtro({ p, accent, h }: { p: Paciente; accent?: boolean; h: C
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-0.5">
             <span className="font-semibold text-sm" style={{ color: "var(--text)" }}>{nombre}</span>
-            {resultado && <span className="text-[11px] font-medium" style={{ color: resultadoCfg?.color ?? "var(--text-3)" }}>{resultadoCfg?.label}</span>}
+            {resultado && <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${etapa.color}20`, color: etapa.color, border: `1px solid ${etapa.color}40` }}>{etapa.icon} {etapa.label}</span>}
           </div>
           <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-xs" style={{ color: "var(--text-3)" }}>
             {telC && <span style={{ color: "#059669" }}>📞 {telC}</span>}
