@@ -189,13 +189,22 @@ export function CardListo({ p, h }: { p: Paciente; h: CardHandlers }) {
           <div>
             <p className="section-label mb-2 pt-3">Resultado de la llamada</p>
             <div className="flex flex-wrap gap-2">
-              {RESULTADOS.filter(r => r.value !== "").map(r => (
-                <button key={r.value} onClick={() => h.setResultado(p, r.value)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                  style={{ background: resultado === r.value ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.04)", color: resultado === r.value ? "#FFF" : "var(--text-3)", border: `1px solid ${resultado === r.value ? "rgba(255,255,255,0.2)" : "var(--border)"}`, opacity: isSaving ? 0.6 : 1 }}>
-                  {r.label}
-                </button>
-              ))}
+              {RESULTADOS.filter(r => r.value !== "").map(r => {
+                const active = resultado === r.value;
+                return (
+                  <button key={r.value} onClick={() => h.setResultado(p, r.value)}
+                    className="px-3 py-2 rounded-xl text-xs font-semibold transition-all"
+                    style={{
+                      background: active ? `color-mix(in srgb, ${r.color} 20%, transparent)` : "rgba(255,255,255,0.03)",
+                      color: active ? r.color : "rgba(255,255,255,0.4)",
+                      border: `1px solid ${active ? `color-mix(in srgb, ${r.color} 45%, transparent)` : "var(--border)"}`,
+                      opacity: isSaving ? 0.6 : 1,
+                      transform: active ? "scale(1.02)" : "scale(1)",
+                    }}>
+                    {r.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
           <div>
@@ -297,13 +306,22 @@ export function CardOtro({ p, accent, h }: { p: Paciente; accent?: boolean; h: C
           <div>
             <p className="section-label mb-2 pt-2">Resultado de la llamada</p>
             <div className="flex flex-wrap gap-2">
-              {RESULTADOS.filter(r => r.value !== "").map(r => (
-                <button key={r.value} onClick={() => h.setResultado(p, r.value)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                  style={{ background: resultado === r.value ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.04)", color: resultado === r.value ? "#FFF" : "var(--text-3)", border: `1px solid ${resultado === r.value ? "rgba(255,255,255,0.2)" : "var(--border)"}`, opacity: isSaving ? 0.6 : 1 }}>
-                  {r.label}
-                </button>
-              ))}
+              {RESULTADOS.filter(r => r.value !== "").map(r => {
+                const active = resultado === r.value;
+                return (
+                  <button key={r.value} onClick={() => h.setResultado(p, r.value)}
+                    className="px-3 py-2 rounded-xl text-xs font-semibold transition-all"
+                    style={{
+                      background: active ? `color-mix(in srgb, ${r.color} 20%, transparent)` : "rgba(255,255,255,0.03)",
+                      color: active ? r.color : "rgba(255,255,255,0.4)",
+                      border: `1px solid ${active ? `color-mix(in srgb, ${r.color} 45%, transparent)` : "var(--border)"}`,
+                      opacity: isSaving ? 0.6 : 1,
+                      transform: active ? "scale(1.02)" : "scale(1)",
+                    }}>
+                    {r.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
           {resumen && (
