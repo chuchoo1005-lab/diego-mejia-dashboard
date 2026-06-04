@@ -70,7 +70,7 @@ export default function CitasPage() {
     return (MAP_A_ETAPA[r] as PipelineTab) ?? "llamar";
   };
 
-  const paraLlamar    = leads.filter(p => etapa(p) === "llamar"        && match(p));
+  const paraLlamar    = leads.filter(p => etapa(p) === "llamar" && (ec(p) === "entrega_premium" || sc(p) >= 60) && match(p));
   const enProceso     = leads.filter(p => etapa(p) === "proceso"       && match(p));
   const cerrados      = leads.filter(p => etapa(p) === "cerrados"      && match(p));
   const noInteresado  = leads.filter(p => etapa(p) === "no_interesado" && match(p));
