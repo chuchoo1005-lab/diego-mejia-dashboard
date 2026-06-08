@@ -207,10 +207,10 @@ export function CardListo({ p, h }: { p: Paciente; h: CardHandlers }) {
           <MoverBotones resultado={resultado} isSaving={isSaving} onMover={v => h.setResultado(p, v)} />
           <div>
             <div className="flex items-center gap-1.5 mb-2"><FileText className="w-3.5 h-3.5" style={{ color: "var(--text-3)" }} /><p className="section-label">Notas del equipo</p></div>
-            <textarea rows={3} placeholder="Ej: Llamé, no contestó. Volver a llamar mañana..."
+            <textarea rows={3} placeholder="Escribir nota… (ejemplo: Llamé, no contestó. Volver a llamar mañana)"
               value={h.notasTemp[p.id] ?? notas}
               onChange={e => h.setNotasTemp(prev => ({ ...prev, [p.id]: e.target.value }))}
-              className="w-full text-sm rounded-xl px-3 py-2 resize-none"
+              className="w-full text-sm rounded-xl px-3 py-2 resize-none placeholder:italic placeholder:text-[var(--text-3)]"
               style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", color: "var(--text)", lineHeight: 1.5 }} />
             <button onClick={() => h.guardarNotas(p)} disabled={isSaving}
               className="mt-2 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all"
