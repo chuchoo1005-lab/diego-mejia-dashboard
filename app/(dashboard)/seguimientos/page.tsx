@@ -257,6 +257,7 @@ export default function SeguimientosPage() {
               const isCancelado = esSeg(p) === "cancelado";
               const pct = Math.min(Math.round((n / TOTAL) * 100), 100);
               const barColor = isConv ? "#10B981" : isCancelado ? "#EF4444" : activeTab.color;
+              const telC = telContacto(p); const wa = waLink(p);
               return (
                 <div key={p.id} className="dm-card p-4 space-y-3">
 
@@ -274,6 +275,26 @@ export default function SeguimientosPage() {
                       <span className="badge badge-gray shrink-0 text-xs" style={{ color: activeTab.color }}>Activo</span>
                     )}
                   </div>
+
+                  {/* Row Acciones: llamar + whatsapp */}
+                  {(telC || wa) && (
+                    <div className="flex gap-2">
+                      {telC && (
+                        <a href={`tel:${telC.replace(/\s/g,"")}`}
+                          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-bold"
+                          style={{ background:"rgba(16,185,129,0.1)", color:"#10B981", border:"1px solid rgba(16,185,129,0.25)" }}>
+                          <Phone className="w-3.5 h-3.5" /> Llamar
+                        </a>
+                      )}
+                      {wa && (
+                        <a href={wa} target="_blank" rel="noopener noreferrer"
+                          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-bold"
+                          style={{ background:"rgba(37,211,102,0.1)", color:"#25D366", border:"1px solid rgba(37,211,102,0.2)" }}>
+                          💬 Mensaje
+                        </a>
+                      )}
+                    </div>
+                  )}
 
                   {/* Row 2: servicio + paso */}
                   <div className="flex items-center justify-between">
