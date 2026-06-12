@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { format, formatDistanceToNow, isToday, isTomorrow } from "date-fns";
 import { es } from "date-fns/locale";
 import { Brain, Flame, Clock, MessageSquare, Users, TrendingUp, ArrowRight, Zap, Activity, Phone, AlertTriangle, Target, ChevronDown, ChevronUp, CalendarDays, Plus, MapPin, Stethoscope, CheckCircle } from "lucide-react";
+import { MAP_A_ETAPA } from "@/components/CallCard";
 
 interface CitaAgenda {
   id: string; paciente_nombre: string; fecha_hora: string;
@@ -46,6 +47,12 @@ function niv(p: Paciente) { return (p.perfil_paciente?.nivel_interes as string) 
 function ua(p: Paciente)  { const v = p.perfil_paciente?.ultima_actividad_at as string; return v ? new Date(v) : new Date(p.created_at); }
 function resumen(p: Paciente) { return (p.perfil_paciente?.resumen_lead as string) || ""; }
 function razon(p: Paciente)   { return (p.perfil_paciente?.razon_score as string) || ""; }
+// Etapa del pipeline de Leads (mismo criterio que /citas): si ya lo movieron a Proceso/Cerrado/No interesado, deja de ser "para llamar"
+function etapaLead(p: Paciente): string {
+  const r = (p.perfil_paciente?.resultado_llamada as string) || "";
+  if (!r) return "llamar";
+  return MAP_A_ETAPA[r] ?? "llamar";
+}
 
 // ─── Score badge ─────────────────────────────────────────────────────────────
 function scoreBadge(score: number) {
@@ -168,7 +175,7 @@ export default function Home() {
       const cv = (convsD || []) as Conv[];
       // Contar chats únicos (pacientes distintos), no mensajes individuales
       const chatsUnicos = new Set((convsHoyData || []).map((c: {paciente_id: string}) => c.paciente_id)).size;
-      setKpis({ total:total??0, hoy:hoy??0, convsHoy:chatsUnicos, listos:d.filter(p=>ec(p)==="entrega_premium").length, calientes:d.filter(p=>sc(p)>=60).length, seguimientos:segActivos??0 });
+      setKpis({ total:total??0, hoy:hoy??0, convsHoy:chatsUnicos, listos:d.filter(p=>ec(p)==="entrega_premium" && etapaLead(p)==="llamar").length, calientes:d.filter(p=>sc(p)>=60 && etapaLead(p)==="llamar").length, seguimientos:segActivos??0 });
       setPacs(d); setCitas((citasD || []) as CitaAgenda[]);
       // Deduplicar: un mensaje por paciente (el más reciente entrante)
       const cvAll = (convsD || []) as Conv[];
@@ -205,7 +212,7 @@ export default function Home() {
   const toggleExpanded = (id: string) => setExpanded(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
 
   const leadsTop = pacs.filter(p => sc(p) >= 40).sort((a,b) => sc(b)-sc(a)).slice(0,6);
-  const alertasUrgentes = pacs.filter(p => { const h=(Date.now()-ua(p).getTime())/3600000; return (ec(p)==="entrega_premium" || (h>6 && sc(p)>=60)); }).slice(0,3);
+  const alertasUrgentes = pacs.filter(p => { const h=(Date.now()-ua(p).getTime())/3600000; return etapaLead(p)==="llamar" && (ec(p)==="entrega_premium" || (h>6 && sc(p)>=60)); }).slice(0,3);
   const insights = buildInsights(pacs);
   const funnel = [
     { label: "Conversaciones totales", value: kpis.total, color: "rgba(255,255,255,0.2)" },
