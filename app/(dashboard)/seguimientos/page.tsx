@@ -77,7 +77,20 @@ export default function SeguimientosPage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); const t = setInterval(load, 30000); return () => clearInterval(t); }, [load]);
+
+  // Sincronización en tiempo real: si alguien mueve un lead desde otro dispositivo, se refleja aquí al instante
+  useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const channel = supabase
+      .channel("realtime-pacientes-seguimientos")
+      .on("postgres_changes", { event: "*", schema: "public", table: "pacientes" }, () => {
+        if (timeout) clearTimeout(timeout);
+        timeout = setTimeout(load, 800);
+      })
+      .subscribe();
+    return () => { if (timeout) clearTimeout(timeout); supabase.removeChannel(channel); };
+  }, [load]);
 
   // Pipeline — exclude leads that never entered seguimiento AND never reached cita_agendada
   const pipeline = pacientes.filter(p => {
@@ -258,21 +271,44 @@ export default function SeguimientosPage() {
               const pct = Math.min(Math.round((n / TOTAL) * 100), 100);
               const barColor = isConv ? "#10B981" : isCancelado ? "#EF4444" : activeTab.color;
               const telC = telContacto(p); const wa = waLink(p);
+              const scr = score(p); const ciu = ciudad(p); const niv_ = nivel(p);
+              const nivCfg = NIVEL_CFG[niv_] ?? NIVEL_CFG.bajo;
               return (
                 <div key={p.id} className="dm-card p-4 space-y-3">
 
-                  {/* Row 1: nombre + badge */}
+                  {/* Row 1: nombre + score + badge */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="font-semibold text-sm truncate" style={{ color: "var(--text)" }}>{nom}</p>
                       {tel && <p className="text-xs mt-0.5 truncate" style={{ color: "var(--text-muted)" }}>{tel}</p>}
                     </div>
-                    {isConv ? (
-                      <span className="badge badge-green shrink-0 text-xs">✓ Convirtió</span>
-                    ) : isCancelado ? (
-                      <span className="badge badge-gray shrink-0 text-xs" style={{ color: "#EF4444", borderColor: "rgba(239,68,68,0.3)" }}>Canceló</span>
-                    ) : (
-                      <span className="badge badge-gray shrink-0 text-xs" style={{ color: activeTab.color }}>Activo</span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs font-black px-2 py-0.5 rounded-full"
+                        style={{ background: scr >= 60 ? "rgba(6,182,212,0.12)" : scr >= 30 ? "rgba(251,191,36,0.1)" : "rgba(255,255,255,0.05)", color: scr >= 60 ? "var(--cyan)" : scr >= 30 ? "#FBBF24" : "var(--text-muted)" }}>
+                        {scr} pts
+                      </span>
+                      {isConv ? (
+                        <span className="badge badge-green text-xs">✓ Convirtió</span>
+                      ) : isCancelado ? (
+                        <span className="badge badge-gray text-xs" style={{ color: "#EF4444", borderColor: "rgba(239,68,68,0.3)" }}>Canceló</span>
+                      ) : (
+                        <span className="badge badge-gray text-xs" style={{ color: activeTab.color }}>Activo</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Row tags: servicio + interés + ciudad */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs px-2 py-0.5 rounded-lg" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-secondary)", border: "1px solid var(--border)" }}>
+                      {svc ? (SRV[svc] ?? svc) : "Sin servicio"}
+                    </span>
+                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: nivCfg.bg, color: nivCfg.color }}>
+                      {nivCfg.label}
+                    </span>
+                    {ciu && (
+                      <span className="text-xs flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
+                        <MapPin className="w-2.5 h-2.5" />{ciu}
+                      </span>
                     )}
                   </div>
 
@@ -296,11 +332,9 @@ export default function SeguimientosPage() {
                     </div>
                   )}
 
-                  {/* Row 2: servicio + paso */}
+                  {/* Row 2: progreso */}
                   <div className="flex items-center justify-between">
-                    <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
-                      {svc ? (SRV[svc] ?? svc) : "Sin servicio"}
-                    </span>
+                    <span className="text-xs" style={{ color: "var(--text-muted)" }}>Seguimiento</span>
                     <span className="text-xs font-semibold" style={{ color: "var(--text)" }}>
                       Paso {n} <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>/ {TOTAL}</span>
                     </span>

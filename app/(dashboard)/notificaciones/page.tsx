@@ -88,6 +88,7 @@ export default function NotificacionesPage() {
   useEffect(() => { load(); const t = setInterval(load, 30000); return () => clearInterval(t); }, [load]);
 
   useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout> | undefined;
     const channel = supabase
       .channel("dm_valoracion_alarm")
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "pacientes" }, (payload) => {
@@ -97,11 +98,13 @@ export default function NotificacionesPage() {
         if ((estado === "entrega_premium" || notificado === true) && !yaAlarmados.current.has(rec.id)) {
           yaAlarmados.current.add(rec.id);
           dispararAlarma(rec.perfil_paciente?.nombre);
-          load();
         }
+        // Sincronización en tiempo real: cualquier cambio (ej. mover lead desde otro dispositivo) refresca aquí
+        if (timeout) clearTimeout(timeout);
+        timeout = setTimeout(load, 800);
       })
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => { if (timeout) clearTimeout(timeout); supabase.removeChannel(channel); };
   }, [load]);
 
   // Call flow handlers

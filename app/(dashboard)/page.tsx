@@ -144,7 +144,7 @@ export default function Home() {
   const [pacs, setPacs] = useState<Paciente[]>([]);
   const [convs, setConvs] = useState<Conv[]>([]);
   const [citas, setCitas] = useState<CitaAgenda[]>([]);
-  const [kpis, setKpis] = useState({ total: 0, hoy: 0, convsHoy: 0, listos: 0, calientes: 0 });
+  const [kpis, setKpis] = useState({ total: 0, hoy: 0, convsHoy: 0, listos: 0, calientes: 0, seguimientos: 0 });
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -155,9 +155,10 @@ export default function Home() {
       const today = new Date(); today.setHours(0,0,0,0);
       const t = today.toISOString();
       const semana = new Date(); semana.setDate(semana.getDate() + 7);
-      const [{ count: total }, { count: hoy }, { data: convsHoyData }, { data: pacsD }, { data: convsD }, { data: citasD }] = await Promise.all([
+      const [{ count: total }, { count: hoy }, { count: segActivos }, { data: convsHoyData }, { data: pacsD }, { data: convsD }, { data: citasD }] = await Promise.all([
         supabase.from("pacientes").select("*", { count:"exact", head:true }),
         supabase.from("pacientes").select("*", { count:"exact", head:true }).gte("created_at", t),
+        supabase.from("pacientes").select("*", { count:"exact", head:true }).eq("estado","activo").eq("perfil_paciente->>estado_seguimiento","activo"),
         supabase.from("conversaciones").select("paciente_id").gte("timestamp", t),
         supabase.from("pacientes").select("id,alias,calificado,origen,telefono_encriptado,perfil_paciente,created_at,updated_at").eq("estado","activo").order("updated_at",{ascending:false}).limit(50),
         supabase.from("conversaciones").select("id,paciente_id,direccion,mensaje_encriptado,timestamp,metadata").order("timestamp",{ascending:false}).limit(30),
@@ -167,7 +168,7 @@ export default function Home() {
       const cv = (convsD || []) as Conv[];
       // Contar chats únicos (pacientes distintos), no mensajes individuales
       const chatsUnicos = new Set((convsHoyData || []).map((c: {paciente_id: string}) => c.paciente_id)).size;
-      setKpis({ total:total??0, hoy:hoy??0, convsHoy:chatsUnicos, listos:d.filter(p=>ec(p)==="entrega_premium").length, calientes:d.filter(p=>sc(p)>=60).length });
+      setKpis({ total:total??0, hoy:hoy??0, convsHoy:chatsUnicos, listos:d.filter(p=>ec(p)==="entrega_premium").length, calientes:d.filter(p=>sc(p)>=60).length, seguimientos:segActivos??0 });
       setPacs(d); setCitas((citasD || []) as CitaAgenda[]);
       // Deduplicar: un mensaje por paciente (el más reciente entrante)
       const cvAll = (convsD || []) as Conv[];
@@ -187,6 +188,19 @@ export default function Home() {
   }, []);
 
   useEffect(() => { load(); const t = setInterval(load, 30000); return () => clearInterval(t); }, [load]);
+
+  // Sincronización en tiempo real: cualquier cambio en pacientes (ej. mover lead en otro dispositivo) refresca aquí
+  useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const channel = supabase
+      .channel("realtime-pacientes-home")
+      .on("postgres_changes", { event: "*", schema: "public", table: "pacientes" }, () => {
+        if (timeout) clearTimeout(timeout);
+        timeout = setTimeout(load, 800);
+      })
+      .subscribe();
+    return () => { if (timeout) clearTimeout(timeout); supabase.removeChannel(channel); };
+  }, [load]);
 
   const toggleExpanded = (id: string) => setExpanded(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
 
@@ -290,6 +304,7 @@ export default function Home() {
               { label:"Mensajes hoy",  value:kpis.convsHoy,       icon:MessageSquare, color:"var(--cyan)",  href:"/conversaciones" },
               { label:"Leads 🔥",      value:kpis.calientes,       icon:Flame,         color:"#F97316",      href:"/citas" },
               { label:"Para llamar",   value:kpis.listos,          icon:Phone,         color:"var(--green)", href:"/citas" },
+              { label:"Seguimientos",  value:kpis.seguimientos,    icon:Activity,      color:"#A78BFA",      href:"/seguimientos" },
             ].map(({ label, value, icon:Icon, color, href }) => (
               <a key={label} href={href}
                 className="text-center px-3 py-3 rounded-xl block transition-all active:scale-95"

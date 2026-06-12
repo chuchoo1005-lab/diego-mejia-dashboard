@@ -36,6 +36,19 @@ export default function CitasPage() {
 
   useEffect(() => { load(); const t = setInterval(load, 30000); return () => clearInterval(t); }, [load]);
 
+  // Sincronización en tiempo real: si alguien mueve un lead desde otro dispositivo, se refleja aquí al instante
+  useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const channel = supabase
+      .channel("realtime-pacientes-citas")
+      .on("postgres_changes", { event: "*", schema: "public", table: "pacientes" }, () => {
+        if (timeout) clearTimeout(timeout);
+        timeout = setTimeout(load, 800);
+      })
+      .subscribe();
+    return () => { if (timeout) clearTimeout(timeout); supabase.removeChannel(channel); };
+  }, [load]);
+
   const updatePerfil = async (id: string, updates: Record<string, unknown>) => {
     setSaving(id);
     const pac = leads.find(p => p.id === id);
