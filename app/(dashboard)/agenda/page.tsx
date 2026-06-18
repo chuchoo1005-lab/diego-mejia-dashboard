@@ -137,12 +137,6 @@ export default function AgendaPage() {
     await load();
   };
 
-  const abrirEditar = (c: Cita) => {
-    const dt = new Date(c.fecha_hora);
-    setForm({ paciente_nombre: c.paciente_nombre, paciente_telefono: c.paciente_telefono || "", servicio: c.servicio || "valoracion", fecha: format(dt, "yyyy-MM-dd"), hora: format(dt, "HH:mm"), duracion_min: c.duracion_min, estado: c.estado, notas: c.notas || "" });
-    setEditando(c.id); setModal(true);
-  };
-
   const crearCitaDesdeLead = (lead: Lead) => {
     const nombre = (lead.perfil_paciente?.nombre as string) || (lead.perfil_paciente?.nombre_whatsapp as string) || formatTel(lead.telefono_encriptado) || "";
     const tel = (lead.perfil_paciente?.telefono_contacto as string) || lead.telefono_encriptado || "";
@@ -205,6 +199,8 @@ export default function AgendaPage() {
               const urgencia = getHorarioUrgencia(horario);
               const svcColor = SRV_COLOR[servicio] || { bg: "rgba(16,185,129,0.1)", color: "#34D399" };
               const tiempoAtras = formatDistanceToNow(new Date(lead.updated_at), { locale: es, addSuffix: true });
+              const waClean = ((lead.perfil_paciente?.telefono_contacto as string) || lead.telefono_encriptado || "").replace(/\D/g, "");
+              const waLink = waClean ? `https://wa.me/${waClean.startsWith("57") ? waClean : "57" + waClean}` : null;
 
               return (
                 <div key={lead.id} className="p-4 rounded-xl relative" style={{ background:"rgba(255,255,255,0.03)", border:`1px solid ${urgencia.border}` }}>
@@ -251,6 +247,13 @@ export default function AgendaPage() {
                         className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold flex-1 justify-center"
                         style={{ background:"rgba(16,185,129,0.12)", color:"#10B981", border:"1px solid rgba(16,185,129,0.25)" }}>
                         <Phone className="w-3 h-3" /> Llamar
+                      </a>
+                    )}
+                    {waLink && (
+                      <a href={waLink} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center justify-center w-9 h-9 rounded-lg text-sm shrink-0 active:scale-95 transition-all"
+                        style={{ background:"rgba(37,211,102,0.12)", color:"#25D366", border:"1px solid rgba(37,211,102,0.25)", WebkitTapHighlightColor:"transparent" }}>
+                        💬
                       </a>
                     )}
                     <button onClick={() => crearCitaDesdeLead(lead)}
@@ -341,6 +344,8 @@ export default function AgendaPage() {
                 const ec = ESTADO_COLOR[c.estado] ?? ESTADO_COLOR.pendiente;
                 const svcLabel = c.servicio ? (SRV[c.servicio] ?? c.servicio) : null;
                 const svcColor = c.servicio ? (SRV_COLOR[c.servicio] ?? { bg:"rgba(16,185,129,0.1)", color:"#34D399" }) : null;
+                const waClean = (c.paciente_telefono || "").replace(/\D/g, "");
+                const waLink = waClean ? `https://wa.me/${waClean.startsWith("57") ? waClean : "57" + waClean}` : null;
                 return (
                   <div key={c.id} className="p-3.5 rounded-xl" style={{ background:"rgba(255,255,255,0.03)", border:`1px solid ${ec.border}` }}>
                     {/* Top row */}
@@ -360,7 +365,13 @@ export default function AgendaPage() {
                         </div>
                       </div>
                       <div className="flex gap-1 shrink-0 ml-2">
-                        <button onClick={() => abrirEditar(c)} className="text-xs px-2 py-1 rounded-lg transition-colors" style={{ background:"rgba(255,255,255,0.05)", color:"var(--text-3)", border:"1px solid var(--border)" }}>✏️</button>
+                        {waLink && (
+                          <a href={waLink} target="_blank" rel="noopener noreferrer"
+                            className="flex items-center justify-center w-7 h-7 rounded-lg text-xs active:scale-95 transition-all"
+                            style={{ background:"rgba(37,211,102,0.12)", color:"#25D366", border:"1px solid rgba(37,211,102,0.25)", WebkitTapHighlightColor:"transparent" }}>
+                            💬
+                          </a>
+                        )}
                         <button onClick={() => eliminar(c.id)} className="text-xs px-2 py-1 rounded-lg transition-colors" style={{ background:"rgba(239,68,68,0.08)", color:"var(--red)", border:"1px solid rgba(239,68,68,0.2)" }}>✕</button>
                       </div>
                     </div>
@@ -416,6 +427,8 @@ export default function AgendaPage() {
               const svcColor = c.servicio ? (SRV_COLOR[c.servicio] ?? null) : null;
               const dt = new Date(c.fecha_hora);
               const esHoyC = isToday(dt);
+              const waCleanC = (c.paciente_telefono || "").replace(/\D/g, "");
+              const waLinkC = waCleanC ? `https://wa.me/${waCleanC.startsWith("57") ? waCleanC : "57" + waCleanC}` : null;
               return (
                 <div key={c.id} className="flex items-center gap-4 px-3 py-2.5 rounded-xl hover:bg-white/[0.025] transition-colors cursor-pointer" onClick={() => { setDiaSeleccionado(dt); }}>
                   <div className="text-center shrink-0 w-10">
@@ -439,6 +452,13 @@ export default function AgendaPage() {
                         className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold"
                         style={{ background:"rgba(16,185,129,0.1)", color:"#10B981", border:"1px solid rgba(16,185,129,0.2)" }}>
                         <Phone className="w-3 h-3" />
+                      </a>
+                    )}
+                    {waLinkC && (
+                      <a href={waLinkC} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                        className="flex items-center justify-center w-7 h-7 rounded-lg text-xs active:scale-95 transition-all"
+                        style={{ background:"rgba(37,211,102,0.12)", color:"#25D366", border:"1px solid rgba(37,211,102,0.25)", WebkitTapHighlightColor:"transparent" }}>
+                        💬
                       </a>
                     )}
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: ec.bg, color: ec.color, border:`1px solid ${ec.border}` }}>
