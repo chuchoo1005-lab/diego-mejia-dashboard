@@ -7,7 +7,7 @@ import { Brain, Flame, Clock, MessageSquare, Users, TrendingUp, ArrowRight, Zap,
 import { MAP_A_ETAPA } from "@/components/CallCard";
 
 interface CitaAgenda {
-  id: string; paciente_nombre: string; fecha_hora: string;
+  id: string; paciente_nombre: string; paciente_telefono: string | null; fecha_hora: string;
   servicio: string | null; estado: string; duracion_min: number;
 }
 
@@ -169,7 +169,7 @@ export default function Home() {
         supabase.from("conversaciones").select("paciente_id").gte("timestamp", t),
         supabase.from("pacientes").select("id,alias,calificado,origen,telefono_encriptado,perfil_paciente,created_at,updated_at").eq("estado","activo").order("updated_at",{ascending:false}).limit(50),
         supabase.from("conversaciones").select("id,paciente_id,direccion,mensaje_encriptado,timestamp,metadata").order("timestamp",{ascending:false}).limit(30),
-        supabase.from("agenda_citas").select("id,paciente_nombre,fecha_hora,servicio,estado,duracion_min").gte("fecha_hora", t).lte("fecha_hora", semana.toISOString()).neq("estado","cancelada").order("fecha_hora").limit(10),
+        supabase.from("agenda_citas").select("id,paciente_nombre,paciente_telefono,fecha_hora,servicio,estado,duracion_min").gte("fecha_hora", t).lte("fecha_hora", semana.toISOString()).neq("estado","cancelada").order("fecha_hora").limit(10),
       ]);
       const d = (pacsD || []) as Paciente[];
       const cv = (convsD || []) as Conv[];
@@ -363,13 +363,24 @@ export default function Home() {
               const esManana = isTomorrow(fecha);
               const ESTADO_COLOR: Record<string, string> = { pendiente:"var(--amber)", confirmada:"var(--cyan)", completada:"var(--green)", no_asistio:"var(--text-3)" };
               const SRV: Record<string, string> = { ortodoncia_invisible:"Ortodoncia", diseno_sonrisa:"Diseño", general:"General", valoracion:"Valoración" };
+              const waClean = (c.paciente_telefono || "").replace(/\D/g, "");
+              const waLink = waClean ? `https://wa.me/${waClean.startsWith("57") ? waClean : "57" + waClean}` : null;
               return (
                 <div key={c.id} className="p-3 rounded-xl transition-all" style={{ background: esHoy ? "rgba(6,182,212,0.08)" : "rgba(255,255,255,0.03)", border:`1px solid ${esHoy ? "rgba(6,182,212,0.25)" : "var(--border)"}` }}>
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: esHoy ? "var(--cyan)" : esManana ? "var(--amber)" : "var(--text-3)" }}>
                       {esHoy ? "HOY" : esManana ? "MAÑANA" : format(fecha, "EEE d MMM", { locale: es })}
                     </span>
-                    <div className="w-2 h-2 rounded-full" style={{ background: ESTADO_COLOR[c.estado] ?? "var(--text-3)" }} />
+                    <div className="flex items-center gap-1.5">
+                      {waLink && (
+                        <a href={waLink} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center justify-center w-6 h-6 rounded-md text-xs active:scale-95 transition-all"
+                          style={{ background:"rgba(37,211,102,0.12)", color:"#25D366", border:"1px solid rgba(37,211,102,0.25)", WebkitTapHighlightColor:"transparent" }}>
+                          💬
+                        </a>
+                      )}
+                      <div className="w-2 h-2 rounded-full" style={{ background: ESTADO_COLOR[c.estado] ?? "var(--text-3)" }} />
+                    </div>
                   </div>
                   <p className="text-sm font-semibold truncate" style={{ color:"var(--text)" }}>{c.paciente_nombre}</p>
                   <p className="text-[11px] mt-0.5" style={{ color:"var(--text-3)" }}>
@@ -415,6 +426,9 @@ export default function Home() {
                   const score = sc(p); const badge = scoreBadge(score); const emocion = detectEmocion(p);
                   const telefono = tel(p); const nombre = nom(p); const servicio = srv(p);
                   const ciudad = p.perfil_paciente?.ciudad as string; const horario = p.perfil_paciente?.horario_contacto as string;
+                  const waNum = (p.perfil_paciente?.telefono_contacto as string) || p.telefono_encriptado || "";
+                  const waClean = waNum.replace(/\D/g, "");
+                  const waLink = waClean ? `https://wa.me/${waClean.startsWith("57") ? waClean : "57" + waClean}` : null;
                   const cierre = cierrePct(p); const rec = iaRecomendacion(p);
                   const sumario = resumen(p); const razonScore = razon(p);
                   const timeline = buildTimeline(p); const isExp = expanded.has(p.id);
@@ -452,6 +466,12 @@ export default function Home() {
                             <a href={`tel:${p.telefono_encriptado}`} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all"
                               style={{ background:"var(--green)", color:"#000" }}>
                               <Phone className="w-3 h-3" /> Llamar
+                            </a>
+                          )}
+                          {waLink && (
+                            <a href={waLink} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all active:scale-95"
+                              style={{ background:"rgba(37,211,102,0.12)", color:"#25D366", border:"1px solid rgba(37,211,102,0.25)", WebkitTapHighlightColor:"transparent" }}>
+                              💬
                             </a>
                           )}
                           <button onClick={() => toggleExpanded(p.id)} className="flex items-center justify-center px-2.5 py-1.5 rounded-lg text-[11px] transition-all"
