@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, addMonths, subMonths, startOfWeek, endOfWeek, formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { CalendarDays, ChevronLeft, ChevronRight, Plus, Clock, X, RefreshCw, Phone, Stethoscope, MessageCircle } from "lucide-react";
+import { telAccionable } from "@/components/CallCard";
 
 interface Cita {
   id: string; paciente_nombre: string; paciente_telefono: string | null;
@@ -199,7 +200,8 @@ export default function AgendaPage() {
               const urgencia = getHorarioUrgencia(horario);
               const svcColor = SRV_COLOR[servicio] || { bg: "rgba(16,185,129,0.1)", color: "#34D399" };
               const tiempoAtras = formatDistanceToNow(new Date(lead.updated_at), { locale: es, addSuffix: true });
-              const waClean = ((lead.perfil_paciente?.telefono_contacto as string) || lead.telefono_encriptado || "").replace(/\D/g, "");
+              const telAcc = telAccionable(lead.perfil_paciente?.telefono_contacto as string, lead.telefono_encriptado);
+              const waClean = (telAcc || "").replace(/\D/g, "");
               const waLink = waClean ? `https://wa.me/${waClean.startsWith("57") ? waClean : "57" + waClean}` : null;
 
               return (
@@ -243,7 +245,7 @@ export default function AgendaPage() {
                   {/* Acciones */}
                   <div className="flex gap-2">
                     {(telC || telWA) && (
-                      <a href={`tel:${(lead.perfil_paciente?.telefono_contacto as string) || lead.telefono_encriptado}`}
+                      <a href={`tel:${telAcc}`}
                         className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold flex-1 justify-center"
                         style={{ background:"rgba(16,185,129,0.12)", color:"#10B981", border:"1px solid rgba(16,185,129,0.25)" }}>
                         <Phone className="w-3 h-3" /> Llamar

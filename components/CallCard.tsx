@@ -79,6 +79,11 @@ export function sc(p: Paciente) { return parseInt(String(p.perfil_paciente?.scor
 export function ec(p: Paciente) { return (p.perfil_paciente?.estado_conv as string) || "nuevo"; }
 export function ua(p: Paciente) { const v = p.perfil_paciente?.ultima_actividad_at as string; return v ? new Date(v) : new Date(p.updated_at); }
 export function telContacto(p: Paciente): string { return formatTel((p.perfil_paciente?.telefono_contacto as string) || null); }
+// Si telefono_contacto no tiene suficientes dígitos para ser un teléfono real (ej. "es este", "internacional"), usa el número real de WhatsApp
+export function telAccionable(contacto: string | null | undefined, encriptado: string | null | undefined): string | null {
+  const digitos = (contacto || "").replace(/\D/g, "");
+  return digitos.length >= 7 ? (contacto as string) : (encriptado || null);
+}
 export function resultadoLlamada(p: Paciente): string { return (p.perfil_paciente?.resultado_llamada as string) || ""; }
 export function notasInternas(p: Paciente): string { return (p.perfil_paciente?.notas_internas as string) || ""; }
 
@@ -133,8 +138,8 @@ export function CardListo({ p, h }: { p: Paciente; h: CardHandlers }) {
   const isExp = h.expanded.has(p.id);
   const etapa = etapaInfo(resultado);
   const isSaving = h.saving === p.id;
-  const callTel = (p.perfil_paciente?.telefono_contacto as string) || p.telefono_encriptado;
-  const waNum = ((p.perfil_paciente?.telefono_contacto as string) || p.telefono_encriptado || "").replace(/\D/g, "");
+  const callTel = telAccionable(p.perfil_paciente?.telefono_contacto as string, p.telefono_encriptado);
+  const waNum = (callTel || "").replace(/\D/g, "");
   const waLink = waNum ? `https://wa.me/${waNum.startsWith("57") ? waNum : "57" + waNum}` : null;
   const score = sc(p);
   const nivel = (p.perfil_paciente?.nivel_interes as string) || "bajo";
@@ -238,8 +243,8 @@ export function CardOtro({ p, accent, h }: { p: Paciente; accent?: boolean; h: C
   const isExp = h.expanded.has(p.id);
   const etapa = etapaInfo(resultado);
   const isSaving = h.saving === p.id;
-  const callTel = (p.perfil_paciente?.telefono_contacto as string) || p.telefono_encriptado;
-  const waNum = ((p.perfil_paciente?.telefono_contacto as string) || p.telefono_encriptado || "").replace(/\D/g, "");
+  const callTel = telAccionable(p.perfil_paciente?.telefono_contacto as string, p.telefono_encriptado);
+  const waNum = (callTel || "").replace(/\D/g, "");
   const waLink = waNum ? `https://wa.me/${waNum.startsWith("57") ? waNum : "57" + waNum}` : null;
   const resumen = p.perfil_paciente?.resumen_lead as string;
   const botActivo = !p.modo_humano;

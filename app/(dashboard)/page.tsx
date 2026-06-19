@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { format, formatDistanceToNow, isToday, isTomorrow } from "date-fns";
 import { es } from "date-fns/locale";
 import { Brain, Flame, Clock, MessageSquare, Users, TrendingUp, ArrowRight, Zap, Activity, Phone, AlertTriangle, Target, ChevronDown, ChevronUp, CalendarDays, Plus, MapPin, Stethoscope, CheckCircle } from "lucide-react";
-import { MAP_A_ETAPA } from "@/components/CallCard";
+import { MAP_A_ETAPA, telAccionable } from "@/components/CallCard";
 
 interface CitaAgenda {
   id: string; paciente_nombre: string; paciente_telefono: string | null; fecha_hora: string;
@@ -241,8 +241,7 @@ export default function Home() {
             const isListo = ec(p) === "entrega_premium";
             const servicio = srv(p);
             const horario = p.perfil_paciente?.horario_contacto as string;
-            const waNum = (p.perfil_paciente?.telefono_contacto as string) || p.telefono_encriptado || "";
-            const waClean = waNum.replace(/\D/g,"");
+            const waClean = (telAccionable(p.perfil_paciente?.telefono_contacto as string, p.telefono_encriptado) || "").replace(/\D/g,"");
             const waLink = waClean ? `https://wa.me/${waClean.startsWith("57") ? waClean : "57"+waClean}` : null;
             const svc = servicio ? svcBadge(servicio) : null;
             const tiempoRegistro = formatDistanceToNow(ua(p), { locale:es, addSuffix:true });
@@ -426,8 +425,7 @@ export default function Home() {
                   const score = sc(p); const badge = scoreBadge(score); const emocion = detectEmocion(p);
                   const telefono = tel(p); const nombre = nom(p); const servicio = srv(p);
                   const ciudad = p.perfil_paciente?.ciudad as string; const horario = p.perfil_paciente?.horario_contacto as string;
-                  const waNum = (p.perfil_paciente?.telefono_contacto as string) || p.telefono_encriptado || "";
-                  const waClean = waNum.replace(/\D/g, "");
+                  const waClean = (telAccionable(p.perfil_paciente?.telefono_contacto as string, p.telefono_encriptado) || "").replace(/\D/g, "");
                   const waLink = waClean ? `https://wa.me/${waClean.startsWith("57") ? waClean : "57" + waClean}` : null;
                   const cierre = cierrePct(p); const rec = iaRecomendacion(p);
                   const sumario = resumen(p); const razonScore = razon(p);
@@ -469,7 +467,7 @@ export default function Home() {
                             </a>
                           )}
                           {waLink && (
-                            <a href={waLink} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all active:scale-95"
+                            <a href={waLink} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-8 h-8 mx-auto rounded-lg text-sm transition-all active:scale-95"
                               style={{ background:"rgba(37,211,102,0.12)", color:"#25D366", border:"1px solid rgba(37,211,102,0.25)", WebkitTapHighlightColor:"transparent" }}>
                               💬
                             </a>
