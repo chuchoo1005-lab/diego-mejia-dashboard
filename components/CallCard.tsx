@@ -147,7 +147,7 @@ export function CardListo({ p, h }: { p: Paciente; h: CardHandlers }) {
     <div className="overflow-hidden rounded-2xl" style={{ background: "rgba(16,185,129,0.05)", border: "1px solid rgba(16,185,129,0.25)", boxShadow: "0 0 20px rgba(16,185,129,0.06)" }}>
       <div className="h-0.5 w-full" style={{ background: "linear-gradient(90deg, rgba(16,185,129,0.8), rgba(16,185,129,0.2))" }} />
       <div className="p-4">
-        <div className="flex items-start justify-between gap-3 mb-2">
+        <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-1">
               <span className="font-bold" style={{ color: "var(--text)", fontSize: "15px" }}>{nombre}</span>
@@ -156,7 +156,7 @@ export function CardListo({ p, h }: { p: Paciente; h: CardHandlers }) {
             </div>
             <p className="text-[10px]" style={{ color: "var(--text-3)" }}>{p.alias} · {tiempoAtras}</p>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
             <div className="text-center px-2.5 py-1.5 rounded-xl" style={{ background: score >= 60 ? "rgba(16,185,129,0.12)" : score >= 30 ? "rgba(251,191,36,0.1)" : "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
               <p className="text-lg font-black leading-none" style={{ color: score >= 60 ? "#10B981" : score >= 30 ? "#FBBF24" : "var(--text-3)" }}>{score}</p>
               <p className="text-[9px]" style={{ color: "var(--text-3)" }}>score</p>
