@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { Search, RefreshCw, Phone, TrendingUp, XCircle, Trophy } from "lucide-react";
 import {
-  Paciente, CardListo, CardOtro, CardHandlers,
+  Paciente, CardOtro, CardHandlers,
   displayName, formatTel, sc, ec, resultadoLlamada, MAP_A_ETAPA,
 } from "@/components/CallCard";
 
@@ -172,14 +172,9 @@ export default function CitasPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {tab === "llamar"
-            ? currentList.map(p =>
-                ec(p) === "entrega_premium"
-                  ? <CardListo key={p.id} p={p} h={handlers} />
-                  : <CardOtro key={p.id} p={p} accent={sc(p) >= 60} h={handlers} />
-              )
-            : currentList.map(p => <CardOtro key={p.id} p={p} h={handlers} />)
-          }
+          {currentList.map(p =>
+            <CardOtro key={p.id} p={p} accent={tab === "llamar" && (ec(p) === "entrega_premium" || sc(p) >= 60)} h={handlers} />
+          )}
         </div>
       )}
     </div>
