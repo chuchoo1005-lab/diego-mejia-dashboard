@@ -4,9 +4,9 @@ const CW_URL = 'https://diagnostico-chatwoot.zhmz81.easypanel.host'
 const CW_TOKEN = '9fhfgx5Tz4vonxAFhogeZSjL'
 const CW_ACCOUNT = '3'
 
-export async function getConversaciones() {
+export async function getConversaciones(status: 'open' | 'resolved' = 'open') {
   const res = await fetch(
-    `${CW_URL}/api/v1/accounts/${CW_ACCOUNT}/conversations?page=1&status=open`,
+    `${CW_URL}/api/v1/accounts/${CW_ACCOUNT}/conversations?page=1&status=${status}`,
     { headers: { 'api_access_token': CW_TOKEN }, cache: 'no-store' }
   )
   if (!res.ok) return []

@@ -36,10 +36,10 @@ export default function ChatInterface() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const cargarConversaciones = useCallback(async () => {
-    const data = await getConversaciones()
+    const data = await getConversaciones(filtro)
     setConversaciones(data)
     setCargando(false)
-  }, [])
+  }, [filtro])
 
   const cargarMensajes = useCallback(async (convId: number) => {
     const data = await getMensajes(convId)
@@ -70,7 +70,7 @@ export default function ChatInterface() {
     await cargarConversaciones()
   }
 
-  const convsFiltradas = conversaciones.filter(c => c.status === filtro)
+  const convsFiltradas = conversaciones
 
   return (
     <div className="flex h-[calc(100vh-120px)] rounded-2xl overflow-hidden"
@@ -90,7 +90,7 @@ export default function ChatInterface() {
           </div>
           <div className="flex gap-1 p-1 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)' }}>
             {(['open', 'resolved'] as const).map(f => (
-              <button key={f} onClick={() => setFiltro(f)}
+              <button key={f} onClick={() => { setFiltro(f); setCargando(true) }}
                 className="flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all"
                 style={{
                   background: filtro === f ? 'rgba(6,182,212,0.15)' : 'transparent',
