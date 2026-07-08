@@ -261,7 +261,7 @@ export function CardOtro({ p, accent, h }: { p: Paciente; accent?: boolean; h: C
           <div className="flex items-center gap-2 flex-wrap mb-0.5">
             <span className="font-bold text-[15px]" style={{ color: "var(--text)" }}>{nombre}</span>
             {resultado && <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${etapa.color}20`, color: etapa.color, border: `1px solid ${etapa.color}40` }}>{etapa.icon} {etapa.label}</span>}
-            {ec(p) === "calificacion_estrategica" && <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(251,191,36,0.15)", color: "#FBBF24", border: "1px solid rgba(251,191,36,0.35)" }}>🕓 Sin terminar de agendar</span>}
+            {ec(p) === "calificacion_estrategica" && !!p.perfil_paciente?.nombre && <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(251,191,36,0.15)", color: "#FBBF24", border: "1px solid rgba(251,191,36,0.35)" }}>🕓 Empezó a agendar, no terminó</span>}
           </div>
           <p className="text-[10px]" style={{ color: "var(--text-3)" }}>{p.alias} · {tiempoAtras}</p>
         </div>

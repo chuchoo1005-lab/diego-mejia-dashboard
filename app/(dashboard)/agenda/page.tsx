@@ -106,8 +106,9 @@ export default function AgendaPage() {
       const horario = (p.perfil_paciente?.horario_contacto as string) || "";
       return ec === "entrega_premium" && horario;
     }));
-    // Empezaron a agendar (pidieron valoración) pero se quedaron sin dar todos sus datos
-    setLeadsIncompletos(todos.filter(p => (p.perfil_paciente?.estado_conv as string) === "calificacion_estrategica"));
+    // "calificacion_estrategica" también se pone al simplemente ver el video de un tratamiento, no solo al pedir agendar.
+    // Por eso exigimos que ya haya dado su nombre: eso solo se pide después de pulsar "Agendar valoración".
+    setLeadsIncompletos(todos.filter(p => (p.perfil_paciente?.estado_conv as string) === "calificacion_estrategica" && !!p.perfil_paciente?.nombre));
   }, [mes]);
 
   useEffect(() => { load(); }, [load]);

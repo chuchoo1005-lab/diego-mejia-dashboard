@@ -83,16 +83,13 @@ export default function CitasPage() {
     return (MAP_A_ETAPA[r] as PipelineTab) ?? "llamar";
   };
 
-  // Orden dentro de "Para llamar": listos para agendar primero, luego los que empezaron a agendar y no terminaron, luego el resto por score
-  const prioridadLlamar = (p: Paciente) => {
-    const e = ec(p);
-    if (e === "entrega_premium") return 0;
-    if (e === "calificacion_estrategica") return 1;
-    return 2;
-  };
-  const paraLlamar = leads
-    .filter(p => etapa(p) === "llamar" && (ec(p) === "entrega_premium" || ec(p) === "calificacion_estrategica" || sc(p) >= 60) && match(p))
-    .sort((a, b) => prioridadLlamar(a) - prioridadLlamar(b) || sc(b) - sc(a));
+  // "calificacion_estrategica" se pone tanto al pedir agendar como al simplemente ver el video de un tratamiento.
+  // Solo cuenta como "agendamiento sin terminar" si ya dio su nombre (eso solo se pide después de pulsar "Agendar valoración").
+  const agendamientoIncompleto = (p: Paciente) => ec(p) === "calificacion_estrategica" && !!p.perfil_paciente?.nombre;
+
+  const paraLlamar = leads.filter(p => etapa(p) === "llamar" && (ec(p) === "entrega_premium" || agendamientoIncompleto(p) || sc(p) >= 60) && match(p));
+  const paraLlamarListos      = paraLlamar.filter(p => ec(p) === "entrega_premium" || (!agendamientoIncompleto(p) && sc(p) >= 60)).sort((a, b) => sc(b) - sc(a));
+  const paraLlamarIncompletos = paraLlamar.filter(p => agendamientoIncompleto(p)).sort((a, b) => sc(b) - sc(a));
   const enProceso     = leads.filter(p => etapa(p) === "proceso"       && match(p));
   const cerrados      = leads.filter(p => etapa(p) === "cerrados"      && match(p));
   const noInteresado  = leads.filter(p => etapa(p) === "no_interesado" && match(p));
@@ -179,11 +176,24 @@ export default function CitasPage() {
             </p>
           )}
         </div>
+      ) : tab === "llamar" ? (
+        <div className="space-y-5">
+          {paraLlamarListos.length > 0 && (
+            <div className="space-y-3">
+              {paraLlamarIncompletos.length > 0 && <p className="section-label px-1">✓ Listos para llamar</p>}
+              {paraLlamarListos.map(p => <CardOtro key={p.id} p={p} accent h={handlers} />)}
+            </div>
+          )}
+          {paraLlamarIncompletos.length > 0 && (
+            <div className="space-y-3">
+              <p className="section-label px-1" style={{ color: "#FBBF24" }}>🕓 Empezaron a agendar y no terminaron ({paraLlamarIncompletos.length})</p>
+              {paraLlamarIncompletos.map(p => <CardOtro key={p.id} p={p} h={handlers} />)}
+            </div>
+          )}
+        </div>
       ) : (
         <div className="space-y-3">
-          {currentList.map(p =>
-            <CardOtro key={p.id} p={p} accent={tab === "llamar" && (ec(p) === "entrega_premium" || ec(p) === "calificacion_estrategica" || sc(p) >= 60)} h={handlers} />
-          )}
+          {currentList.map(p => <CardOtro key={p.id} p={p} h={handlers} />)}
         </div>
       )}
     </div>
