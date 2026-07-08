@@ -1,16 +1,17 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { Search, RefreshCw, Phone, TrendingUp, XCircle, Trophy } from "lucide-react";
+import { Search, RefreshCw, Phone, TrendingUp, XCircle, Trophy, Clock } from "lucide-react";
 import {
   Paciente, CardOtro, CardHandlers,
   displayName, formatTel, sc, ec, resultadoLlamada, MAP_A_ETAPA,
 } from "@/components/CallCard";
 
-type PipelineTab = "llamar" | "proceso" | "cerrados" | "no_interesado";
+type PipelineTab = "llamar" | "sin_terminar" | "proceso" | "cerrados" | "no_interesado";
 
 const TABS: { key: PipelineTab; label: string; color: string; icon: React.ElementType }[] = [
   { key: "llamar",        label: "Para llamar",   color: "#10B981", icon: Phone },
+  { key: "sin_terminar",  label: "Sin terminar",  color: "#F97316", icon: Clock },
   { key: "proceso",       label: "En proceso",    color: "#FBBF24", icon: TrendingUp },
   { key: "cerrados",      label: "Cerrados",      color: "#22D3EE", icon: Trophy },
   { key: "no_interesado", label: "No interesado", color: "#EF4444", icon: XCircle },
@@ -87,15 +88,16 @@ export default function CitasPage() {
   // Solo cuenta como "agendamiento sin terminar" si ya dio su nombre (eso solo se pide después de pulsar "Agendar valoración").
   const agendamientoIncompleto = (p: Paciente) => ec(p) === "calificacion_estrategica" && !!p.perfil_paciente?.nombre;
 
-  const paraLlamar = leads.filter(p => etapa(p) === "llamar" && (ec(p) === "entrega_premium" || agendamientoIncompleto(p) || sc(p) >= 60) && match(p));
-  const paraLlamarListos      = paraLlamar.filter(p => ec(p) === "entrega_premium" || (!agendamientoIncompleto(p) && sc(p) >= 60)).sort((a, b) => sc(b) - sc(a));
-  const paraLlamarIncompletos = paraLlamar.filter(p => agendamientoIncompleto(p)).sort((a, b) => sc(b) - sc(a));
+  // Pipeline propio, sin mezclar sus números con "Para llamar"
+  const paraLlamar    = leads.filter(p => etapa(p) === "llamar" && !agendamientoIncompleto(p) && (ec(p) === "entrega_premium" || sc(p) >= 60) && match(p)).sort((a, b) => sc(b) - sc(a));
+  const sinTerminar   = leads.filter(p => etapa(p) === "llamar" && agendamientoIncompleto(p) && match(p)).sort((a, b) => sc(b) - sc(a));
   const enProceso     = leads.filter(p => etapa(p) === "proceso"       && match(p));
   const cerrados      = leads.filter(p => etapa(p) === "cerrados"      && match(p));
   const noInteresado  = leads.filter(p => etapa(p) === "no_interesado" && match(p));
 
   const counts: Record<PipelineTab, number> = {
     llamar: paraLlamar.length,
+    sin_terminar: sinTerminar.length,
     proceso: enProceso.length,
     cerrados: cerrados.length,
     no_interesado: noInteresado.length,
@@ -104,7 +106,7 @@ export default function CitasPage() {
   const toggleExp = (id: string) => setExpanded(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
   const handlers: CardHandlers = { expanded, toggleExp, notasTemp, setNotasTemp, saving, setResultado, guardarNotas, toggleCandado };
 
-  const currentList = { llamar: paraLlamar, proceso: enProceso, cerrados, no_interesado: noInteresado }[tab];
+  const currentList = { llamar: paraLlamar, sin_terminar: sinTerminar, proceso: enProceso, cerrados, no_interesado: noInteresado }[tab];
   const currentTab = TABS.find(t => t.key === tab)!;
 
   return (
@@ -123,7 +125,7 @@ export default function CitasPage() {
       </div>
 
       {/* Pipeline tabs */}
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-5 gap-2">
         {TABS.map(({ key, label, color, icon: Icon }) => {
           const active = tab === key;
           const count = counts[key];
@@ -166,34 +168,20 @@ export default function CitasPage() {
           <currentTab.icon className="w-8 h-8 mx-auto mb-3" style={{ color: "var(--text-3)" }} />
           <p className="font-medium" style={{ color: "var(--text-2)" }}>
             {tab === "llamar" ? "Sin leads pendientes de llamar"
+            : tab === "sin_terminar" ? "Nadie se quedó a medias agendando"
             : tab === "proceso" ? "Sin leads en proceso"
             : tab === "cerrados" ? "Sin leads cerrados"
             : "Sin leads no interesados"}
           </p>
-          {tab !== "llamar" && (
+          {tab !== "llamar" && tab !== "sin_terminar" && (
             <p className="text-sm mt-1" style={{ color: "var(--text-3)" }}>
               Mueve leads aquí desde "Para llamar"
             </p>
           )}
         </div>
-      ) : tab === "llamar" ? (
-        <div className="space-y-5">
-          {paraLlamarListos.length > 0 && (
-            <div className="space-y-3">
-              {paraLlamarIncompletos.length > 0 && <p className="section-label px-1">✓ Listos para llamar</p>}
-              {paraLlamarListos.map(p => <CardOtro key={p.id} p={p} accent h={handlers} />)}
-            </div>
-          )}
-          {paraLlamarIncompletos.length > 0 && (
-            <div className="space-y-3">
-              <p className="section-label px-1" style={{ color: "#FBBF24" }}>🕓 Empezaron a agendar y no terminaron ({paraLlamarIncompletos.length})</p>
-              {paraLlamarIncompletos.map(p => <CardOtro key={p.id} p={p} h={handlers} />)}
-            </div>
-          )}
-        </div>
       ) : (
         <div className="space-y-3">
-          {currentList.map(p => <CardOtro key={p.id} p={p} h={handlers} />)}
+          {currentList.map(p => <CardOtro key={p.id} p={p} accent={tab === "llamar"} h={handlers} />)}
         </div>
       )}
     </div>

@@ -45,6 +45,9 @@ function ec(p: Paciente)  { return (p.perfil_paciente?.estado_conv as string) ||
 function srv(p: Paciente) { return (p.perfil_paciente?.servicio_interes as string) || null; }
 function niv(p: Paciente) { return (p.perfil_paciente?.nivel_interes as string) || "bajo"; }
 function ua(p: Paciente)  { const v = p.perfil_paciente?.ultima_actividad_at as string; return v ? new Date(v) : new Date(p.created_at); }
+// "calificacion_estrategica" también se pone al simplemente ver el video de un tratamiento, no solo al pedir agendar.
+// Solo cuenta como "sin terminar de agendar" si ya dio su nombre (eso solo se pide después de pulsar "Agendar valoración").
+function agendamientoIncompleto(p: Paciente) { return ec(p) === "calificacion_estrategica" && !!p.perfil_paciente?.nombre; }
 function resumen(p: Paciente) { return (p.perfil_paciente?.resumen_lead as string) || ""; }
 function razon(p: Paciente)   { return (p.perfil_paciente?.razon_score as string) || ""; }
 // Etapa del pipeline de Leads (mismo criterio que /citas): si ya lo movieron a Proceso/Cerrado/No interesado, deja de ser "para llamar"
@@ -151,7 +154,7 @@ export default function Home() {
   const [pacs, setPacs] = useState<Paciente[]>([]);
   const [convs, setConvs] = useState<Conv[]>([]);
   const [citas, setCitas] = useState<CitaAgenda[]>([]);
-  const [kpis, setKpis] = useState({ total: 0, hoy: 0, convsHoy: 0, listos: 0, calientes: 0, seguimientos: 0 });
+  const [kpis, setKpis] = useState({ total: 0, hoy: 0, convsHoy: 0, listos: 0, sinTerminar: 0, calientes: 0, seguimientos: 0 });
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -175,7 +178,7 @@ export default function Home() {
       const cv = (convsD || []) as Conv[];
       // Contar chats únicos (pacientes distintos), no mensajes individuales
       const chatsUnicos = new Set((convsHoyData || []).map((c: {paciente_id: string}) => c.paciente_id)).size;
-      setKpis({ total:total??0, hoy:hoy??0, convsHoy:chatsUnicos, listos:d.filter(p=>(ec(p)==="entrega_premium"||ec(p)==="calificacion_estrategica") && etapaLead(p)==="llamar").length, calientes:d.filter(p=>sc(p)>=60 && etapaLead(p)==="llamar").length, seguimientos:segActivos??0 });
+      setKpis({ total:total??0, hoy:hoy??0, convsHoy:chatsUnicos, listos:d.filter(p=>ec(p)==="entrega_premium" && etapaLead(p)==="llamar").length, sinTerminar:d.filter(p=>agendamientoIncompleto(p) && etapaLead(p)==="llamar").length, calientes:d.filter(p=>sc(p)>=60 && etapaLead(p)==="llamar").length, seguimientos:segActivos??0 });
       setPacs(d); setCitas((citasD || []) as CitaAgenda[]);
       // Deduplicar: un mensaje por paciente (el más reciente entrante)
       const cvAll = (convsD || []) as Conv[];
@@ -213,9 +216,9 @@ export default function Home() {
 
   const leadsTop = pacs.filter(p => sc(p) >= 40).sort((a,b) => sc(b)-sc(a)).slice(0,6);
   // Orden: listos para agendar primero, luego los que empezaron a agendar y no terminaron, luego el resto por score
-  const prioridadLlamar = (p: Paciente) => ec(p) === "entrega_premium" ? 0 : ec(p) === "calificacion_estrategica" ? 1 : 2;
+  const prioridadLlamar = (p: Paciente) => ec(p) === "entrega_premium" ? 0 : agendamientoIncompleto(p) ? 1 : 2;
   const alertasUrgentes = pacs
-    .filter(p => { const h=(Date.now()-ua(p).getTime())/3600000; return etapaLead(p)==="llamar" && (ec(p)==="entrega_premium" || ec(p)==="calificacion_estrategica" || (h>6 && sc(p)>=60)); })
+    .filter(p => { const h=(Date.now()-ua(p).getTime())/3600000; return etapaLead(p)==="llamar" && (ec(p)==="entrega_premium" || agendamientoIncompleto(p) || (h>6 && sc(p)>=60)); })
     .sort((a,b) => prioridadLlamar(a)-prioridadLlamar(b) || sc(b)-sc(a))
     .slice(0,3);
   const insights = buildInsights(pacs);
@@ -244,7 +247,7 @@ export default function Home() {
           {alertasUrgentes.slice(0, 3).map(p => {
             const telefono = tel(p); const nombre = nom(p);
             const isListo = ec(p) === "entrega_premium";
-            const isIncompleto = ec(p) === "calificacion_estrategica";
+            const isIncompleto = agendamientoIncompleto(p);
             const colorEstado = isListo ? "#10B981" : isIncompleto ? "#FBBF24" : "#EF4444";
             const servicio = srv(p);
             const horario = p.perfil_paciente?.horario_contacto as string;
@@ -312,12 +315,13 @@ export default function Home() {
               {format(new Date(), "EEEE d 'de' MMMM, yyyy", { locale:es })} · {format(lastUpdate, "HH:mm:ss")}
             </p>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             {[
-              { label:"Mensajes hoy",  value:kpis.convsHoy,       icon:MessageSquare, color:"var(--cyan)",  href:"/conversaciones" },
-              { label:"Leads 🔥",      value:kpis.calientes,       icon:Flame,         color:"#F97316",      href:"/citas" },
-              { label:"Para llamar",   value:kpis.listos,          icon:Phone,         color:"var(--green)", href:"/citas" },
-              { label:"Seguimientos",  value:kpis.seguimientos,    icon:Activity,      color:"#A78BFA",      href:"/seguimientos" },
+              { label:"Mensajes hoy",   value:kpis.convsHoy,     icon:MessageSquare, color:"var(--cyan)",  href:"/conversaciones" },
+              { label:"Leads 🔥",       value:kpis.calientes,    icon:Flame,         color:"#F97316",      href:"/citas" },
+              { label:"Para llamar",    value:kpis.listos,       icon:Phone,         color:"var(--green)", href:"/citas" },
+              { label:"Sin terminar",   value:kpis.sinTerminar,  icon:Clock,         color:"#FBBF24",      href:"/citas" },
+              { label:"Seguimientos",   value:kpis.seguimientos, icon:Activity,      color:"#A78BFA",      href:"/seguimientos" },
             ].map(({ label, value, icon:Icon, color, href }) => (
               <a key={label} href={href}
                 className="text-center px-3 py-3 rounded-xl block transition-all active:scale-95"
