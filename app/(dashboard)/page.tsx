@@ -215,11 +215,11 @@ export default function Home() {
   const toggleExpanded = (id: string) => setExpanded(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
 
   const leadsTop = pacs.filter(p => sc(p) >= 40).sort((a,b) => sc(b)-sc(a)).slice(0,6);
-  // Orden: listos para agendar primero, luego los que empezaron a agendar y no terminaron, luego el resto por score
-  const prioridadLlamar = (p: Paciente) => ec(p) === "entrega_premium" ? 0 : agendamientoIncompleto(p) ? 1 : 2;
+  // Franja de alertas: solo los realmente urgentes (listos para agendar o calientes sin respuesta).
+  // "Sin terminar" tiene su propio pipeline completo en Citas — no se duplica aquí como lista parcial.
   const alertasUrgentes = pacs
-    .filter(p => { const h=(Date.now()-ua(p).getTime())/3600000; return etapaLead(p)==="llamar" && (ec(p)==="entrega_premium" || agendamientoIncompleto(p) || (h>6 && sc(p)>=60)); })
-    .sort((a,b) => prioridadLlamar(a)-prioridadLlamar(b) || sc(b)-sc(a))
+    .filter(p => { const h=(Date.now()-ua(p).getTime())/3600000; return etapaLead(p)==="llamar" && (ec(p)==="entrega_premium" || (h>6 && sc(p)>=60)); })
+    .sort((a,b) => (ec(a)==="entrega_premium"?0:1) - (ec(b)==="entrega_premium"?0:1) || sc(b)-sc(a))
     .slice(0,3);
   const insights = buildInsights(pacs);
   const funnel = [
@@ -247,8 +247,7 @@ export default function Home() {
           {alertasUrgentes.slice(0, 3).map(p => {
             const telefono = tel(p); const nombre = nom(p);
             const isListo = ec(p) === "entrega_premium";
-            const isIncompleto = agendamientoIncompleto(p);
-            const colorEstado = isListo ? "#10B981" : isIncompleto ? "#FBBF24" : "#EF4444";
+            const colorEstado = isListo ? "#10B981" : "#EF4444";
             const servicio = srv(p);
             const horario = p.perfil_paciente?.horario_contacto as string;
             const waClean = (telAccionable(p.perfil_paciente?.telefono_contacto as string, p.telefono_encriptado) || "").replace(/\D/g,"");
@@ -271,7 +270,7 @@ export default function Home() {
                     {horarioCorto && <span className="text-[10px] flex items-center gap-0.5" style={{ color:"var(--text-3)" }}><Clock className="w-2.5 h-2.5" />{horarioCorto}</span>}
                   </div>
                   <p className="text-[10px] mt-0.5" style={{ color: colorEstado }}>
-                    {isListo ? "✓ Listo para llamar" : isIncompleto ? "🕓 Sin terminar de agendar" : "⚡ Urgente"} · {tiempoRegistro}
+                    {isListo ? "✓ Listo para llamar" : "⚡ Urgente"} · {tiempoRegistro}
                     {telefono && <span style={{ color:"var(--text-3)" }}> · {telefono}</span>}
                   </p>
                 </div>
