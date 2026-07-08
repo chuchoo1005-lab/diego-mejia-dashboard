@@ -83,7 +83,16 @@ export default function CitasPage() {
     return (MAP_A_ETAPA[r] as PipelineTab) ?? "llamar";
   };
 
-  const paraLlamar    = leads.filter(p => etapa(p) === "llamar" && (ec(p) === "entrega_premium" || sc(p) >= 60) && match(p));
+  // Orden dentro de "Para llamar": listos para agendar primero, luego los que empezaron a agendar y no terminaron, luego el resto por score
+  const prioridadLlamar = (p: Paciente) => {
+    const e = ec(p);
+    if (e === "entrega_premium") return 0;
+    if (e === "calificacion_estrategica") return 1;
+    return 2;
+  };
+  const paraLlamar = leads
+    .filter(p => etapa(p) === "llamar" && (ec(p) === "entrega_premium" || ec(p) === "calificacion_estrategica" || sc(p) >= 60) && match(p))
+    .sort((a, b) => prioridadLlamar(a) - prioridadLlamar(b) || sc(b) - sc(a));
   const enProceso     = leads.filter(p => etapa(p) === "proceso"       && match(p));
   const cerrados      = leads.filter(p => etapa(p) === "cerrados"      && match(p));
   const noInteresado  = leads.filter(p => etapa(p) === "no_interesado" && match(p));
@@ -173,7 +182,7 @@ export default function CitasPage() {
       ) : (
         <div className="space-y-3">
           {currentList.map(p =>
-            <CardOtro key={p.id} p={p} accent={tab === "llamar" && (ec(p) === "entrega_premium" || sc(p) >= 60)} h={handlers} />
+            <CardOtro key={p.id} p={p} accent={tab === "llamar" && (ec(p) === "entrega_premium" || ec(p) === "calificacion_estrategica" || sc(p) >= 60)} h={handlers} />
           )}
         </div>
       )}

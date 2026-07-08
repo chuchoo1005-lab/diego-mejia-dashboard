@@ -175,7 +175,7 @@ export default function Home() {
       const cv = (convsD || []) as Conv[];
       // Contar chats únicos (pacientes distintos), no mensajes individuales
       const chatsUnicos = new Set((convsHoyData || []).map((c: {paciente_id: string}) => c.paciente_id)).size;
-      setKpis({ total:total??0, hoy:hoy??0, convsHoy:chatsUnicos, listos:d.filter(p=>ec(p)==="entrega_premium" && etapaLead(p)==="llamar").length, calientes:d.filter(p=>sc(p)>=60 && etapaLead(p)==="llamar").length, seguimientos:segActivos??0 });
+      setKpis({ total:total??0, hoy:hoy??0, convsHoy:chatsUnicos, listos:d.filter(p=>(ec(p)==="entrega_premium"||ec(p)==="calificacion_estrategica") && etapaLead(p)==="llamar").length, calientes:d.filter(p=>sc(p)>=60 && etapaLead(p)==="llamar").length, seguimientos:segActivos??0 });
       setPacs(d); setCitas((citasD || []) as CitaAgenda[]);
       // Deduplicar: un mensaje por paciente (el más reciente entrante)
       const cvAll = (convsD || []) as Conv[];
@@ -212,7 +212,12 @@ export default function Home() {
   const toggleExpanded = (id: string) => setExpanded(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
 
   const leadsTop = pacs.filter(p => sc(p) >= 40).sort((a,b) => sc(b)-sc(a)).slice(0,6);
-  const alertasUrgentes = pacs.filter(p => { const h=(Date.now()-ua(p).getTime())/3600000; return etapaLead(p)==="llamar" && (ec(p)==="entrega_premium" || (h>6 && sc(p)>=60)); }).slice(0,3);
+  // Orden: listos para agendar primero, luego los que empezaron a agendar y no terminaron, luego el resto por score
+  const prioridadLlamar = (p: Paciente) => ec(p) === "entrega_premium" ? 0 : ec(p) === "calificacion_estrategica" ? 1 : 2;
+  const alertasUrgentes = pacs
+    .filter(p => { const h=(Date.now()-ua(p).getTime())/3600000; return etapaLead(p)==="llamar" && (ec(p)==="entrega_premium" || ec(p)==="calificacion_estrategica" || (h>6 && sc(p)>=60)); })
+    .sort((a,b) => prioridadLlamar(a)-prioridadLlamar(b) || sc(b)-sc(a))
+    .slice(0,3);
   const insights = buildInsights(pacs);
   const funnel = [
     { label: "Conversaciones totales", value: kpis.total, color: "rgba(255,255,255,0.2)" },
@@ -239,6 +244,8 @@ export default function Home() {
           {alertasUrgentes.slice(0, 3).map(p => {
             const telefono = tel(p); const nombre = nom(p);
             const isListo = ec(p) === "entrega_premium";
+            const isIncompleto = ec(p) === "calificacion_estrategica";
+            const colorEstado = isListo ? "#10B981" : isIncompleto ? "#FBBF24" : "#EF4444";
             const servicio = srv(p);
             const horario = p.perfil_paciente?.horario_contacto as string;
             const waClean = (telAccionable(p.perfil_paciente?.telefono_contacto as string, p.telefono_encriptado) || "").replace(/\D/g,"");
@@ -251,7 +258,7 @@ export default function Home() {
               <div key={p.id} className="flex items-center gap-2.5 px-3 py-2 rounded-lg animate-fade-up"
                 style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)" }}>
                 {/* Dot */}
-                <div className="w-2 h-2 rounded-full shrink-0" style={{ background: isListo ? "#10B981" : "#EF4444", boxShadow:`0 0 6px ${isListo ? "#10B981" : "#EF4444"}` }} />
+                <div className="w-2 h-2 rounded-full shrink-0" style={{ background: colorEstado, boxShadow:`0 0 6px ${colorEstado}` }} />
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
@@ -260,8 +267,8 @@ export default function Home() {
                     {svc && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded" style={{ background:svc.bg, color:svc.color }}>{svc.label}</span>}
                     {horarioCorto && <span className="text-[10px] flex items-center gap-0.5" style={{ color:"var(--text-3)" }}><Clock className="w-2.5 h-2.5" />{horarioCorto}</span>}
                   </div>
-                  <p className="text-[10px] mt-0.5" style={{ color: isListo ? "#10B981" : "var(--red)" }}>
-                    {isListo ? "✓ Listo para llamar" : "⚡ Urgente"} · {tiempoRegistro}
+                  <p className="text-[10px] mt-0.5" style={{ color: colorEstado }}>
+                    {isListo ? "✓ Listo para llamar" : isIncompleto ? "🕓 Sin terminar de agendar" : "⚡ Urgente"} · {tiempoRegistro}
                     {telefono && <span style={{ color:"var(--text-3)" }}> · {telefono}</span>}
                   </p>
                 </div>
@@ -271,7 +278,7 @@ export default function Home() {
                   {telefono && (
                     <a href={`tel:${p.telefono_encriptado}`}
                       className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold active:scale-95 transition-all"
-                      style={{ background: isListo ? "#10B981" : "#EF4444", color:"#000", WebkitTapHighlightColor:"transparent" }}>
+                      style={{ background: colorEstado, color:"#000", WebkitTapHighlightColor:"transparent" }}>
                       <Phone className="w-3 h-3" /> Llamar
                     </a>
                   )}

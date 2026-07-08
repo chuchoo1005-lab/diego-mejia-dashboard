@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, addMonths, subMonths, startOfWeek, endOfWeek, formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
-import { CalendarDays, ChevronLeft, ChevronRight, Plus, Clock, X, RefreshCw, Phone, Stethoscope, MessageCircle } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Plus, Clock, X, RefreshCw, Phone, Stethoscope, MessageCircle, AlertTriangle } from "lucide-react";
 import { telAccionable } from "@/components/CallCard";
 
 interface Cita {
@@ -79,6 +79,7 @@ export default function AgendaPage() {
   const [mes, setMes] = useState(new Date());
   const [citas, setCitas] = useState<Cita[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [leadsIncompletos, setLeadsIncompletos] = useState<Lead[]>([]);
   const [diaSeleccionado, setDiaSeleccionado] = useState<Date>(new Date());
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState(BLANK_FORM);
@@ -105,9 +106,24 @@ export default function AgendaPage() {
       const horario = (p.perfil_paciente?.horario_contacto as string) || "";
       return ec === "entrega_premium" && horario;
     }));
+    // Empezaron a agendar (pidieron valoración) pero se quedaron sin dar todos sus datos
+    setLeadsIncompletos(todos.filter(p => (p.perfil_paciente?.estado_conv as string) === "calificacion_estrategica"));
   }, [mes]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Sincronización en tiempo real: nuevos agendamientos sin terminar aparecen al instante
+  useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const channel = supabase
+      .channel("realtime-pacientes-agenda")
+      .on("postgres_changes", { event: "*", schema: "public", table: "pacientes" }, () => {
+        if (timeout) clearTimeout(timeout);
+        timeout = setTimeout(load, 800);
+      })
+      .subscribe();
+    return () => { if (timeout) clearTimeout(timeout); supabase.removeChannel(channel); };
+  }, [load]);
 
   const ini = startOfWeek(startOfMonth(mes), { weekStartsOn: 1 });
   const fin = endOfWeek(endOfMonth(mes), { weekStartsOn: 1 });
@@ -160,6 +176,22 @@ export default function AgendaPage() {
     return urgenciaOrder(ha) - urgenciaOrder(hb);
   });
 
+  // Falta(s) de datos para un lead que empezó a agendar
+  const faltantes = (lead: Lead): string[] => {
+    const p = lead.perfil_paciente || {};
+    const out: string[] = [];
+    if (!p.nombre) out.push("nombre");
+    if (!p.telefono_contacto) out.push("teléfono");
+    if (!p.horario_contacto) out.push("horario");
+    return out;
+  };
+  // Más cerca de terminar (menos datos faltantes) primero, luego más reciente
+  const leadsIncompletosSorted = [...leadsIncompletos].sort((a, b) => {
+    const fa = faltantes(a).length, fb = faltantes(b).length;
+    if (fa !== fb) return fa - fb;
+    return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+  });
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -167,7 +199,7 @@ export default function AgendaPage() {
         <div>
           <p className="section-label mb-2">Gestión de tiempo</p>
           <h1 style={{ fontFamily:"var(--font-cormorant)", fontSize:"2rem", fontWeight:500, color:"var(--text)" }}>Agenda de citas</h1>
-          <p className="text-sm mt-1" style={{ color:"var(--text-3)" }}>{citas.length} citas · {leads.length} leads esperando</p>
+          <p className="text-sm mt-1" style={{ color:"var(--text-3)" }}>{citas.length} citas · {leads.length} leads esperando · {leadsIncompletos.length} sin terminar de agendar</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={load} className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-xl" style={{ background:"rgba(255,255,255,0.05)", border:"1px solid var(--border)", color:"var(--text-2)" }}>
@@ -263,6 +295,77 @@ export default function AgendaPage() {
                       style={{ background:"rgba(6,182,212,0.1)", color:"var(--cyan)", border:"1px solid rgba(6,182,212,0.2)" }}>
                       <Plus className="w-3 h-3" /> Agendar
                     </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Agendamientos sin terminar (pidieron valoración pero no dieron todos los datos) ── */}
+      {leadsIncompletosSorted.length > 0 && (
+        <div className="dm-card p-5" style={{ borderColor: "rgba(251,191,36,0.25)" }}>
+          <div className="flex items-center gap-2 mb-4">
+            <AlertTriangle className="w-4 h-4" style={{ color: "#FBBF24" }} />
+            <p className="section-label">Agendamientos sin terminar</p>
+            <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ background: "rgba(251,191,36,0.1)", color: "#FBBF24", border: "1px solid rgba(251,191,36,0.25)" }}>{leadsIncompletosSorted.length}</span>
+          </div>
+          <p className="text-xs mb-4" style={{ color: "var(--text-3)" }}>Pidieron agendar valoración pero se quedaron a medias dando sus datos. Llámalos para terminar de agendar.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+            {leadsIncompletosSorted.map(lead => {
+              const nombre = (lead.perfil_paciente?.nombre as string) || (lead.perfil_paciente?.nombre_whatsapp as string) || formatTel(lead.telefono_encriptado) || "Sin nombre aún";
+              const telC = formatTel((lead.perfil_paciente?.telefono_contacto as string) || null);
+              const telWA = formatTel(lead.telefono_encriptado);
+              const servicio = (lead.perfil_paciente?.servicio_interes as string) || "";
+              const svcColor = SRV_COLOR[servicio] || { bg: "rgba(16,185,129,0.1)", color: "#34D399" };
+              const tiempoAtras = formatDistanceToNow(new Date(lead.updated_at), { locale: es, addSuffix: true });
+              const telAcc = telAccionable(lead.perfil_paciente?.telefono_contacto as string, lead.telefono_encriptado);
+              const waClean = (telAcc || "").replace(/\D/g, "");
+              const waLink = waClean ? `https://wa.me/${waClean.startsWith("57") ? waClean : "57" + waClean}` : null;
+              const falta = faltantes(lead);
+
+              return (
+                <div key={lead.id} className="p-4 rounded-xl relative" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(251,191,36,0.2)" }}>
+                  {/* Falta badge */}
+                  <div className="flex items-center justify-between mb-2.5">
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full" style={{ background: "rgba(251,191,36,0.12)", color: "#FBBF24", border: "1px solid rgba(251,191,36,0.3)" }}>
+                      Falta: {falta.join(", ") || "horario"}
+                    </span>
+                    <span className="text-[10px]" style={{ color: "var(--text-3)" }}>{tiempoAtras}</span>
+                  </div>
+
+                  {/* Nombre */}
+                  <p className="font-bold text-sm mb-1" style={{ color: "var(--text)" }}>{nombre}</p>
+                  <p className="text-[10px] mb-2.5" style={{ color: "var(--text-3)" }}>{lead.alias}</p>
+
+                  {/* Servicio + teléfonos */}
+                  <div className="space-y-1 mb-3">
+                    {servicio && (
+                      <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg font-medium" style={{ background: svcColor.bg, color: svcColor.color }}>
+                        <Stethoscope className="w-3 h-3" /> {SRV[servicio] ?? servicio}
+                      </span>
+                    )}
+                    {telC && <p className="text-xs font-semibold" style={{ color: "#10B981" }}>📞 {telC}</p>}
+                    {telWA && telWA !== telC && <p className="text-xs" style={{ color: "var(--text-3)" }}>WA: {telWA}</p>}
+                  </div>
+
+                  {/* Acciones */}
+                  <div className="flex gap-2">
+                    {telAcc && (
+                      <a href={`tel:${telAcc}`}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold flex-1 justify-center"
+                        style={{ background: "rgba(16,185,129,0.12)", color: "#10B981", border: "1px solid rgba(16,185,129,0.25)" }}>
+                        <Phone className="w-3 h-3" /> Llamar
+                      </a>
+                    )}
+                    {waLink && (
+                      <a href={waLink} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center justify-center w-9 h-9 rounded-lg text-sm shrink-0 active:scale-95 transition-all"
+                        style={{ background: "rgba(37,211,102,0.12)", color: "#25D366", border: "1px solid rgba(37,211,102,0.25)", WebkitTapHighlightColor: "transparent" }}>
+                        💬
+                      </a>
+                    )}
                   </div>
                 </div>
               );
