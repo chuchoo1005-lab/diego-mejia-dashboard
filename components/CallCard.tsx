@@ -231,7 +231,8 @@ export function CardListo({ p, h }: { p: Paciente; h: CardHandlers }) {
 
 /* ── CardOtro ── */
 export function CardOtro({ p, accent, sinTerminarAgendar, h }: { p: Paciente; accent?: boolean; sinTerminarAgendar?: boolean; h: CardHandlers }) {
-  const score = sc(p);
+  // En "Sin terminar" el score real no refleja bien el interés (muchos aún no dieron datos) — se muestra fijo en 50 (medio)
+  const score = sinTerminarAgendar ? 50 : sc(p);
   const nombre = displayName(p);
   const tieneNombrePropio = !!p.perfil_paciente?.nombre;
   const nombreEsWhatsapp = !tieneNombrePropio && !!p.perfil_paciente?.nombre_whatsapp;
@@ -264,12 +265,12 @@ export function CardOtro({ p, accent, sinTerminarAgendar, h }: { p: Paciente; ac
             <span className="font-bold text-[15px]" style={{ color: "var(--text)" }}>{nombre}</span>
             {nombreEsWhatsapp && <span className="text-[9px] italic" style={{ color: "var(--text-3)" }}>(WhatsApp, no confirmado)</span>}
             {resultado && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${etapa.color}20`, color: etapa.color, border: `1px solid ${etapa.color}40` }}>{etapa.icon} {etapa.label}</span>}
-            {sinTerminarAgendar && (
-              tieneNombrePropio
-                ? <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(251,191,36,0.15)", color: "#FBBF24", border: "1px solid rgba(251,191,36,0.35)" }}>🕓 Dio su nombre, falta completar</span>
-                : <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(249,115,22,0.15)", color: "#FB923C", border: "1px solid rgba(249,115,22,0.35)" }}>🕓 Pidió agendar, no respondió más</span>
-            )}
           </div>
+          {sinTerminarAgendar && (
+            <p className="text-[10px] font-bold mt-1 mb-0.5" style={{ color: tieneNombrePropio ? "#FBBF24" : "#FB923C" }}>
+              🕓 {tieneNombrePropio ? "Dio su nombre, falta completar" : "Pidió agendar, no respondió más"}
+            </p>
+          )}
           <p className="text-[10px]" style={{ color: "var(--text-3)" }}>{p.alias} · {tiempoAtras}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
