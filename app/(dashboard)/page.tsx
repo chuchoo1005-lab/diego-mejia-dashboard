@@ -221,7 +221,7 @@ export default function Home() {
   // "Sin terminar" tiene su propio pipeline completo en Citas — no se duplica aquí como lista parcial.
   const alertasUrgentes = pacs
     .filter(p => { const h=(Date.now()-ua(p).getTime())/3600000; return etapaLead(p)==="llamar" && (ec(p)==="entrega_premium" || (h>6 && sc(p)>=60)); })
-    .sort((a,b) => (ec(a)==="entrega_premium"?0:1) - (ec(b)==="entrega_premium"?0:1) || sc(b)-sc(a))
+    .sort((a,b) => (ec(a)==="entrega_premium"?0:1) - (ec(b)==="entrega_premium"?0:1) || ua(b).getTime()-ua(a).getTime())
     .slice(0,3);
   const insights = buildInsights(pacs);
   const funnel = [

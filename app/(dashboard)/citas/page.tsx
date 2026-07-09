@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { Search, RefreshCw, Phone, TrendingUp, XCircle, Trophy, Clock } from "lucide-react";
 import {
   Paciente, CardOtro, CardHandlers,
-  displayName, formatTel, sc, ec, resultadoLlamada, MAP_A_ETAPA,
+  displayName, formatTel, sc, ec, ua, resultadoLlamada, MAP_A_ETAPA,
 } from "@/components/CallCard";
 
 type PipelineTab = "llamar" | "sin_terminar" | "proceso" | "cerrados" | "no_interesado";
@@ -96,9 +96,12 @@ export default function CitasPage() {
   // Cubre tanto al que respondió a medias (dio nombre pero no teléfono/horario) como al que pidió agendar y no volvió a escribir.
   const agendamientoIncompleto = (p: Paciente) => agendarIniciado.has(p.id) && ec(p) !== "entrega_premium";
 
-  // Pipeline propio, sin mezclar sus números con "Para llamar"
-  const paraLlamar    = leads.filter(p => etapa(p) === "llamar" && !agendamientoIncompleto(p) && (ec(p) === "entrega_premium" || sc(p) >= 60) && match(p)).sort((a, b) => sc(b) - sc(a));
-  const sinTerminar   = leads.filter(p => etapa(p) === "llamar" && agendamientoIncompleto(p) && match(p)).sort((a, b) => sc(b) - sc(a));
+  // Pipeline propio, sin mezclar sus números con "Para llamar". Ordenado por actividad real más reciente
+  // (ultima_actividad_at, la marca el bot solo con mensajes reales) para que lo de anoche quede arriba
+  // y no se mezcle con leads de días atrás.
+  const porRecencia = (a: Paciente, b: Paciente) => ua(b).getTime() - ua(a).getTime();
+  const paraLlamar    = leads.filter(p => etapa(p) === "llamar" && !agendamientoIncompleto(p) && (ec(p) === "entrega_premium" || sc(p) >= 60) && match(p)).sort(porRecencia);
+  const sinTerminar   = leads.filter(p => etapa(p) === "llamar" && agendamientoIncompleto(p) && match(p)).sort(porRecencia);
   const enProceso     = leads.filter(p => etapa(p) === "proceso"       && match(p));
   const cerrados      = leads.filter(p => etapa(p) === "cerrados"      && match(p));
   const noInteresado  = leads.filter(p => etapa(p) === "no_interesado" && match(p));
