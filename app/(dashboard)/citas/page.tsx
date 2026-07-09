@@ -136,20 +136,20 @@ export default function CitasPage() {
       </div>
 
       {/* Pipeline tabs */}
-      <div className="grid grid-cols-5 gap-2">
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
         {TABS.map(({ key, label, color, icon: Icon }) => {
           const active = tab === key;
           const count = counts[key];
           return (
             <button key={key} onClick={() => setTab(key)}
-              className="flex flex-col items-center gap-1.5 px-2 py-3 rounded-2xl text-center transition-all"
+              className="flex flex-col items-center gap-1 sm:gap-1.5 px-1.5 py-2.5 sm:px-2 sm:py-3 rounded-2xl text-center transition-all"
               style={{
                 background: active ? `${color}18` : "rgba(255,255,255,0.03)",
                 border: `1px solid ${active ? `${color}40` : "var(--border)"}`,
               }}>
               <Icon className="w-4 h-4" style={{ color: active ? color : "var(--text-3)" }} />
-              <span className="text-xl font-black leading-none" style={{ color: active ? color : "var(--text-2)" }}>{count}</span>
-              <span className="text-[10px] font-medium leading-tight" style={{ color: active ? color : "var(--text-3)" }}>{label}</span>
+              <span className="text-lg sm:text-xl font-black leading-none" style={{ color: active ? color : "var(--text-2)" }}>{count}</span>
+              <span className="text-[9px] sm:text-[10px] font-medium leading-tight" style={{ color: active ? color : "var(--text-3)" }}>{label}</span>
             </button>
           );
         })}
