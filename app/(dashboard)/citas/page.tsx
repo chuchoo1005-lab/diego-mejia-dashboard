@@ -19,6 +19,7 @@ const TABS: { key: PipelineTab; label: string; color: string; icon: React.Elemen
 
 export default function CitasPage() {
   const [leads, setLeads] = useState<Paciente[]>([]);
+  const [agendarIniciado, setAgendarIniciado] = useState<Set<string>>(new Set());
   const [busqueda, setBusqueda] = useState("");
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<PipelineTab>("llamar");
@@ -27,11 +28,18 @@ export default function CitasPage() {
   const [notasTemp, setNotasTemp] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
-    const { data } = await supabase
-      .from("pacientes")
-      .select("id,alias,calificado,telefono_encriptado,perfil_paciente,updated_at,modo_humano")
-      .eq("estado", "activo").order("updated_at", { ascending: false }).limit(200);
+    const [{ data }, { data: convData }] = await Promise.all([
+      supabase.from("pacientes")
+        .select("id,alias,calificado,telefono_encriptado,perfil_paciente,updated_at,modo_humano")
+        .eq("estado", "activo").order("updated_at", { ascending: false }).limit(200),
+      // El bot solo envía "...¿cómo te llamas?" justo después de pulsar "Agendar valoración" (o responder "sí" a un seguimiento).
+      // Es la única señal 100% confiable de que alguien de verdad inició el agendamiento, a diferencia de estado_conv
+      // (que también se pone al simplemente ver el video de un tratamiento) o de tener nombre capturado (que puede
+      // haberse dado de forma casual en la conversación, sin pedir agendar nada).
+      supabase.from("conversaciones").select("paciente_id").eq("direccion", "saliente").ilike("mensaje_encriptado", "%cómo te llamas%"),
+    ]);
     setLeads((data || []) as Paciente[]);
+    setAgendarIniciado(new Set((convData || []).map((c: { paciente_id: string }) => c.paciente_id)));
     setLoading(false);
   }, []);
 
@@ -84,9 +92,9 @@ export default function CitasPage() {
     return (MAP_A_ETAPA[r] as PipelineTab) ?? "llamar";
   };
 
-  // "calificacion_estrategica" se pone tanto al pedir agendar como al simplemente ver el video de un tratamiento.
-  // Solo cuenta como "agendamiento sin terminar" si ya dio su nombre (eso solo se pide después de pulsar "Agendar valoración").
-  const agendamientoIncompleto = (p: Paciente) => ec(p) === "calificacion_estrategica" && !!p.perfil_paciente?.nombre;
+  // Pidió agendar (recibió el mensaje "¿cómo te llamas?") pero nunca llegó a entrega_premium (datos completos).
+  // Cubre tanto al que respondió a medias (dio nombre pero no teléfono/horario) como al que pidió agendar y no volvió a escribir.
+  const agendamientoIncompleto = (p: Paciente) => agendarIniciado.has(p.id) && ec(p) !== "entrega_premium";
 
   // Pipeline propio, sin mezclar sus números con "Para llamar"
   const paraLlamar    = leads.filter(p => etapa(p) === "llamar" && !agendamientoIncompleto(p) && (ec(p) === "entrega_premium" || sc(p) >= 60) && match(p)).sort((a, b) => sc(b) - sc(a));
@@ -181,7 +189,7 @@ export default function CitasPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {currentList.map(p => <CardOtro key={p.id} p={p} accent={tab === "llamar"} h={handlers} />)}
+          {currentList.map(p => <CardOtro key={p.id} p={p} accent={tab === "llamar"} sinTerminarAgendar={agendamientoIncompleto(p)} h={handlers} />)}
         </div>
       )}
     </div>

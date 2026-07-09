@@ -45,9 +45,9 @@ function ec(p: Paciente)  { return (p.perfil_paciente?.estado_conv as string) ||
 function srv(p: Paciente) { return (p.perfil_paciente?.servicio_interes as string) || null; }
 function niv(p: Paciente) { return (p.perfil_paciente?.nivel_interes as string) || "bajo"; }
 function ua(p: Paciente)  { const v = p.perfil_paciente?.ultima_actividad_at as string; return v ? new Date(v) : new Date(p.created_at); }
-// "calificacion_estrategica" también se pone al simplemente ver el video de un tratamiento, no solo al pedir agendar.
-// Solo cuenta como "sin terminar de agendar" si ya dio su nombre (eso solo se pide después de pulsar "Agendar valoración").
-function agendamientoIncompleto(p: Paciente) { return ec(p) === "calificacion_estrategica" && !!p.perfil_paciente?.nombre; }
+// Pidió agendar (recibió el mensaje "¿cómo te llamas?", que el bot solo envía justo tras pulsar "Agendar valoración")
+// pero nunca llegó a entrega_premium (datos completos). agendarIds se arma en load() a partir de conversaciones.
+function agendamientoIncompleto(p: Paciente, agendarIds: Set<string>) { return agendarIds.has(p.id) && ec(p) !== "entrega_premium"; }
 function resumen(p: Paciente) { return (p.perfil_paciente?.resumen_lead as string) || ""; }
 function razon(p: Paciente)   { return (p.perfil_paciente?.razon_score as string) || ""; }
 // Etapa del pipeline de Leads (mismo criterio que /citas): si ya lo movieron a Proceso/Cerrado/No interesado, deja de ser "para llamar"
@@ -165,7 +165,7 @@ export default function Home() {
       const today = new Date(); today.setHours(0,0,0,0);
       const t = today.toISOString();
       const semana = new Date(); semana.setDate(semana.getDate() + 7);
-      const [{ count: total }, { count: hoy }, { count: segActivos }, { data: convsHoyData }, { data: pacsD }, { data: convsD }, { data: citasD }] = await Promise.all([
+      const [{ count: total }, { count: hoy }, { count: segActivos }, { data: convsHoyData }, { data: pacsD }, { data: convsD }, { data: citasD }, { data: agendarData }] = await Promise.all([
         supabase.from("pacientes").select("*", { count:"exact", head:true }),
         supabase.from("pacientes").select("*", { count:"exact", head:true }).gte("created_at", t),
         supabase.from("pacientes").select("*", { count:"exact", head:true }).eq("estado","activo").eq("perfil_paciente->>estado_seguimiento","activo"),
@@ -173,12 +173,14 @@ export default function Home() {
         supabase.from("pacientes").select("id,alias,calificado,origen,telefono_encriptado,perfil_paciente,created_at,updated_at").eq("estado","activo").order("updated_at",{ascending:false}).limit(50),
         supabase.from("conversaciones").select("id,paciente_id,direccion,mensaje_encriptado,timestamp,metadata").order("timestamp",{ascending:false}).limit(30),
         supabase.from("agenda_citas").select("id,paciente_nombre,paciente_telefono,fecha_hora,servicio,estado,duracion_min").gte("fecha_hora", t).lte("fecha_hora", semana.toISOString()).neq("estado","cancelada").order("fecha_hora").limit(10),
+        supabase.from("conversaciones").select("paciente_id").eq("direccion","saliente").ilike("mensaje_encriptado","%cómo te llamas%"),
       ]);
       const d = (pacsD || []) as Paciente[];
       const cv = (convsD || []) as Conv[];
+      const agendarIds = new Set((agendarData || []).map((c: { paciente_id: string }) => c.paciente_id));
       // Contar chats únicos (pacientes distintos), no mensajes individuales
       const chatsUnicos = new Set((convsHoyData || []).map((c: {paciente_id: string}) => c.paciente_id)).size;
-      setKpis({ total:total??0, hoy:hoy??0, convsHoy:chatsUnicos, listos:d.filter(p=>ec(p)==="entrega_premium" && etapaLead(p)==="llamar").length, sinTerminar:d.filter(p=>agendamientoIncompleto(p) && etapaLead(p)==="llamar").length, calientes:d.filter(p=>sc(p)>=60 && etapaLead(p)==="llamar").length, seguimientos:segActivos??0 });
+      setKpis({ total:total??0, hoy:hoy??0, convsHoy:chatsUnicos, listos:d.filter(p=>ec(p)==="entrega_premium" && etapaLead(p)==="llamar").length, sinTerminar:d.filter(p=>agendamientoIncompleto(p, agendarIds) && etapaLead(p)==="llamar").length, calientes:d.filter(p=>sc(p)>=60 && etapaLead(p)==="llamar").length, seguimientos:segActivos??0 });
       setPacs(d); setCitas((citasD || []) as CitaAgenda[]);
       // Deduplicar: un mensaje por paciente (el más reciente entrante)
       const cvAll = (convsD || []) as Conv[];
