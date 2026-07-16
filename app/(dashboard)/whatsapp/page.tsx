@@ -75,7 +75,7 @@ export default function WhatsAppPage() {
               <p className="font-bold" style={{ color: "var(--text)" }}>
                 {isConnected ? "WhatsApp conectado" : "WhatsApp desconectado"}
               </p>
-              <p className="text-xs" style={{ color: "var(--text-3)" }}>
+              <p className="text-sm" style={{ color: "var(--text-3)" }}>
                 Instancia: {status?.instance ?? "diego-mejia-demo"} · Estado: {status?.state ?? "—"}
               </p>
             </div>
@@ -84,7 +84,7 @@ export default function WhatsAppPage() {
             <div className={`w-2.5 h-2.5 rounded-full ${isConnected ? "bg-emerald-400 active-dot" : "bg-red-400"}`}
               style={isConnected ? { boxShadow: "0 0 8px rgba(52,211,153,0.7)" } : {}} />
             <button onClick={check} disabled={loading}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all"
               style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-2)", border: "1px solid var(--border)" }}>
               <RefreshCw className={`w-3 h-3 ${loading ? "animate-spin" : ""}`} />
               Verificar
@@ -92,7 +92,7 @@ export default function WhatsAppPage() {
           </div>
         </div>
 
-        <p className="text-xs" style={{ color: "var(--text-3)" }}>
+        <p className="text-sm" style={{ color: "var(--text-3)" }}>
           Última verificación: {lastCheck.toLocaleTimeString("es-CO")}
           <button onClick={() => setAutoRefresh(!autoRefresh)} className="ml-3 underline" style={{ color: autoRefresh ? "var(--cyan)" : "var(--text-3)" }}>
             Auto-refresh: {autoRefresh ? "activo" : "pausado"}
@@ -119,7 +119,7 @@ export default function WhatsAppPage() {
             <div className="text-center py-8">
               <AlertCircle className="w-10 h-10 mx-auto mb-3" style={{ color: "var(--red)" }} />
               <p className="text-sm font-medium" style={{ color: "var(--text-2)" }}>Error al obtener QR</p>
-              <p className="text-xs mt-1" style={{ color: "var(--text-3)" }}>{status.error}</p>
+              <p className="text-sm mt-1" style={{ color: "var(--text-3)" }}>{status.error}</p>
               <button onClick={check} className="mt-4 px-4 py-2 rounded-lg text-sm"
                 style={{ background: "rgba(6,182,212,0.1)", color: "var(--cyan)", border: "1px solid rgba(6,182,212,0.2)" }}>
                 Reintentar
@@ -141,16 +141,16 @@ export default function WhatsAppPage() {
               <p className="text-sm font-medium mb-1" style={{ color: "var(--text)" }}>
                 Escanea con WhatsApp para conectar
               </p>
-              <p className="text-xs text-center" style={{ color: "var(--text-3)" }}>
+              <p className="text-sm text-center" style={{ color: "var(--text-3)" }}>
                 Abre WhatsApp → Dispositivos vinculados → Vincular dispositivo → Escanear QR
               </p>
               {pairingCode && (
                 <div className="mt-4 px-4 py-3 rounded-xl text-center" style={{ background: "rgba(6,182,212,0.06)", border: "1px solid rgba(6,182,212,0.15)" }}>
-                  <p className="text-xs mb-1" style={{ color: "var(--text-3)" }}>Código de vinculación alternativo</p>
+                  <p className="text-sm mb-1" style={{ color: "var(--text-3)" }}>Código de vinculación alternativo</p>
                   <p className="text-2xl font-black tracking-[0.3em]" style={{ color: "var(--cyan)" }}>{pairingCode}</p>
                 </div>
               )}
-              <div className="flex items-center gap-2 mt-4 text-xs" style={{ color: "var(--text-3)" }}>
+              <div className="flex items-center gap-2 mt-4 text-sm" style={{ color: "var(--text-3)" }}>
                 <div className="w-1.5 h-1.5 rounded-full bg-amber-400 active-dot" />
                 El QR expira en 60 segundos — se actualiza automáticamente
               </div>
@@ -159,7 +159,7 @@ export default function WhatsAppPage() {
             <div className="text-center py-8">
               <div className="w-12 h-12 border-2 rounded-full animate-spin mx-auto mb-4" style={{ borderColor: "rgba(6,182,212,0.2)", borderTopColor: "var(--cyan)" }} />
               <p className="text-sm" style={{ color: "var(--text-2)" }}>Generando código QR...</p>
-              <p className="text-xs mt-1" style={{ color: "var(--text-3)" }}>Conectando con Evolution API</p>
+              <p className="text-sm mt-1" style={{ color: "var(--text-3)" }}>Conectando con Evolution API</p>
             </div>
           )}
         </div>
@@ -175,7 +175,7 @@ export default function WhatsAppPage() {
           <p className="text-sm" style={{ color: "var(--text-2)" }}>
             El agente IA está recibiendo y respondiendo mensajes de WhatsApp
           </p>
-          <div className="mt-4 flex items-center justify-center gap-2 text-xs" style={{ color: "var(--text-3)" }}>
+          <div className="mt-4 flex items-center justify-center gap-2 text-sm" style={{ color: "var(--text-3)" }}>
             <div className="glow-dot" style={{ width: 8, height: 8 }} />
             Sistema activo · Los mensajes se procesan automáticamente
           </div>
@@ -194,7 +194,7 @@ export default function WhatsAppPage() {
             "WhatsApp confirmará la conexión automáticamente",
           ].map((paso, i) => (
             <li key={i} className="flex items-start gap-3 text-sm" style={{ color: "var(--text-2)" }}>
-              <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5"
+              <span className="w-5 h-5 rounded-full flex items-center justify-center text-[13px] font-black shrink-0 mt-0.5"
                 style={{ background: "rgba(6,182,212,0.1)", color: "var(--cyan)", border: "1px solid rgba(6,182,212,0.2)" }}>
                 {i + 1}
               </span>
@@ -203,7 +203,7 @@ export default function WhatsAppPage() {
           ))}
         </ol>
         <div className="mt-4 p-3 rounded-lg" style={{ background: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.12)" }}>
-          <p className="text-xs" style={{ color: "var(--amber)" }}>
+          <p className="text-sm" style={{ color: "var(--amber)" }}>
             ⚠️ El teléfono debe tener conexión a internet mientras el agente esté activo.
             Si el QR expira, presiona Verificar para obtener uno nuevo.
           </p>

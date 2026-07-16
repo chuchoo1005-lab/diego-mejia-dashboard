@@ -14,7 +14,7 @@ const COLORS = ["#06B6D4","#10B981","#F59E0B","#EF4444","#A78BFA"];
 const Tip = ({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number; color: string }[]; label?: string }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="p-3 rounded-xl text-xs shadow-lg" style={{ background:"rgba(10,10,18,0.95)", border:"1px solid rgba(255,255,255,0.1)" }}>
+    <div className="p-3 rounded-xl text-sm shadow-lg" style={{ background:"rgba(10,10,18,0.95)", border:"1px solid rgba(255,255,255,0.1)" }}>
       <p className="font-semibold mb-2" style={{ color:"rgba(255,255,255,0.5)" }}>{label}</p>
       {payload.map(p => (
         <div key={p.name} className="flex items-center gap-2">
@@ -107,7 +107,7 @@ export default function MetricasPage() {
               <Icon className="w-3.5 h-3.5" style={{color}}/>
             </div>
             <p className="text-xl font-black" style={{color}}>{value}</p>
-            <p className="text-[11px] mt-0.5" style={{color:"var(--text-3)"}}>{label}</p>
+            <p className="text-[14px] mt-0.5" style={{color:"var(--text-3)"}}>{label}</p>
           </div>
         ))}
       </div>
@@ -129,12 +129,12 @@ export default function MetricasPage() {
                   <div key={label}>
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black w-5" style={{color:"var(--text-3)"}}>0{i+1}</span>
+                        <span className="text-[13px] font-black w-5" style={{color:"var(--text-3)"}}>0{i+1}</span>
                         <span className="text-sm font-medium" style={{color:"var(--text)"}}>{label}</span>
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-sm font-bold" style={{color:"var(--text)"}}>{value}</span>
-                        <span className="text-[11px] w-10 text-right" style={{color:"var(--text-3)"}}>{pct}%</span>
+                        <span className="text-[14px] w-10 text-right" style={{color:"var(--text-3)"}}>{pct}%</span>
                       </div>
                     </div>
                     <div className="h-2 rounded-full" style={{background:"rgba(255,255,255,0.05)"}}>
@@ -195,7 +195,7 @@ export default function MetricasPage() {
                 </div>
                 <div className="flex flex-wrap gap-3 mt-2 justify-center">
                   {servicios.map((s,i)=>(
-                    <div key={s.nombre} className="flex items-center gap-1.5 text-xs" style={{color:"var(--text-2)"}}>
+                    <div key={s.nombre} className="flex items-center gap-1.5 text-sm" style={{color:"var(--text-2)"}}>
                       <div className="w-2.5 h-2.5 rounded-full" style={{background:COLORS[i%COLORS.length]}}/>
                       {SRV[s.nombre]??s.nombre} ({s.pct}%)
                     </div>

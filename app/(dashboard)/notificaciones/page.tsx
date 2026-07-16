@@ -152,7 +152,7 @@ export default function NotificacionesPage() {
         <div>
           <p className="section-label mb-2">Centro de atención</p>
           <h1 style={{ fontFamily: "var(--font-cormorant)", fontSize: "2rem", fontWeight: 500, color: "var(--text)" }}>Actividad</h1>
-          <p className="text-sm mt-1" style={{ color: "var(--text-3)" }}>Alertas · Seguimientos · Conversaciones · Actualización cada 30s</p>
+          <p className="text-sm mt-1 uppercase tracking-wide" style={{ color: "var(--text-3)" }}>Alertas · Seguimientos · Conversaciones · Actualización cada 30s</p>
         </div>
         <div className="flex items-center gap-2">
           {notifPermiso !== "granted" && (
@@ -186,7 +186,7 @@ export default function NotificacionesPage() {
           <div key={label} className="dm-card p-4">
             <div className="flex items-center gap-2 mb-2"><Icon className="w-4 h-4" style={{ color }} /></div>
             <p className="text-2xl font-black" style={{ color }}>{value}</p>
-            <p className="text-xs mt-1" style={{ color: "var(--text-3)" }}>{label}</p>
+            <p className="text-sm mt-1 font-semibold uppercase tracking-wide" style={{ color: "var(--text-3)" }}>{label}</p>
           </div>
         ))}
       </div>
@@ -199,7 +199,7 @@ export default function NotificacionesPage() {
           { key: "actividad",    label: "Conversaciones" },
         ].map(({ key, label }) => (
           <button key={key} onClick={() => setTab(key as typeof tab)}
-            className="px-4 py-2 text-xs font-medium rounded-lg transition-all"
+            className="px-4 py-2 text-sm font-semibold rounded-lg transition-all uppercase tracking-wide"
             style={{ background: tab === key ? "rgba(255,255,255,0.08)" : "transparent", color: tab === key ? "var(--text)" : "var(--text-3)" }}>
             {label}
           </button>
@@ -216,8 +216,8 @@ export default function NotificacionesPage() {
             <section>
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-2 h-2 rounded-full" style={{ background: "#10B981", boxShadow: "0 0 6px #10B981" }} />
-                <h2 className="text-sm font-bold" style={{ color: "#10B981" }}>LISTOS PARA LLAMAR</h2>
-                <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ background: "rgba(16,185,129,0.12)", color: "#10B981" }}>{alertasListos.length}</span>
+                <h2 className="text-base font-bold" style={{ color: "#10B981" }}>LISTOS PARA LLAMAR</h2>
+                <span className="text-sm px-2 py-0.5 rounded-full font-bold" style={{ background: "rgba(16,185,129,0.12)", color: "#10B981" }}>{alertasListos.length}</span>
               </div>
               <div className="space-y-3">
                 {alertasListos.map(p => <CardListo key={p.id} p={p} h={handlers} />)}
@@ -230,8 +230,8 @@ export default function NotificacionesPage() {
             <section>
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-2 h-2 rounded-full" style={{ background: "var(--red)" }} />
-                <h2 className="text-sm font-bold" style={{ color: "var(--red)" }}>LEADS CALIENTES</h2>
-                <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "rgba(239,68,68,0.1)", color: "var(--red)" }}>{alertasCaliente.length}</span>
+                <h2 className="text-base font-bold" style={{ color: "var(--red)" }}>LEADS CALIENTES</h2>
+                <span className="text-sm px-2 py-0.5 rounded-full font-bold" style={{ background: "rgba(239,68,68,0.1)", color: "var(--red)" }}>{alertasCaliente.length}</span>
               </div>
               <div className="space-y-2">
                 {alertasCaliente.map(p => <CardOtro key={p.id} p={p} accent h={handlers} />)}
@@ -244,8 +244,8 @@ export default function NotificacionesPage() {
             <section>
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-2 h-2 rounded-full" style={{ background: "var(--cyan)" }} />
-                <h2 className="text-sm font-bold" style={{ color: "var(--cyan)" }}>REFERIDOS</h2>
-                <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "rgba(6,182,212,0.1)", color: "var(--cyan)" }}>{alertasReferido.length}</span>
+                <h2 className="text-base font-bold" style={{ color: "var(--cyan)" }}>REFERIDOS</h2>
+                <span className="text-sm px-2 py-0.5 rounded-full font-bold" style={{ background: "rgba(6,182,212,0.1)", color: "var(--cyan)" }}>{alertasReferido.length}</span>
               </div>
               <div className="space-y-2">
                 {alertasReferido.map(p => <CardOtro key={p.id} p={p} h={handlers} />)}
@@ -256,7 +256,7 @@ export default function NotificacionesPage() {
           {totalAlertas === 0 && (
             <div className="dm-card p-12 text-center">
               <Bell className="w-8 h-8 mx-auto mb-3" style={{ color: "var(--text-3)" }} />
-              <p className="font-medium" style={{ color: "var(--text-2)" }}>Todo al día — sin alertas</p>
+              <p className="text-base font-medium" style={{ color: "var(--text-2)" }}>Todo al día — sin alertas</p>
             </div>
           )}
         </div>
@@ -266,7 +266,7 @@ export default function NotificacionesPage() {
           {seguimientosPacs.length === 0 ? (
             <div className="dm-card p-12 text-center">
               <Clock className="w-8 h-8 mx-auto mb-3" style={{ color: "var(--text-3)" }} />
-              <p className="font-medium" style={{ color: "var(--text-2)" }}>Sin seguimientos pendientes</p>
+              <p className="text-base font-medium" style={{ color: "var(--text-2)" }}>Sin seguimientos pendientes</p>
               <p className="text-sm mt-1" style={{ color: "var(--text-3)" }}>Los pacientes aparecen aquí cuando llevan más de 2h sin responder</p>
             </div>
           ) : seguimientosPacs.map(p => {
@@ -277,7 +277,7 @@ export default function NotificacionesPage() {
               <div key={p.id} style={{ borderLeft: `3px solid ${colorUrgencia}` }}>
                 <CardOtro p={p} h={handlers} />
                 <div className="px-3 pb-2 -mt-1">
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${colorUrgencia}18`, color: colorUrgencia, border: `1px solid ${colorUrgencia}40` }}>
+                  <span className="text-[13px] font-bold px-2 py-0.5 rounded-full uppercase" style={{ background: `${colorUrgencia}18`, color: colorUrgencia, border: `1px solid ${colorUrgencia}40` }}>
                     {urgencia === "alta" ? "🔴 Urgente" : urgencia === "media" ? "🟡 Media" : "⚪ Normal"} · {hrs}h sin responder
                   </span>
                 </div>
@@ -289,21 +289,21 @@ export default function NotificacionesPage() {
       ) : (
         <div className="dm-card overflow-hidden">
           {convs.length === 0 ? (
-            <div className="p-12 text-center"><MessageSquare className="w-8 h-8 mx-auto mb-3" style={{ color: "var(--text-3)" }} /><p style={{ color: "var(--text-2)" }}>Sin actividad reciente</p></div>
+            <div className="p-12 text-center"><MessageSquare className="w-8 h-8 mx-auto mb-3" style={{ color: "var(--text-3)" }} /><p className="text-base" style={{ color: "var(--text-2)" }}>Sin actividad reciente</p></div>
           ) : convs.map((c, i) => (
             <div key={c.id} className={`flex items-start gap-3 px-5 py-3.5 ${i > 0 ? "border-t" : ""}`} style={{ borderColor: "rgba(255,255,255,0.05)" }}>
               <div className={`w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 ${c.direccion === "entrante" ? "bg-cyan-400" : "bg-gray-600"}`}
                 style={c.direccion === "entrante" ? { boxShadow: "0 0 6px rgba(6,182,212,0.6)" } : {}} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-xs font-semibold" style={{ color: c.direccion === "entrante" ? "var(--cyan)" : "var(--text-3)" }}>
+                  <span className="text-sm font-semibold uppercase tracking-wide" style={{ color: c.direccion === "entrante" ? "var(--cyan)" : "var(--text-3)" }}>
                     {c.direccion === "entrante" ? "Paciente" : "Asistente virtual"}
                   </span>
-                  <span className="text-[10px] ml-auto" style={{ color: "var(--text-3)" }}>
+                  <span className="text-[13px] ml-auto" style={{ color: "var(--text-3)" }}>
                     {formatDistanceToNow(new Date(c.timestamp), { locale: es, addSuffix: true })}
                   </span>
                 </div>
-                <p className="text-sm truncate" style={{ color: "var(--text)" }}>{c.mensaje_encriptado || "—"}</p>
+                <p className="text-[15px] truncate" style={{ color: "var(--text)" }}>{c.mensaje_encriptado || "—"}</p>
               </div>
             </div>
           ))}

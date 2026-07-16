@@ -149,7 +149,7 @@ export default function CitasPage() {
               }}>
               <Icon className="w-4 h-4" style={{ color: active ? color : "var(--text-3)" }} />
               <span className="text-lg sm:text-xl font-black leading-none" style={{ color: active ? color : "var(--text-2)" }}>{count}</span>
-              <span className="text-[9px] sm:text-[10px] font-medium leading-tight" style={{ color: active ? color : "var(--text-3)" }}>{label}</span>
+              <span className="text-[12px] sm:text-[13px] font-medium leading-tight" style={{ color: active ? color : "var(--text-3)" }}>{label}</span>
             </button>
           );
         })}
@@ -167,7 +167,7 @@ export default function CitasPage() {
       <div className="flex items-center gap-2">
         <currentTab.icon className="w-4 h-4" style={{ color: currentTab.color }} />
         <h2 className="text-sm font-bold uppercase tracking-wide" style={{ color: currentTab.color }}>{currentTab.label}</h2>
-        <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ background: `${currentTab.color}15`, color: currentTab.color }}>{currentList.length}</span>
+        <span className="text-sm px-2 py-0.5 rounded-full font-bold" style={{ background: `${currentTab.color}15`, color: currentTab.color }}>{currentList.length}</span>
       </div>
 
       {loading ? (

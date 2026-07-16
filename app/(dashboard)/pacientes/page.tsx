@@ -157,9 +157,9 @@ export default function PacientesPage() {
                     <tr key={p.id} className="table-row-hover" style={{ borderBottom: "1px solid #F3F4F6" }}>
                       <td className="px-5 py-3.5">
                         <p className="font-semibold" style={{ color: "var(--text)" }}>{nom}</p>
-                        {telC && <p className="text-xs mt-0.5 font-medium" style={{ color: "#059669" }}>📞 {telC}</p>}
-                        {tel && tel !== telC && <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>WA: {tel}</p>}
-                        <p className="text-[10px] mt-0.5" style={{ color: "#D1D5DB" }}>{p.alias}</p>
+                        {telC && <p className="text-sm mt-0.5 font-medium" style={{ color: "#059669" }}>📞 {telC}</p>}
+                        {tel && tel !== telC && <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>WA: {tel}</p>}
+                        <p className="text-[13px] mt-0.5" style={{ color: "#D1D5DB" }}>{p.alias}</p>
                       </td>
                       <td className="px-5 py-3.5">
                         <span className="text-sm capitalize" style={{ color: "var(--text-secondary)" }}>{p.origen || "whatsapp"}</span>
@@ -171,9 +171,9 @@ export default function PacientesPage() {
                         </span>
                       </td>
                       <td className="px-5 py-3.5">
-                        {(() => { const b = svcBadge(serv); return serv ? <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold" style={{ background: b.bg, color: b.color }}>{b.label}</span> : <span className="text-sm" style={{ color: "var(--text-muted)" }}>—</span>; })()}
-                        {hor && <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>🕐 {hor}</p>}
-                        {ciu && <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>📍 {ciu}</p>}
+                        {(() => { const b = svcBadge(serv); return serv ? <span className="inline-block px-2.5 py-0.5 rounded-full text-sm font-semibold" style={{ background: b.bg, color: b.color }}>{b.label}</span> : <span className="text-sm" style={{ color: "var(--text-muted)" }}>—</span>; })()}
+                        {hor && <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>🕐 {hor}</p>}
+                        {ciu && <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>📍 {ciu}</p>}
                       </td>
                       <td className="px-5 py-3.5">
                         <span className={nivelCfg.cls}>{nivelCfg.emoji} {nivelCfg.label}</span>
@@ -189,7 +189,7 @@ export default function PacientesPage() {
                           {p.calificado ? "✓ Sí" : "—"}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 text-xs" style={{ color: "var(--text-muted)" }}>
+                      <td className="px-5 py-3.5 text-sm" style={{ color: "var(--text-muted)" }}>
                         {format(new Date(p.created_at), "d MMM yyyy", { locale: es })}
                       </td>
                     </tr>
@@ -216,12 +216,12 @@ export default function PacientesPage() {
                   <div className="flex items-center justify-between mb-2">
                     <div>
                       <p className="font-semibold text-sm" style={{ color: "var(--text)" }}>{nom}</p>
-                      {telC && <p className="text-xs mt-0.5 font-medium" style={{ color: "#059669" }}>📞 {telC}</p>}
-                      {tel && tel !== telC && <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>WA: {tel}</p>}
+                      {telC && <p className="text-sm mt-0.5 font-medium" style={{ color: "#059669" }}>📞 {telC}</p>}
+                      {tel && tel !== telC && <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>WA: {tel}</p>}
                     </div>
                     <span className="text-lg font-bold" style={{ color: score >= 60 ? "#111827" : "#D1D5DB" }}>{score}</span>
                   </div>
-                  <div className="flex flex-wrap gap-2 text-xs" style={{ color: "var(--text-secondary)" }}>
+                  <div className="flex flex-wrap gap-2 text-sm" style={{ color: "var(--text-secondary)" }}>
                     {serv && (() => { const b = svcBadge(serv); return <span className="px-2 py-0.5 rounded-full font-semibold" style={{ background: b.bg, color: b.color }}>{b.label}</span>; })()}
                     {hor && <span>🕐 {hor}</span>}
                     {ciu && <span>📍 {ciu}</span>}

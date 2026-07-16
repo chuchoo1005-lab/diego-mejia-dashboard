@@ -133,7 +133,7 @@ export default function ROIPage() {
                 </div>
                 <p className="text-2xl font-black" style={{ color: m.color }}>{m.value}</p>
                 <p className="text-sm font-medium mt-1" style={{ color: "var(--text)" }}>{m.label}</p>
-                <p className="text-[11px] mt-0.5" style={{ color: "var(--text-3)" }}>{m.sub}</p>
+                <p className="text-[14px] mt-0.5" style={{ color: "var(--text-3)" }}>{m.sub}</p>
               </div>
             ))}
           </div>
@@ -149,7 +149,7 @@ export default function ROIPage() {
               </div>
               <div className="text-right">
                 <p className="text-2xl font-black" style={{ color: "var(--cyan)" }}>{data.conversionRate}%</p>
-                <p className="text-xs" style={{ color: "var(--text-3)" }}>tasa actual</p>
+                <p className="text-sm" style={{ color: "var(--text-3)" }}>tasa actual</p>
               </div>
             </div>
             <div className="space-y-3">
@@ -163,7 +163,7 @@ export default function ROIPage() {
                     <span className="text-sm" style={{ color: "var(--text)" }}>{label}</span>
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-bold" style={{ color: "var(--text)" }}>{value}</span>
-                      <span className="text-xs w-10 text-right" style={{ color: "var(--text-3)" }}>{pct}%</span>
+                      <span className="text-sm w-10 text-right" style={{ color: "var(--text-3)" }}>{pct}%</span>
                     </div>
                   </div>
                   <div className="h-2 rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
@@ -191,11 +191,11 @@ export default function ROIPage() {
                   <div key={s.servicio} className="flex items-center gap-4 p-3 rounded-xl" style={{ background: "rgba(255,255,255,0.025)" }}>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>{PRECIO_LABELS[s.servicio] ?? s.servicio}</p>
-                      <p className="text-xs" style={{ color: "var(--text-3)" }}>{s.cantidad} leads · precio base {COP(PRECIOS[s.servicio] ?? 500000)}</p>
+                      <p className="text-sm" style={{ color: "var(--text-3)" }}>{s.cantidad} leads · precio base {COP(PRECIOS[s.servicio] ?? 500000)}</p>
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-sm font-black" style={{ color: "var(--green)" }}>{COP(s.ingreso)}</p>
-                      <p className="text-[10px]" style={{ color: "var(--text-3)" }}>potencial (30% conv.)</p>
+                      <p className="text-[13px]" style={{ color: "var(--text-3)" }}>potencial (30% conv.)</p>
                     </div>
                   </div>
                 ))}
@@ -219,13 +219,13 @@ export default function ROIPage() {
                 <div key={label} className="p-4 rounded-xl" style={{ background: "rgba(255,255,255,0.03)" }}>
                   <p className="text-lg font-black mb-1" style={{ color: "var(--cyan)" }}>{value}</p>
                   <p className="text-sm font-semibold mb-0.5" style={{ color: "var(--text)" }}>{label}</p>
-                  <p className="text-[11px]" style={{ color: "var(--text-3)" }}>{calc}</p>
+                  <p className="text-[14px]" style={{ color: "var(--text-3)" }}>{calc}</p>
                 </div>
               ))}
             </div>
           </div>
 
-          <p className="text-xs text-center" style={{ color: "var(--text-3)", fontFamily: "var(--font-cormorant)", fontStyle: "italic" }}>
+          <p className="text-sm text-center" style={{ color: "var(--text-3)", fontFamily: "var(--font-cormorant)", fontStyle: "italic" }}>
             Los ingresos son estimaciones basadas en precios promedio y una tasa de conversión del 30%.
             Los valores reales dependen de la evolución de cada caso.
           </p>

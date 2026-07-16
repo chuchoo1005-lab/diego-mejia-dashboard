@@ -81,7 +81,7 @@ export default function Sidebar() {
         {/* Brand */}
         <div className="px-6 pt-7 pb-5">
           <Logo />
-          <p className="mt-2 text-[9px] font-semibold tracking-[0.22em] uppercase" style={{ color: "rgba(6,182,212,0.45)" }}>
+          <p className="mt-2 text-[12px] font-semibold tracking-[0.14em] uppercase" style={{ color: "rgba(6,182,212,0.75)" }}>
             Creamos Estilos de Vida
           </p>
         </div>
@@ -94,8 +94,8 @@ export default function Sidebar() {
               <div className="glow-dot pulse-ring" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[12px] font-semibold" style={{ color: "var(--cyan)" }}>Sistema activo</p>
-              <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.3)" }}>Dr. Diego Mejía</p>
+              <p className="text-[14px] font-semibold" style={{ color: "var(--cyan)" }}>Sistema activo</p>
+              <p className="text-[13px]" style={{ color: "rgba(255,255,255,0.65)" }}>Dr. Diego Mejía</p>
             </div>
           </div>
         </div>
@@ -109,9 +109,9 @@ export default function Sidebar() {
             const active = pathname === href || (href !== "/" && pathname.startsWith(href));
             return (
               <Link key={href} href={href} onClick={() => setOpen(false)}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-150"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[15px] font-semibold uppercase tracking-wide transition-all duration-150"
                 style={{
-                  color: active ? "var(--cyan)" : "rgba(255,255,255,0.42)",
+                  color: active ? "var(--cyan)" : "rgba(255,255,255,0.75)",
                   background: active ? "rgba(6,182,212,0.08)" : "transparent",
                   borderLeft: `2px solid ${active ? "var(--cyan)" : "transparent"}`,
                 }}>
@@ -121,7 +121,7 @@ export default function Sidebar() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <span className="block truncate">{label}</span>
-                  {active && <span className="text-[10px] block mt-0.5" style={{ color: "rgba(6,182,212,0.5)" }}>{desc}</span>}
+                  {active && <span className="text-[12px] normal-case font-normal block mt-0.5" style={{ color: "rgba(6,182,212,0.7)" }}>{desc}</span>}
                 </div>
               </Link>
             );
@@ -137,15 +137,15 @@ export default function Sidebar() {
               <div className="mb-1 px-3 py-2.5 rounded-xl" style={{ background: "rgba(6,182,212,0.08)", border: "1px solid rgba(6,182,212,0.2)" }}>
                 <div className="flex items-center gap-2 mb-1">
                   <Download className="w-3.5 h-3.5" style={{ color: "var(--cyan)" }} />
-                  <span className="text-[12px] font-semibold" style={{ color: "var(--cyan)" }}>Instalar como app</span>
+                  <span className="text-[13px] font-semibold" style={{ color: "var(--cyan)" }}>Instalar como app</span>
                 </div>
-                <p className="text-[10px] leading-snug" style={{ color: "rgba(255,255,255,0.4)" }}>
+                <p className="text-[13px] leading-snug" style={{ color: "rgba(255,255,255,0.65)" }}>
                   Toca <span style={{ color: "var(--cyan)" }}>⎙ Compartir</span> en Safari y luego <span style={{ color: "var(--cyan)" }}>"Añadir a inicio"</span>
                 </p>
               </div>
             ) : installPrompt ? (
               <button onClick={handleInstall}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold mb-1 transition-all"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[15px] font-semibold mb-1 transition-all"
                 style={{ background: "rgba(6,182,212,0.1)", color: "var(--cyan)", border: "1px solid rgba(6,182,212,0.2)" }}>
                 <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(6,182,212,0.15)" }}>
                   <Download className="w-3.5 h-3.5" />
@@ -156,9 +156,9 @@ export default function Sidebar() {
               <div className="mb-1 px-3 py-2.5 rounded-xl" style={{ background: "rgba(6,182,212,0.05)", border: "1px solid rgba(6,182,212,0.12)" }}>
                 <div className="flex items-center gap-2 mb-1">
                   <Download className="w-3.5 h-3.5" style={{ color: "var(--cyan)" }} />
-                  <span className="text-[12px] font-semibold" style={{ color: "var(--cyan)" }}>Instalar como app</span>
+                  <span className="text-[13px] font-semibold" style={{ color: "var(--cyan)" }}>Instalar como app</span>
                 </div>
-                <p className="text-[10px] leading-snug" style={{ color: "rgba(255,255,255,0.4)" }}>
+                <p className="text-[13px] leading-snug" style={{ color: "rgba(255,255,255,0.65)" }}>
                   En Chrome: menú <span style={{ color: "var(--cyan)" }}>⋮</span> → <span style={{ color: "var(--cyan)" }}>"Añadir a pantalla de inicio"</span>
                 </p>
               </div>
@@ -166,8 +166,8 @@ export default function Sidebar() {
           )}
 
           <button onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all"
-            style={{ color: "rgba(255,255,255,0.28)" }}>
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[15px] font-semibold uppercase tracking-wide transition-all"
+            style={{ color: "rgba(255,255,255,0.7)" }}>
             <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(255,255,255,0.04)" }}>
               <LogOut className="w-3.5 h-3.5" />
             </div>

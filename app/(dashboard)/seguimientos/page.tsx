@@ -197,8 +197,8 @@ export default function SeguimientosPage() {
                       {/* Lead */}
                       <td className="px-4 py-3">
                         <p className="font-semibold text-sm" style={{ color: "var(--text)" }}>{nom}</p>
-                        {tel && <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{tel}</p>}
-                        <p className="text-[10px] mt-0.5 font-bold" style={{ color: sc >= 60 ? "var(--cyan)" : sc >= 30 ? "#FBBF24" : "var(--text-muted)" }}>
+                        {tel && <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>{tel}</p>}
+                        <p className="text-[13px] mt-0.5 font-bold" style={{ color: sc >= 60 ? "var(--cyan)" : sc >= 30 ? "#FBBF24" : "var(--text-muted)" }}>
                           {sc} pts
                         </p>
                       </td>
@@ -208,31 +208,31 @@ export default function SeguimientosPage() {
                           {svc ? (SRV[svc] ?? svc) : <span style={{ color: "var(--text-muted)" }}>—</span>}
                         </p>
                         {ciu && (
-                          <p className="text-xs mt-0.5 flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
+                          <p className="text-sm mt-0.5 flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
                             <MapPin className="w-2.5 h-2.5" />{ciu}
                           </p>
                         )}
                       </td>
                       {/* Nivel */}
                       <td className="px-4 py-3">
-                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: nivCfg.bg, color: nivCfg.color }}>
+                        <span className="text-[14px] font-semibold px-2 py-0.5 rounded-full" style={{ background: nivCfg.bg, color: nivCfg.color }}>
                           {nivCfg.label}
                         </span>
                       </td>
                       {/* Seguimiento */}
                       <td className="px-4 py-3">
                         <span className="font-bold text-sm" style={{ color: "var(--text)" }}>{n}</span>
-                        <span className="text-xs ml-1" style={{ color: "var(--text-muted)" }}>/ {TOTAL}</span>
+                        <span className="text-sm ml-1" style={{ color: "var(--text-muted)" }}>/ {TOTAL}</span>
                       </td>
                       {/* Progreso */}
                       <td className="px-4 py-3">
                         <div className="w-24 h-1.5 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
                           <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: barColor }} />
                         </div>
-                        <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>{pct}%</p>
+                        <p className="text-[13px] mt-1" style={{ color: "var(--text-muted)" }}>{pct}%</p>
                       </td>
                       {/* Último contacto */}
-                      <td className="px-4 py-3 text-xs" style={{ color: "var(--text-muted)" }}>
+                      <td className="px-4 py-3 text-sm" style={{ color: "var(--text-muted)" }}>
                         {ul ? formatDistanceToNow(ul, { addSuffix: true, locale: es }) : "—"}
                       </td>
                       {/* Acciones */}
@@ -240,7 +240,7 @@ export default function SeguimientosPage() {
                         <div className="flex gap-1.5">
                           {telC && (
                             <a href={`tel:${telC.replace(/\s/g,"")}`}
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold"
+                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-sm font-bold"
                               style={{ background:"rgba(16,185,129,0.1)", color:"#10B981", border:"1px solid rgba(16,185,129,0.25)" }}>
                               <Phone className="w-3 h-3" /> Llamar
                             </a>
@@ -280,33 +280,33 @@ export default function SeguimientosPage() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="font-semibold text-sm truncate" style={{ color: "var(--text)" }}>{nom}</p>
-                      {tel && <p className="text-xs mt-0.5 truncate" style={{ color: "var(--text-muted)" }}>{tel}</p>}
+                      {tel && <p className="text-sm mt-0.5 truncate" style={{ color: "var(--text-muted)" }}>{tel}</p>}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-xs font-black px-2 py-0.5 rounded-full"
+                      <span className="text-sm font-black px-2 py-0.5 rounded-full"
                         style={{ background: scr >= 60 ? "rgba(6,182,212,0.12)" : scr >= 30 ? "rgba(251,191,36,0.1)" : "rgba(255,255,255,0.05)", color: scr >= 60 ? "var(--cyan)" : scr >= 30 ? "#FBBF24" : "var(--text-muted)" }}>
                         {scr} pts
                       </span>
                       {isConv ? (
-                        <span className="badge badge-green text-xs">✓ Convirtió</span>
+                        <span className="badge badge-green text-sm">✓ Convirtió</span>
                       ) : isCancelado ? (
-                        <span className="badge badge-gray text-xs" style={{ color: "#EF4444", borderColor: "rgba(239,68,68,0.3)" }}>Canceló</span>
+                        <span className="badge badge-gray text-sm" style={{ color: "#EF4444", borderColor: "rgba(239,68,68,0.3)" }}>Canceló</span>
                       ) : (
-                        <span className="badge badge-gray text-xs" style={{ color: activeTab.color }}>Activo</span>
+                        <span className="badge badge-gray text-sm" style={{ color: activeTab.color }}>Activo</span>
                       )}
                     </div>
                   </div>
 
                   {/* Row tags: servicio + interés + ciudad */}
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs px-2 py-0.5 rounded-lg" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-secondary)", border: "1px solid var(--border)" }}>
+                    <span className="text-sm px-2 py-0.5 rounded-lg" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-secondary)", border: "1px solid var(--border)" }}>
                       {svc ? (SRV[svc] ?? svc) : "Sin servicio"}
                     </span>
-                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: nivCfg.bg, color: nivCfg.color }}>
+                    <span className="text-[14px] font-semibold px-2 py-0.5 rounded-full" style={{ background: nivCfg.bg, color: nivCfg.color }}>
                       {nivCfg.label}
                     </span>
                     {ciu && (
-                      <span className="text-xs flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
+                      <span className="text-sm flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
                         <MapPin className="w-2.5 h-2.5" />{ciu}
                       </span>
                     )}
@@ -334,8 +334,8 @@ export default function SeguimientosPage() {
 
                   {/* Row 2: progreso */}
                   <div className="flex items-center justify-between">
-                    <span className="text-xs" style={{ color: "var(--text-muted)" }}>Seguimiento</span>
-                    <span className="text-xs font-semibold" style={{ color: "var(--text)" }}>
+                    <span className="text-sm" style={{ color: "var(--text-muted)" }}>Seguimiento</span>
+                    <span className="text-sm font-semibold" style={{ color: "var(--text)" }}>
                       Paso {n} <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>/ {TOTAL}</span>
                     </span>
                   </div>
@@ -348,7 +348,7 @@ export default function SeguimientosPage() {
 
                   {/* Row 3: último contacto */}
                   {ul && (
-                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                    <p className="text-sm" style={{ color: "var(--text-muted)" }}>
                       Último contacto: {formatDistanceToNow(ul, { addSuffix: true, locale: es })}
                     </p>
                   )}
@@ -357,7 +357,7 @@ export default function SeguimientosPage() {
                   {isConv && (
                     <div className="flex items-center gap-2 px-3 py-2 rounded-lg"
                       style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}>
-                      <span className="text-xs font-medium" style={{ color: "#10B981" }}>
+                      <span className="text-sm font-medium" style={{ color: "#10B981" }}>
                         🎉 Convirtió después de {n} seguimiento{n !== 1 ? "s" : ""}
                       </span>
                     </div>

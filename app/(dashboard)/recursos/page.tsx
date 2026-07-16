@@ -77,7 +77,7 @@ export default function RecursosPage() {
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={preview.url_publica} alt={preview.nombre} className="w-full rounded-xl object-contain" style={{ maxHeight:"80vh" }} />
                 )}
-                <p className="text-xs mt-2" style={{ color:"rgba(255,255,255,0.4)" }}>{preview.descripcion}</p>
+                <p className="text-sm mt-2" style={{ color:"rgba(255,255,255,0.4)" }}>{preview.descripcion}</p>
               </div>
             </div>
           )}
@@ -102,12 +102,12 @@ export default function RecursosPage() {
                           <Image className="w-5 h-5 text-white" />
                         </div>
                       </div>
-                      <div className="absolute top-2 left-2 w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black"
+                      <div className="absolute top-2 left-2 w-6 h-6 rounded-lg flex items-center justify-center text-sm font-black"
                         style={{ background:"rgba(6,182,212,0.9)", color:"#000" }}>{i + 1}</div>
                     </div>
                     <div className="p-2.5">
-                      <p className="text-xs font-medium truncate" style={{ color:"var(--text)" }}>{f.nombre}</p>
-                      <p className="text-[10px] mt-0.5 truncate" style={{ color:"var(--text-3)" }}>{f.descripcion}</p>
+                      <p className="text-sm font-medium truncate" style={{ color:"var(--text)" }}>{f.nombre}</p>
+                      <p className="text-[13px] mt-0.5 truncate" style={{ color:"var(--text-3)" }}>{f.descripcion}</p>
                     </div>
                   </div>
                 ))}
@@ -135,14 +135,14 @@ export default function RecursosPage() {
                   </div>
                   <div className="p-4">
                     <p className="text-sm font-semibold" style={{ color:"var(--text)" }}>{r.nombre}</p>
-                    <p className="text-xs mt-1 line-clamp-2" style={{ color:"var(--text-2)" }}>{r.descripcion}</p>
+                    <p className="text-sm mt-1 line-clamp-2" style={{ color:"var(--text-2)" }}>{r.descripcion}</p>
                     <div className="flex items-center gap-2 mt-2">
                       {r.duracion_seg > 0 && (
-                        <span className="flex items-center gap-1 text-[10px]" style={{ color:"var(--text-3)" }}>
+                        <span className="flex items-center gap-1 text-[13px]" style={{ color:"var(--text-3)" }}>
                           <Clock className="w-3 h-3" />{formatSeg(r.duracion_seg)}
                         </span>
                       )}
-                      <span className="badge badge-cyan text-[10px]">{r.prioridad}</span>
+                      <span className="badge badge-cyan text-[13px]">{r.prioridad}</span>
                     </div>
                   </div>
                 </div>

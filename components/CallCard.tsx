@@ -108,10 +108,10 @@ function MoverBotones({ resultado, isSaving, onMover }: { resultado: string; isS
           const active = isActive(resultado, r.value);
           return (
             <button key={r.value} onClick={() => onMover(r.value)}
-              className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all"
+              className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold uppercase tracking-wide transition-all"
               style={{
                 background: active ? `${r.color}22` : "rgba(255,255,255,0.04)",
-                color: active ? r.color : "rgba(255,255,255,0.35)",
+                color: active ? r.color : "rgba(255,255,255,0.65)",
                 border: `1.5px solid ${active ? `${r.color}55` : "var(--border)"}`,
                 opacity: isSaving ? 0.6 : 1,
               }}>
@@ -156,15 +156,15 @@ export function CardListo({ p, h }: { p: Paciente; h: CardHandlers }) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-1">
               <span className="font-bold" style={{ color: "var(--text)", fontSize: "15px" }}>{nombre}</span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(16,185,129,0.15)", color: "#10B981", border: "1px solid rgba(16,185,129,0.3)" }}>✓ LISTO PARA LLAMAR</span>
-              {resultado && <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${etapa.color}20`, color: etapa.color, border: `1px solid ${etapa.color}40` }}>{etapa.icon} {etapa.label}</span>}
+              <span className="text-[13px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(16,185,129,0.15)", color: "#10B981", border: "1px solid rgba(16,185,129,0.3)" }}>✓ LISTO PARA LLAMAR</span>
+              {resultado && <span className="text-[13px] font-bold px-2 py-0.5 rounded-full uppercase" style={{ background: `${etapa.color}20`, color: etapa.color, border: `1px solid ${etapa.color}40` }}>{etapa.icon} {etapa.label}</span>}
             </div>
-            <p className="text-[10px]" style={{ color: "var(--text-3)" }}>{p.alias} · {tiempoAtras}</p>
+            <p className="text-[13px]" style={{ color: "var(--text-3)" }}>{p.alias} · {tiempoAtras}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
             <div className="text-center px-2.5 py-1.5 rounded-xl" style={{ background: score >= 60 ? "rgba(16,185,129,0.12)" : score >= 30 ? "rgba(251,191,36,0.1)" : "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
               <p className="text-lg font-black leading-none" style={{ color: score >= 60 ? "#10B981" : score >= 30 ? "#FBBF24" : "var(--text-3)" }}>{score}</p>
-              <p className="text-[9px]" style={{ color: "var(--text-3)" }}>score</p>
+              <p className="text-[12px] uppercase" style={{ color: "var(--text-3)" }}>score</p>
             </div>
             <button onClick={() => h.toggleCandado(p)} title={botActivo ? "Bot activo" : "Bot pausado"}
               className="flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-bold transition-all"
@@ -188,21 +188,21 @@ export function CardListo({ p, h }: { p: Paciente; h: CardHandlers }) {
         </div>
         <div className="mb-3">
           {telC && <p className="text-sm font-bold" style={{ color: "#10B981" }}>📞 {telC}</p>}
-          {telefono && telefono !== telC && <p className="text-xs mt-0.5" style={{ color: "var(--text-3)" }}>WA: {telefono}</p>}
+          {telefono && telefono !== telC && <p className="text-sm mt-0.5" style={{ color: "var(--text-3)" }}>WA: {telefono}</p>}
         </div>
         <div className="flex flex-wrap gap-2 mb-2">
-          {svc && <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg font-semibold" style={{ background: svc.bg, color: svc.color }}><Stethoscope className="w-3 h-3" /> {svc.label}</span>}
-          <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg font-medium" style={{ background: nivelCfg.bg, color: nivelCfg.color }}>{nivelCfg.label}</span>
-          {horario && <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-2)", border: "1px solid var(--border)" }}><Clock className="w-3 h-3" /> {horario}</span>}
-          {ciudad && <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-2)", border: "1px solid var(--border)" }}><MapPin className="w-3 h-3" /> {ciudad}</span>}
+          {svc && <span className="flex items-center gap-1 text-sm px-2.5 py-1 rounded-lg font-semibold" style={{ background: svc.bg, color: svc.color }}><Stethoscope className="w-3 h-3" /> {svc.label}</span>}
+          <span className="flex items-center gap-1 text-sm px-2.5 py-1 rounded-lg font-medium" style={{ background: nivelCfg.bg, color: nivelCfg.color }}>{nivelCfg.label}</span>
+          {horario && <span className="flex items-center gap-1 text-sm px-2.5 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-2)", border: "1px solid var(--border)" }}><Clock className="w-3 h-3" /> {horario}</span>}
+          {ciudad && <span className="flex items-center gap-1 text-sm px-2.5 py-1 rounded-lg uppercase" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-2)", border: "1px solid var(--border)" }}><MapPin className="w-3 h-3" /> {ciudad}</span>}
         </div>
         {resumen && (
           <div className="mb-3 p-2.5 rounded-xl" style={{ background: "rgba(6,182,212,0.04)", border: "1px solid rgba(6,182,212,0.1)" }}>
-            <div className="flex items-center gap-1 mb-1"><Brain className="w-3 h-3" style={{ color: "var(--cyan)" }} /><span className="text-[10px] font-bold" style={{ color: "rgba(6,182,212,0.6)" }}>RESUMEN IA</span></div>
-            <p className="text-xs leading-relaxed" style={{ color: "var(--text-2)" }}>{isExp ? resumen : resumen.length > 120 ? resumen.slice(0, 120) + "…" : resumen}</p>
+            <div className="flex items-center gap-1 mb-1"><Brain className="w-3 h-3" style={{ color: "var(--cyan)" }} /><span className="text-[13px] font-bold" style={{ color: "rgba(6,182,212,0.6)" }}>RESUMEN IA</span></div>
+            <p className="text-sm leading-relaxed" style={{ color: "var(--text-2)" }}>{isExp ? resumen : resumen.length > 120 ? resumen.slice(0, 120) + "…" : resumen}</p>
           </div>
         )}
-        <button onClick={() => h.toggleExp(p.id)} className="flex items-center gap-1 text-[11px]" style={{ color: "var(--text-3)" }}>
+        <button onClick={() => h.toggleExp(p.id)} className="flex items-center gap-1 text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-3)" }}>
           <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isExp ? "rotate-180" : ""}`} />
           {isExp ? "Ocultar" : "Registrar resultado"}
         </button>
@@ -218,7 +218,7 @@ export function CardListo({ p, h }: { p: Paciente; h: CardHandlers }) {
               className="w-full text-sm rounded-xl px-3 py-2 resize-none placeholder:italic placeholder:text-[var(--text-3)]"
               style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", color: "var(--text)", lineHeight: 1.5 }} />
             <button onClick={() => h.guardarNotas(p)} disabled={isSaving}
-              className="mt-2 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all"
+              className="mt-2 px-4 py-1.5 rounded-lg text-sm font-semibold uppercase tracking-wide transition-all"
               style={{ background: isSaving ? "rgba(255,255,255,0.05)" : "rgba(6,182,212,0.1)", color: isSaving ? "var(--text-3)" : "var(--cyan)", border: "1px solid rgba(6,182,212,0.2)" }}>
               {isSaving ? "Guardando..." : "Guardar nota"}
             </button>
@@ -263,20 +263,20 @@ export function CardOtro({ p, accent, sinTerminarAgendar, h }: { p: Paciente; ac
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
             <span className="font-bold text-[15px]" style={{ color: "var(--text)" }}>{nombre}</span>
-            {nombreEsWhatsapp && <span className="text-[9px] italic" style={{ color: "var(--text-3)" }}>(WhatsApp, no confirmado)</span>}
-            {resultado && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${etapa.color}20`, color: etapa.color, border: `1px solid ${etapa.color}40` }}>{etapa.icon} {etapa.label}</span>}
+            {nombreEsWhatsapp && <span className="text-[12px] italic" style={{ color: "var(--text-3)" }}>(WhatsApp, no confirmado)</span>}
+            {resultado && <span className="text-[13px] font-bold px-2 py-0.5 rounded-full uppercase" style={{ background: `${etapa.color}20`, color: etapa.color, border: `1px solid ${etapa.color}40` }}>{etapa.icon} {etapa.label}</span>}
           </div>
           {sinTerminarAgendar && (
-            <p className="text-[10px] font-bold mt-1 mb-0.5" style={{ color: tieneNombrePropio ? "#FBBF24" : "#FB923C" }}>
+            <p className="text-[13px] font-bold mt-1 mb-0.5" style={{ color: tieneNombrePropio ? "#FBBF24" : "#FB923C" }}>
               🕓 {tieneNombrePropio ? "Dio su nombre, falta completar" : "Pidió agendar, no respondió más"}
             </p>
           )}
-          <p className="text-[10px]" style={{ color: "var(--text-3)" }}>{p.alias} · {tiempoAtras}</p>
+          <p className="text-[13px]" style={{ color: "var(--text-3)" }}>{p.alias} · {tiempoAtras}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <div className="text-center px-2 py-1 rounded-xl" style={{ background: score >= 60 ? "rgba(16,185,129,0.12)" : score >= 30 ? "rgba(251,191,36,0.1)" : "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
             <p className="text-base font-black leading-none" style={{ color: score >= 60 ? "#10B981" : score >= 30 ? "#FBBF24" : "var(--text-3)" }}>{score}</p>
-            <p className="text-[9px]" style={{ color: "var(--text-3)" }}>score</p>
+            <p className="text-[12px] uppercase" style={{ color: "var(--text-3)" }}>score</p>
           </div>
           <button onClick={() => h.toggleCandado(p)} title={botActivo ? "Bot activo" : "Bot pausado"}
             className="flex items-center justify-center w-8 h-8 rounded-xl text-sm transition-all shrink-0"
@@ -284,7 +284,7 @@ export function CardOtro({ p, accent, sinTerminarAgendar, h }: { p: Paciente; ac
             {botActivo ? "🤖" : "🔒"}
           </button>
           {callTel && (
-            <a href={`tel:${callTel}`} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold shrink-0"
+            <a href={`tel:${callTel}`} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold shrink-0"
               style={{ background: "#10B981", color: "#000" }}>
               <Phone className="w-3.5 h-3.5" /> Llamar
             </a>
@@ -302,17 +302,17 @@ export function CardOtro({ p, accent, sinTerminarAgendar, h }: { p: Paciente; ac
       {/* ── Fila 2: teléfonos ── */}
       <div className="px-4 mb-2">
         {telC && <p className="text-sm font-bold" style={{ color: "#10B981" }}>📞 {telC}</p>}
-        {telefono && telefono !== telC && <p className="text-xs mt-0.5" style={{ color: "var(--text-3)" }}>WA: {telefono}</p>}
+        {telefono && telefono !== telC && <p className="text-sm mt-0.5" style={{ color: "var(--text-3)" }}>WA: {telefono}</p>}
       </div>
 
       {/* ── Fila 3: tags + expand ── */}
       <div className="px-4 pb-3">
         <div className="flex flex-wrap gap-2 mb-2">
-          {svc && <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg font-semibold" style={{ background: svc.bg, color: svc.color }}><Stethoscope className="w-3 h-3" /> {svc.label}</span>}
-          {horario && <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-2)", border: "1px solid var(--border)" }}><Clock className="w-3 h-3" /> {horario}</span>}
-          {ciudad && <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-2)", border: "1px solid var(--border)" }}><MapPin className="w-3 h-3" /> {ciudad}</span>}
+          {svc && <span className="flex items-center gap-1 text-sm px-2.5 py-1 rounded-lg font-semibold" style={{ background: svc.bg, color: svc.color }}><Stethoscope className="w-3 h-3" /> {svc.label}</span>}
+          {horario && <span className="flex items-center gap-1 text-sm px-2.5 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-2)", border: "1px solid var(--border)" }}><Clock className="w-3 h-3" /> {horario}</span>}
+          {ciudad && <span className="flex items-center gap-1 text-sm px-2.5 py-1 rounded-lg uppercase" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-2)", border: "1px solid var(--border)" }}><MapPin className="w-3 h-3" /> {ciudad}</span>}
         </div>
-        <button onClick={() => h.toggleExp(p.id)} className="flex items-center gap-1 text-[11px]" style={{ color: "var(--text-3)" }}>
+        <button onClick={() => h.toggleExp(p.id)} className="flex items-center gap-1 text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-3)" }}>
           <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isExp ? "rotate-180" : ""}`} />
           {isExp ? "Ocultar" : "Registrar resultado"}
         </button>
@@ -323,7 +323,7 @@ export function CardOtro({ p, accent, sinTerminarAgendar, h }: { p: Paciente; ac
           {resumen && (
             <div className="p-3 rounded-xl" style={{ background: "rgba(6,182,212,0.04)", border: "1px solid rgba(6,182,212,0.12)" }}>
               <div className="flex items-center gap-1.5 mb-1"><Brain className="w-3.5 h-3.5" style={{ color: "var(--cyan)" }} /><span className="section-label" style={{ color: "rgba(6,182,212,0.5)" }}>Resumen IA</span></div>
-              <p className="text-xs leading-relaxed" style={{ color: "var(--text-2)" }}>{resumen}</p>
+              <p className="text-sm leading-relaxed" style={{ color: "var(--text-2)" }}>{resumen}</p>
             </div>
           )}
           <div>
@@ -334,7 +334,7 @@ export function CardOtro({ p, accent, sinTerminarAgendar, h }: { p: Paciente; ac
               className="w-full text-sm rounded-xl px-3 py-2 resize-none"
               style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", color: "var(--text)", lineHeight: 1.5 }} />
             <button onClick={() => h.guardarNotas(p)} disabled={isSaving}
-              className="mt-2 px-4 py-1.5 rounded-lg text-xs font-semibold"
+              className="mt-2 px-4 py-1.5 rounded-lg text-sm font-semibold uppercase tracking-wide"
               style={{ background: "rgba(6,182,212,0.1)", color: "var(--cyan)", border: "1px solid rgba(6,182,212,0.2)" }}>
               {isSaving ? "Guardando..." : "Guardar"}
             </button>

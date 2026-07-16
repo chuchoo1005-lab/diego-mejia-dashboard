@@ -201,7 +201,7 @@ export default function AgendaPage() {
           <div className="flex items-center gap-2 mb-4">
             <MessageCircle className="w-4 h-4" style={{ color:"var(--cyan)" }} />
             <p className="section-label">Solicitudes de contacto vía WhatsApp</p>
-            <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ background:"rgba(6,182,212,0.1)", color:"var(--cyan)", border:"1px solid rgba(6,182,212,0.2)" }}>{leadsSorted.length}</span>
+            <span className="text-sm px-2 py-0.5 rounded-full font-bold" style={{ background:"rgba(6,182,212,0.1)", color:"var(--cyan)", border:"1px solid rgba(6,182,212,0.2)" }}>{leadsSorted.length}</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
             {leadsSorted.map(lead => {
@@ -222,36 +222,36 @@ export default function AgendaPage() {
                 <div key={lead.id} className="p-4 rounded-xl relative" style={{ background:"rgba(255,255,255,0.03)", border:`1px solid ${urgencia.border}` }}>
                   {/* Urgencia badge */}
                   <div className="flex items-center justify-between mb-2.5">
-                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full" style={{ background: urgencia.bg, color: urgencia.color, border:`1px solid ${urgencia.border}` }}>
+                    <span className="text-[13px] font-black px-2 py-0.5 rounded-full" style={{ background: urgencia.bg, color: urgencia.color, border:`1px solid ${urgencia.border}` }}>
                       {urgencia.label}
                     </span>
-                    <span className="text-[10px]" style={{ color:"var(--text-3)" }}>{tiempoAtras}</span>
+                    <span className="text-[13px]" style={{ color:"var(--text-3)" }}>{tiempoAtras}</span>
                   </div>
 
                   {/* Nombre */}
                   <p className="font-bold text-sm mb-1" style={{ color:"var(--text)" }}>{nombre}</p>
-                  <p className="text-[10px] mb-2.5" style={{ color:"var(--text-3)" }}>{lead.alias}</p>
+                  <p className="text-[13px] mb-2.5" style={{ color:"var(--text-3)" }}>{lead.alias}</p>
 
                   {/* Horario destacado */}
                   <div className="flex items-center gap-1.5 mb-2.5 px-2.5 py-1.5 rounded-lg" style={{ background: urgencia.bg, border:`1px solid ${urgencia.border}` }}>
                     <Clock className="w-3.5 h-3.5 shrink-0" style={{ color: urgencia.color }} />
-                    <span className="text-xs font-semibold" style={{ color: urgencia.color }}>{horario}</span>
+                    <span className="text-sm font-semibold" style={{ color: urgencia.color }}>{horario}</span>
                   </div>
 
                   {/* Servicio + teléfonos */}
                   <div className="space-y-1 mb-3">
                     {servicio && (
-                      <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg font-medium" style={{ background: svcColor.bg, color: svcColor.color }}>
+                      <span className="inline-flex items-center gap-1 text-[14px] px-2 py-0.5 rounded-lg font-medium" style={{ background: svcColor.bg, color: svcColor.color }}>
                         <Stethoscope className="w-3 h-3" /> {SRV[servicio] ?? servicio}
                       </span>
                     )}
-                    {telC && <p className="text-xs font-semibold" style={{ color:"#10B981" }}>📞 {telC}</p>}
-                    {telWA && telWA !== telC && <p className="text-xs" style={{ color:"var(--text-3)" }}>WA: {telWA}</p>}
+                    {telC && <p className="text-sm font-semibold" style={{ color:"#10B981" }}>📞 {telC}</p>}
+                    {telWA && telWA !== telC && <p className="text-sm" style={{ color:"var(--text-3)" }}>WA: {telWA}</p>}
                   </div>
 
                   {/* Resumen IA si existe */}
                   {resumen && (
-                    <p className="text-[11px] mb-3 px-2 py-1.5 rounded-lg italic" style={{ color:"var(--text-2)", background:"rgba(6,182,212,0.05)", border:"1px solid rgba(6,182,212,0.1)" }}>
+                    <p className="text-[14px] mb-3 px-2 py-1.5 rounded-lg italic" style={{ color:"var(--text-2)", background:"rgba(6,182,212,0.05)", border:"1px solid rgba(6,182,212,0.1)" }}>
                       "{resumen.length > 80 ? resumen.slice(0,80) + "…" : resumen}"
                     </p>
                   )}
@@ -260,7 +260,7 @@ export default function AgendaPage() {
                   <div className="flex gap-2">
                     {(telC || telWA) && (
                       <a href={`tel:${telAcc}`}
-                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold flex-1 justify-center"
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-sm font-bold flex-1 justify-center"
                         style={{ background:"rgba(16,185,129,0.12)", color:"#10B981", border:"1px solid rgba(16,185,129,0.25)" }}>
                         <Phone className="w-3 h-3" /> Llamar
                       </a>
@@ -273,7 +273,7 @@ export default function AgendaPage() {
                       </a>
                     )}
                     <button onClick={() => crearCitaDesdeLead(lead)}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold flex-1 justify-center"
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-sm font-bold flex-1 justify-center"
                       style={{ background:"rgba(6,182,212,0.1)", color:"var(--cyan)", border:"1px solid rgba(6,182,212,0.2)" }}>
                       <Plus className="w-3 h-3" /> Agendar
                     </button>
@@ -340,7 +340,7 @@ export default function AgendaPage() {
                 {isToday(diaSeleccionado) ? "Hoy · " : ""}{format(diaSeleccionado, "d 'de' MMMM", { locale: es })}
               </h2>
             </div>
-            <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: citasSeleccionadas.length > 0 ? "rgba(6,182,212,0.1)" : "rgba(255,255,255,0.05)", color: citasSeleccionadas.length > 0 ? "var(--cyan)" : "var(--text-3)", border: `1px solid ${citasSeleccionadas.length > 0 ? "rgba(6,182,212,0.3)" : "var(--border)"}` }}>
+            <span className="text-sm font-bold px-2.5 py-1 rounded-full" style={{ background: citasSeleccionadas.length > 0 ? "rgba(6,182,212,0.1)" : "rgba(255,255,255,0.05)", color: citasSeleccionadas.length > 0 ? "var(--cyan)" : "var(--text-3)", border: `1px solid ${citasSeleccionadas.length > 0 ? "rgba(6,182,212,0.3)" : "var(--border)"}` }}>
               {citasSeleccionadas.length} {citasSeleccionadas.length === 1 ? "cita" : "citas"}
             </span>
           </div>
@@ -350,7 +350,7 @@ export default function AgendaPage() {
               <CalendarDays className="w-8 h-8 mx-auto mb-2" style={{ color:"var(--text-3)" }} />
               <p className="text-sm mb-3" style={{ color:"var(--text-3)" }}>Sin citas este día</p>
               <button onClick={() => { setForm({ ...BLANK_FORM, fecha: format(diaSeleccionado, "yyyy-MM-dd") }); setModal(true); }}
-                className="text-xs px-3 py-1.5 rounded-lg" style={{ background:"rgba(6,182,212,0.1)", color:"var(--cyan)", border:"1px solid rgba(6,182,212,0.2)" }}>
+                className="text-sm px-3 py-1.5 rounded-lg" style={{ background:"rgba(6,182,212,0.1)", color:"var(--cyan)", border:"1px solid rgba(6,182,212,0.2)" }}>
                 + Agregar cita
               </button>
             </div>
@@ -369,12 +369,12 @@ export default function AgendaPage() {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold truncate" style={{ color:"var(--text)" }}>{c.paciente_nombre}</p>
                         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                          <span className="flex items-center gap-1 text-xs" style={{ color:"var(--text-3)" }}>
+                          <span className="flex items-center gap-1 text-sm" style={{ color:"var(--text-3)" }}>
                             <Clock className="w-3 h-3" />
                             {format(new Date(c.fecha_hora), "HH:mm")} · {c.duracion_min}min
                           </span>
                           {c.paciente_telefono && (
-                            <a href={`tel:${c.paciente_telefono}`} className="flex items-center gap-1 text-xs font-medium" style={{ color:"#10B981" }}>
+                            <a href={`tel:${c.paciente_telefono}`} className="flex items-center gap-1 text-sm font-medium" style={{ color:"#10B981" }}>
                               <Phone className="w-3 h-3" /> {c.paciente_telefono}
                             </a>
                           )}
@@ -383,19 +383,19 @@ export default function AgendaPage() {
                       <div className="flex gap-1 shrink-0 ml-2">
                         {waLink && (
                           <a href={waLink} target="_blank" rel="noopener noreferrer"
-                            className="flex items-center justify-center w-7 h-7 rounded-lg text-xs active:scale-95 transition-all"
+                            className="flex items-center justify-center w-7 h-7 rounded-lg text-sm active:scale-95 transition-all"
                             style={{ background:"rgba(37,211,102,0.12)", color:"#25D366", border:"1px solid rgba(37,211,102,0.25)", WebkitTapHighlightColor:"transparent" }}>
                             💬
                           </a>
                         )}
-                        <button onClick={() => eliminar(c.id)} className="text-xs px-2 py-1 rounded-lg transition-colors" style={{ background:"rgba(239,68,68,0.08)", color:"var(--red)", border:"1px solid rgba(239,68,68,0.2)" }}>✕</button>
+                        <button onClick={() => eliminar(c.id)} className="text-sm px-2 py-1 rounded-lg transition-colors" style={{ background:"rgba(239,68,68,0.08)", color:"var(--red)", border:"1px solid rgba(239,68,68,0.2)" }}>✕</button>
                       </div>
                     </div>
 
                     {/* Servicio */}
                     {svcLabel && svcColor && (
                       <div className="mb-2">
-                        <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg font-medium" style={{ background: svcColor.bg, color: svcColor.color }}>
+                        <span className="inline-flex items-center gap-1 text-[14px] px-2 py-0.5 rounded-lg font-medium" style={{ background: svcColor.bg, color: svcColor.color }}>
                           <Stethoscope className="w-3 h-3" /> {svcLabel}
                         </span>
                       </div>
@@ -403,21 +403,21 @@ export default function AgendaPage() {
 
                     {/* Notas */}
                     {c.notas && (
-                      <p className="text-[11px] mb-2 italic px-2 py-1 rounded-lg" style={{ color:"var(--text-2)", background:"rgba(255,255,255,0.03)", border:"1px solid var(--border)" }}>
+                      <p className="text-[14px] mb-2 italic px-2 py-1 rounded-lg" style={{ color:"var(--text-2)", background:"rgba(255,255,255,0.03)", border:"1px solid var(--border)" }}>
                         {c.notas}
                       </p>
                     )}
 
                     {/* Estado actual + botones */}
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: ec.bg, color: ec.color, border:`1px solid ${ec.border}` }}>
+                      <span className="text-[13px] font-bold px-2 py-0.5 rounded-full" style={{ background: ec.bg, color: ec.color, border:`1px solid ${ec.border}` }}>
                         {ESTADO_LABEL[c.estado] ?? c.estado}
                       </span>
                       {ESTADOS.filter(e => e !== c.estado).map(e => {
                         const ecB = ESTADO_COLOR[e];
                         return (
                           <button key={e} onClick={() => cambiarEstado(c.id, e)}
-                            className="text-[10px] px-2 py-0.5 rounded-full transition-all"
+                            className="text-[13px] px-2 py-0.5 rounded-full transition-all"
                             style={{ background:"rgba(255,255,255,0.03)", color:"var(--text-3)", border:"1px solid var(--border)" }}>
                             → {ESTADO_LABEL[e]}
                           </button>
@@ -449,38 +449,38 @@ export default function AgendaPage() {
                 <div key={c.id} className="flex items-center gap-4 px-3 py-2.5 rounded-xl hover:bg-white/[0.025] transition-colors cursor-pointer" onClick={() => { setDiaSeleccionado(dt); }}>
                   <div className="text-center shrink-0 w-10">
                     <p className="text-lg font-black" style={{ color: esHoyC ? "#10B981" : "var(--cyan)" }}>{format(dt, "d")}</p>
-                    <p className="text-[9px] uppercase" style={{ color:"var(--text-3)" }}>{format(dt, "MMM", { locale: es })}</p>
+                    <p className="text-[12px] uppercase" style={{ color:"var(--text-3)" }}>{format(dt, "MMM", { locale: es })}</p>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold truncate" style={{ color:"var(--text)" }}>{c.paciente_nombre}</p>
                     <div className="flex items-center gap-2 flex-wrap mt-0.5">
-                      <span className="text-xs" style={{ color:"var(--text-3)" }}>
+                      <span className="text-sm" style={{ color:"var(--text-3)" }}>
                         <Clock className="w-3 h-3 inline mr-0.5" />{format(dt, "HH:mm")} · {c.duracion_min}min
                       </span>
                       {svcLabel && svcColor && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded font-medium" style={{ background: svcColor.bg, color: svcColor.color }}>{svcLabel}</span>
+                        <span className="text-[13px] px-1.5 py-0.5 rounded font-medium" style={{ background: svcColor.bg, color: svcColor.color }}>{svcLabel}</span>
                       )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     {c.paciente_telefono && (
                       <a href={`tel:${c.paciente_telefono}`} onClick={e => e.stopPropagation()}
-                        className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold"
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-bold"
                         style={{ background:"rgba(16,185,129,0.1)", color:"#10B981", border:"1px solid rgba(16,185,129,0.2)" }}>
                         <Phone className="w-3 h-3" />
                       </a>
                     )}
                     {waLinkC && (
                       <a href={waLinkC} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                        className="flex items-center justify-center w-7 h-7 rounded-lg text-xs active:scale-95 transition-all"
+                        className="flex items-center justify-center w-7 h-7 rounded-lg text-sm active:scale-95 transition-all"
                         style={{ background:"rgba(37,211,102,0.12)", color:"#25D366", border:"1px solid rgba(37,211,102,0.25)", WebkitTapHighlightColor:"transparent" }}>
                         💬
                       </a>
                     )}
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: ec.bg, color: ec.color, border:`1px solid ${ec.border}` }}>
+                    <span className="text-[13px] font-bold px-2 py-0.5 rounded-full" style={{ background: ec.bg, color: ec.color, border:`1px solid ${ec.border}` }}>
                       {ESTADO_LABEL[c.estado]}
                     </span>
-                    {esHoyC && <span className="text-[9px] font-black px-1.5 py-0.5 rounded" style={{ background:"rgba(16,185,129,0.15)", color:"#10B981" }}>HOY</span>}
+                    {esHoyC && <span className="text-[12px] font-black px-1.5 py-0.5 rounded" style={{ background:"rgba(16,185,129,0.15)", color:"#10B981" }}>HOY</span>}
                   </div>
                 </div>
               );

@@ -235,7 +235,7 @@ export default function Home() {
     <div className="flex items-center justify-center h-64">
       <div className="flex flex-col items-center gap-4">
         <div className="w-10 h-10 border-2 rounded-full animate-spin" style={{ borderColor:"rgba(6,182,212,0.2)", borderTopColor:"var(--cyan)" }} />
-        <p className="text-xs tracking-widest uppercase" style={{ color:"var(--text-3)" }}>Inicializando sistema IA...</p>
+        <p className="text-sm tracking-widest uppercase" style={{ color:"var(--text-3)" }}>Inicializando sistema IA...</p>
       </div>
     </div>
   );
@@ -268,10 +268,10 @@ export default function Home() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-bold truncate" style={{ color:"var(--text)" }}>{nombre}</span>
-                    {svc && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded" style={{ background:svc.bg, color:svc.color }}>{svc.label}</span>}
-                    {horarioCorto && <span className="text-[10px] flex items-center gap-0.5" style={{ color:"var(--text-3)" }}><Clock className="w-2.5 h-2.5" />{horarioCorto}</span>}
+                    {svc && <span className="text-[13px] font-semibold px-1.5 py-0.5 rounded uppercase" style={{ background:svc.bg, color:svc.color }}>{svc.label}</span>}
+                    {horarioCorto && <span className="text-[13px] flex items-center gap-0.5 uppercase" style={{ color:"var(--text-3)" }}><Clock className="w-2.5 h-2.5" />{horarioCorto}</span>}
                   </div>
-                  <p className="text-[10px] mt-0.5" style={{ color: colorEstado }}>
+                  <p className="text-[13px] font-semibold mt-0.5 uppercase" style={{ color: colorEstado }}>
                     {isListo ? "✓ Listo para llamar" : "⚡ Urgente"} · {tiempoRegistro}
                     {telefono && <span style={{ color:"var(--text-3)" }}> · {telefono}</span>}
                   </p>
@@ -281,7 +281,7 @@ export default function Home() {
                 <div className="flex gap-1.5 shrink-0">
                   {telefono && (
                     <a href={`tel:${p.telefono_encriptado}`}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold active:scale-95 transition-all"
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-bold active:scale-95 transition-all"
                       style={{ background: colorEstado, color:"#000", WebkitTapHighlightColor:"transparent" }}>
                       <Phone className="w-3 h-3" /> Llamar
                     </a>
@@ -307,12 +307,12 @@ export default function Home() {
           <div>
             <div className="flex items-center gap-2 mb-3">
               <div className="glow-dot pulse-ring" />
-              <span className="text-xs font-bold tracking-[0.2em]" style={{ color:"var(--cyan)" }}>ADMISIONES · EN LÍNEA</span>
+              <span className="text-sm font-bold tracking-[0.2em]" style={{ color:"var(--cyan)" }}>ADMISIONES · EN LÍNEA</span>
             </div>
             <h1 style={{ fontFamily:"var(--font-cormorant)", fontSize:"1.85rem", fontWeight:500, color:"var(--text)", lineHeight:1.15 }}>
               Diego Mejía<br /><span className="gradient-text">Dental Group</span>
             </h1>
-            <p className="text-xs mt-2" style={{ color:"var(--text-3)" }}>
+            <p className="text-sm mt-2 uppercase" style={{ color:"var(--text-3)" }}>
               {format(new Date(), "EEEE d 'de' MMMM, yyyy", { locale:es })} · {format(lastUpdate, "HH:mm:ss")}
             </p>
           </div>
@@ -331,7 +331,7 @@ export default function Home() {
                 onMouseLeave={e => { const el = e.currentTarget; el.style.background="rgba(255,255,255,0.03)"; el.style.borderColor="var(--border)"; }}>
                 <Icon className="w-4 h-4 mx-auto mb-1" style={{ color }} />
                 <p className="text-2xl font-black" style={{ color }}>{value}</p>
-                <p className="text-[10px] leading-tight" style={{ color:"var(--text-3)" }}>{label}</p>
+                <p className="text-[13px] leading-tight font-semibold uppercase" style={{ color:"var(--text-3)" }}>{label}</p>
               </a>
             ))}
           </div>
@@ -352,7 +352,7 @@ export default function Home() {
           </a>
           <div className="flex items-center gap-2 shrink-0">
             <span className="badge badge-cyan">{citas.length} citas</span>
-            <a href="/agenda" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-95"
+            <a href="/agenda" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all active:scale-95"
               style={{ background:"rgba(6,182,212,0.1)", color:"var(--cyan)", border:"1px solid rgba(6,182,212,0.2)", WebkitTapHighlightColor:"transparent" }}>
               <Plus className="w-3 h-3" /> Nueva cita
             </a>
@@ -362,7 +362,7 @@ export default function Home() {
           <div className="text-center py-6">
             <CalendarDays className="w-8 h-8 mx-auto mb-2" style={{ color:"var(--text-3)" }} />
             <p className="text-sm" style={{ color:"var(--text-3)" }}>Sin citas programadas esta semana</p>
-            <a href="/agenda" className="inline-block mt-2 text-xs px-3 py-1.5 rounded-lg" style={{ background:"rgba(6,182,212,0.1)", color:"var(--cyan)" }}>
+            <a href="/agenda" className="inline-block mt-2 text-sm px-3 py-1.5 rounded-lg" style={{ background:"rgba(6,182,212,0.1)", color:"var(--cyan)" }}>
               Ir al calendario →
             </a>
           </div>
@@ -379,13 +379,13 @@ export default function Home() {
               return (
                 <div key={c.id} className="p-3 rounded-xl transition-all" style={{ background: esHoy ? "rgba(6,182,212,0.08)" : "rgba(255,255,255,0.03)", border:`1px solid ${esHoy ? "rgba(6,182,212,0.25)" : "var(--border)"}` }}>
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: esHoy ? "var(--cyan)" : esManana ? "var(--amber)" : "var(--text-3)" }}>
+                    <span className="text-[13px] font-bold uppercase tracking-wider" style={{ color: esHoy ? "var(--cyan)" : esManana ? "var(--amber)" : "var(--text-3)" }}>
                       {esHoy ? "HOY" : esManana ? "MAÑANA" : format(fecha, "EEE d MMM", { locale: es })}
                     </span>
                     <div className="flex items-center gap-1.5">
                       {waLink && (
                         <a href={waLink} target="_blank" rel="noopener noreferrer"
-                          className="flex items-center justify-center w-6 h-6 rounded-md text-xs active:scale-95 transition-all"
+                          className="flex items-center justify-center w-6 h-6 rounded-md text-sm active:scale-95 transition-all"
                           style={{ background:"rgba(37,211,102,0.12)", color:"#25D366", border:"1px solid rgba(37,211,102,0.25)", WebkitTapHighlightColor:"transparent" }}>
                           💬
                         </a>
@@ -394,7 +394,7 @@ export default function Home() {
                     </div>
                   </div>
                   <p className="text-sm font-semibold truncate" style={{ color:"var(--text)" }}>{c.paciente_nombre}</p>
-                  <p className="text-[11px] mt-0.5" style={{ color:"var(--text-3)" }}>
+                  <p className="text-[14px] mt-0.5 uppercase" style={{ color:"var(--text-3)" }}>
                     {format(fecha, "HH:mm")} · {c.duracion_min}min
                     {c.servicio ? ` · ${SRV[c.servicio] ?? c.servicio}` : ""}
                   </p>
@@ -423,7 +423,7 @@ export default function Home() {
                   <h2 className="text-sm font-bold" style={{ color:"var(--text)" }}>Leads prioritarios</h2>
                 </div>
               </div>
-              <a href="/citas" className="flex items-center gap-1 text-xs font-medium" style={{ color:"var(--cyan)" }}>Ver todos <ArrowRight className="w-3 h-3" /></a>
+              <a href="/citas" className="flex items-center gap-1 text-sm font-medium" style={{ color:"var(--cyan)" }}>Ver todos <ArrowRight className="w-3 h-3" /></a>
             </div>
 
             {leadsTop.length === 0 ? (
@@ -448,7 +448,7 @@ export default function Home() {
                       style={{ border:"1px solid var(--border)", background:"rgba(255,255,255,0.025)" }}>
                       {/* Card header */}
                       <div className="flex items-center gap-3 p-4">
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-xs font-black"
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-sm font-black"
                           style={{ background:"rgba(6,182,212,0.1)", color:"var(--cyan)", border:"1px solid rgba(6,182,212,0.15)" }}>
                           {nombre.slice(0,2).toUpperCase()}
                         </div>
@@ -456,24 +456,24 @@ export default function Home() {
                           <div className="flex items-center gap-2 flex-wrap mb-1">
                             <span className="font-bold text-sm" style={{ color:"var(--text)" }}>{nombre}</span>
                             <span className={`badge ${badge.cls}`}>{badge.emoji} {badge.label}</span>
-                            {emocion && <span className="text-[11px] font-medium" style={{ color:emocion.color }}>{emocion.emoji} {emocion.label}</span>}
+                            {emocion && <span className="text-[14px] font-medium uppercase" style={{ color:emocion.color }}>{emocion.emoji} {emocion.label}</span>}
                           </div>
                           <div className="flex items-center gap-2 flex-wrap">
-                            {servicio && (() => { const b = svcBadge(servicio); return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ background: b.bg, color: b.color }}>{b.label}</span>; })()}
-                            {ciudad && <span className="text-xs" style={{ color:"var(--text-3)" }}>📍 {ciudad}</span>}
-                            {telefono && <span className="text-xs" style={{ color:"var(--text-3)" }}>{telefono}</span>}
+                            {servicio && (() => { const b = svcBadge(servicio); return <span className="px-2 py-0.5 rounded-full text-[13px] font-bold uppercase" style={{ background: b.bg, color: b.color }}>{b.label}</span>; })()}
+                            {ciudad && <span className="text-sm uppercase" style={{ color:"var(--text-3)" }}>📍 {ciudad}</span>}
+                            {telefono && <span className="text-sm" style={{ color:"var(--text-3)" }}>{telefono}</span>}
                           </div>
                         </div>
                         {/* Score */}
                         <div className="text-right shrink-0 mr-2">
                           <p className="text-xl font-black" style={{ color: score >= 60 ? "var(--cyan)" : score >= 30 ? "var(--amber)" : "var(--text-3)" }}>{score}</p>
                           <div className="score-bar w-16 mt-1"><div className="score-bar-fill" style={{ width:`${score}%` }} /></div>
-                          <p className="text-[9px] mt-0.5" style={{ color:"var(--text-3)" }}>puntuación</p>
+                          <p className="text-[12px] mt-0.5 uppercase" style={{ color:"var(--text-3)" }}>puntuación</p>
                         </div>
                         {/* Actions */}
                         <div className="flex flex-col gap-1.5 shrink-0">
                           {telefono && (
-                            <a href={`tel:${p.telefono_encriptado}`} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all"
+                            <a href={`tel:${p.telefono_encriptado}`} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[14px] font-bold transition-all"
                               style={{ background:"var(--green)", color:"#000" }}>
                               <Phone className="w-3 h-3" /> Llamar
                             </a>
@@ -484,7 +484,7 @@ export default function Home() {
                               💬
                             </a>
                           )}
-                          <button onClick={() => toggleExpanded(p.id)} className="flex items-center justify-center px-2.5 py-1.5 rounded-lg text-[11px] transition-all"
+                          <button onClick={() => toggleExpanded(p.id)} className="flex items-center justify-center px-2.5 py-1.5 rounded-lg text-[14px] transition-all"
                             style={{ background:"rgba(255,255,255,0.05)", color:"var(--text-2)", border:"1px solid var(--border)" }}>
                             {isExp ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                           </button>
@@ -501,7 +501,7 @@ export default function Home() {
                                 <Brain className="w-3.5 h-3.5" style={{ color:"var(--cyan)" }} />
                                 <span className="section-label" style={{ color:"rgba(6,182,212,0.6)" }}>Resumen IA</span>
                               </div>
-                              <p className="text-xs leading-relaxed" style={{ color:"var(--text-2)" }}>{sumario}</p>
+                              <p className="text-sm leading-relaxed" style={{ color:"var(--text-2)" }}>{sumario}</p>
                             </div>
                           )}
 
@@ -511,14 +511,14 @@ export default function Home() {
                               <Zap className="w-3.5 h-3.5" style={{ color:"var(--amber)" }} />
                               <span className="section-label" style={{ color:"rgba(245,158,11,0.6)" }}>Recomendación IA</span>
                             </div>
-                            <p className="text-xs font-medium" style={{ color:"var(--amber)" }}>{rec}</p>
-                            {razonScore && <p className="text-[11px] mt-1" style={{ color:"var(--text-3)" }}>Razón score: {razonScore}</p>}
+                            <p className="text-sm font-medium" style={{ color:"var(--amber)" }}>{rec}</p>
+                            {razonScore && <p className="text-[14px] mt-1" style={{ color:"var(--text-3)" }}>Razón score: {razonScore}</p>}
                           </div>
 
                           {/* Datos capturados */}
                           <div className="p-3 rounded-lg" style={{ background:"rgba(255,255,255,0.03)", border:"1px solid var(--border)" }}>
                             <p className="section-label mb-2">Datos capturados</p>
-                            <div className="space-y-1 text-xs" style={{ color:"var(--text-2)" }}>
+                            <div className="space-y-1 text-sm" style={{ color:"var(--text-2)" }}>
                               {ciudad   && <p>📍 {ciudad}</p>}
                               {horario  && <p>⏰ {horario}</p>}
                               {telefono && <p>📱 {telefono}</p>}
@@ -532,7 +532,7 @@ export default function Home() {
                               <p className="section-label mb-2">Timeline del lead</p>
                               <div className="space-y-1.5">
                                 {timeline.map((ev, i) => (
-                                  <div key={i} className="flex items-center gap-2 text-xs" style={{ color:"var(--text-2)" }}>
+                                  <div key={i} className="flex items-center gap-2 text-sm" style={{ color:"var(--text-2)" }}>
                                     <span>{ev.icon}</span>
                                     <span>{ev.msg}</span>
                                   </div>
@@ -575,15 +575,15 @@ export default function Home() {
                       style={isEnt ? { boxShadow:"0 0 6px rgba(6,182,212,0.6)" } : {}} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-xs font-semibold" style={{ color:isEnt ? "var(--cyan)" : "var(--text-3)" }}>
+                        <span className="text-sm font-semibold uppercase tracking-wide" style={{ color:isEnt ? "var(--cyan)" : "var(--text-3)" }}>
                           {isEnt ? "Paciente" : "Asistente virtual"}
                         </span>
                         {estado && (
-                          <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background:"rgba(255,255,255,0.06)", color:"var(--text-3)" }}>
+                          <span className="text-[12px] px-1.5 py-0.5 rounded-full uppercase" style={{ background:"rgba(255,255,255,0.06)", color:"var(--text-3)" }}>
                             {estado}
                           </span>
                         )}
-                        <span className="text-[10px] ml-auto" style={{ color:"var(--text-3)" }}>
+                        <span className="text-[13px] ml-auto uppercase" style={{ color:"var(--text-3)" }}>
                           {formatDistanceToNow(new Date(c.timestamp), { locale:es, addSuffix:true })}
                         </span>
                       </div>
@@ -608,7 +608,7 @@ export default function Home() {
                   <h2 className="text-sm font-bold flex items-center gap-1" style={{ color:"var(--text)" }}>Embudo de conversión <ArrowRight className="w-3.5 h-3.5" style={{ color:"var(--text-3)" }} /></h2>
                 </div>
               </a>
-              <a href="/metricas" className="text-xs font-medium flex items-center gap-1" style={{ color:"var(--cyan)", WebkitTapHighlightColor:"transparent" }}>Ver métricas <ArrowRight className="w-3 h-3" /></a>
+              <a href="/metricas" className="text-sm font-medium flex items-center gap-1" style={{ color:"var(--cyan)", WebkitTapHighlightColor:"transparent" }}>Ver métricas <ArrowRight className="w-3 h-3" /></a>
             </div>
             <div className="space-y-3">
               {funnel.map(({ label, value, color }, i) => {
@@ -617,12 +617,12 @@ export default function Home() {
                   <div key={label}>
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black" style={{ color:"var(--text-3)" }}>0{i+1}</span>
+                        <span className="text-[13px] font-black" style={{ color:"var(--text-3)" }}>0{i+1}</span>
                         <span className="text-sm font-medium" style={{ color:"var(--text)" }}>{label}</span>
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-sm font-bold" style={{ color:"var(--text)" }}>{value}</span>
-                        <span className="text-xs" style={{ color:"var(--text-3)" }}>{pct}%</span>
+                        <span className="text-sm" style={{ color:"var(--text-3)" }}>{pct}%</span>
                       </div>
                     </div>
                     <div className="h-1.5 rounded-full" style={{ background:"rgba(255,255,255,0.05)" }}>
@@ -653,14 +653,14 @@ export default function Home() {
             </div>
             <div className="space-y-2.5">
               {feedItems.length === 0 ? (
-                <p className="text-xs text-center py-4" style={{ color:"var(--text-3)" }}>Sin actividad reciente</p>
+                <p className="text-sm text-center py-4" style={{ color:"var(--text-3)" }}>Sin actividad reciente</p>
               ) : feedItems.map((f, i) => (
                 <div key={i} className="flex items-start gap-2.5 animate-slide-in" style={{ animationDelay:`${i*30}ms` }}>
                   <div className={`w-2 h-2 rounded-full mt-1 shrink-0`}
                     style={{ background:f.tipo==="entrante"?"var(--green)":"var(--cyan)", boxShadow:`0 0 6px ${f.tipo==="entrante"?"rgba(16,185,129,0.6)":"rgba(6,182,212,0.6)"}` }} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs" style={{ color:"var(--text-2)" }}>{f.msg}</p>
-                    <p className="text-[10px] mt-0.5" style={{ color:"var(--text-3)" }}>
+                    <p className="text-sm" style={{ color:"var(--text-2)" }}>{f.msg}</p>
+                    <p className="text-[13px] mt-0.5 uppercase" style={{ color:"var(--text-3)" }}>
                       {formatDistanceToNow(f.time, { locale:es, addSuffix:true })}
                     </p>
                   </div>
@@ -685,7 +685,7 @@ export default function Home() {
                 <div key={i} className="flex items-start gap-2.5">
                   <span className="text-base shrink-0">{ins.icon}</span>
                   <div>
-                    <p className="text-xs leading-relaxed" style={{ color:"var(--text-2)" }}>{ins.text}</p>
+                    <p className="text-sm leading-relaxed" style={{ color:"var(--text-2)" }}>{ins.text}</p>
                   </div>
                 </div>
               ))}
@@ -711,7 +711,7 @@ export default function Home() {
                 { label:"Nuevos hoy",                value:kpis.hoy },
               ].map(({ label, value }) => (
                 <div key={label} className="flex items-center justify-between">
-                  <span className="text-xs" style={{ color:"var(--text-3)" }}>{label}</span>
+                  <span className="text-sm uppercase" style={{ color:"var(--text-3)" }}>{label}</span>
                   <span className="text-sm font-bold" style={{ color:"var(--text)" }}>{value}</span>
                 </div>
               ))}
@@ -721,7 +721,7 @@ export default function Home() {
       </div>
 
       <div className="text-center py-1">
-        <p className="text-xs" style={{ color:"var(--text-3)", fontFamily:"var(--font-cormorant)", fontStyle:"italic" }}>
+        <p className="text-sm" style={{ color:"var(--text-3)", fontFamily:"var(--font-cormorant)", fontStyle:"italic" }}>
           Diego Mejía Dental Group · Sistema Privado de Admisiones · Diego Mejía Dental Group
         </p>
       </div>

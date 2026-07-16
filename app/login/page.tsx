@@ -41,7 +41,7 @@ export default function LoginPage() {
               MEJÍA
             </span>
           </div>
-          <p className="text-xs font-semibold tracking-[0.3em] uppercase" style={{ color: "rgba(255,255,255,0.4)" }}>
+          <p className="text-sm font-semibold tracking-[0.3em] uppercase" style={{ color: "rgba(255,255,255,0.4)" }}>
             Panel Administrativo
           </p>
         </div>
@@ -76,7 +76,7 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div className="text-xs py-2.5 px-3 rounded-sm" style={{ background: "rgba(255,60,60,0.1)", border: "1px solid rgba(255,60,60,0.2)", color: "#FF6666" }}>
+              <div className="text-sm py-2.5 px-3 rounded-sm" style={{ background: "rgba(255,60,60,0.1)", border: "1px solid rgba(255,60,60,0.2)", color: "#FF6666" }}>
                 {error}
               </div>
             )}
@@ -89,7 +89,7 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="text-center mt-8 text-[10px] font-medium tracking-wider" style={{ color: "rgba(255,255,255,0.2)" }}>
+        <p className="text-center mt-8 text-[13px] font-medium tracking-wider" style={{ color: "rgba(255,255,255,0.2)" }}>
           DIEGO MEJÍA DENTAL GROUP © 2026
         </p>
       </div>

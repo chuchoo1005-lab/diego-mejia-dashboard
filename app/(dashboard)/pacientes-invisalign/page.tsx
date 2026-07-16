@@ -74,12 +74,12 @@ export default function PacientesInvisalignPage() {
                 {filtrados.map(p => (
                   <tr key={p.id} className="table-row-hover" style={{ borderBottom:"1px solid rgba(255,255,255,0.04)" }}>
                     <td className="px-4 py-3 font-semibold text-sm" style={{ color:"var(--text)" }}>{p.nombre}</td>
-                    <td className="px-4 py-3 text-xs" style={{ color:"var(--text-3)" }}>{p.tipo_doc}</td>
-                    <td className="px-4 py-3 text-xs" style={{ color:"var(--text-2)" }}>{p.cedula}</td>
-                    <td className="px-4 py-3 text-xs" style={{ color:"var(--text-3)" }}>
+                    <td className="px-4 py-3 text-sm" style={{ color:"var(--text-3)" }}>{p.tipo_doc}</td>
+                    <td className="px-4 py-3 text-sm" style={{ color:"var(--text-2)" }}>{p.cedula}</td>
+                    <td className="px-4 py-3 text-sm" style={{ color:"var(--text-3)" }}>
                       {p.fecha_primera_consulta ? format(new Date(p.fecha_primera_consulta + 'T12:00:00'), "d MMM yyyy", { locale: es }) : "—"}
                     </td>
-                    <td className="px-4 py-3 text-xs" style={{ color:"var(--text-3)" }}>
+                    <td className="px-4 py-3 text-sm" style={{ color:"var(--text-3)" }}>
                       {p.fecha_ultima_consulta ? format(new Date(p.fecha_ultima_consulta + 'T12:00:00'), "d MMM yyyy", { locale: es }) : "—"}
                     </td>
                     <td className="px-4 py-3 text-center">
@@ -88,11 +88,11 @@ export default function PacientesInvisalignPage() {
                     <td className="px-4 py-3">
                       {editId === p.id ? (
                         <input value={editTel} onChange={e => setEditTel(e.target.value)}
-                          placeholder="+57..." className="w-32 px-2 py-1 text-xs rounded-lg"
+                          placeholder="+57..." className="w-32 px-2 py-1 text-sm rounded-lg"
                           style={{ background:"rgba(255,255,255,0.05)", border:"1px solid rgba(6,182,212,0.3)", color:"var(--text)" }}
                           onKeyDown={e => e.key === "Enter" && guardarEdicion(p.id)} />
                       ) : (
-                        <span className="text-xs cursor-pointer" style={{ color: p.telefono ? "var(--cyan)" : "var(--text-3)" }}
+                        <span className="text-sm cursor-pointer" style={{ color: p.telefono ? "var(--cyan)" : "var(--text-3)" }}
                           onClick={() => { setEditId(p.id); setEditTel(p.telefono || ""); setEditNotas(p.notas || ""); }}>
                           {p.telefono || "＋ agregar"}
                         </span>
@@ -102,13 +102,13 @@ export default function PacientesInvisalignPage() {
                       {editId === p.id ? (
                         <div className="flex gap-1">
                           <input value={editNotas} onChange={e => setEditNotas(e.target.value)}
-                            placeholder="nota..." className="w-28 px-2 py-1 text-xs rounded-lg"
+                            placeholder="nota..." className="w-28 px-2 py-1 text-sm rounded-lg"
                             style={{ background:"rgba(255,255,255,0.05)", border:"1px solid rgba(6,182,212,0.3)", color:"var(--text)" }} />
-                          <button onClick={() => guardarEdicion(p.id)} className="text-xs px-2 py-1 rounded-lg" style={{ background:"var(--cyan)", color:"#000" }}>✓</button>
-                          <button onClick={() => setEditId(null)} className="text-xs px-2 py-1 rounded-lg" style={{ background:"rgba(255,255,255,0.05)", color:"var(--text-3)" }}>✕</button>
+                          <button onClick={() => guardarEdicion(p.id)} className="text-sm px-2 py-1 rounded-lg" style={{ background:"var(--cyan)", color:"#000" }}>✓</button>
+                          <button onClick={() => setEditId(null)} className="text-sm px-2 py-1 rounded-lg" style={{ background:"rgba(255,255,255,0.05)", color:"var(--text-3)" }}>✕</button>
                         </div>
                       ) : (
-                        <span className="text-xs" style={{ color:"var(--text-3)" }}>{p.notas || "—"}</span>
+                        <span className="text-sm" style={{ color:"var(--text-3)" }}>{p.notas || "—"}</span>
                       )}
                     </td>
                   </tr>
@@ -127,7 +127,7 @@ export default function PacientesInvisalignPage() {
             {filtrados.map(p => (
               <div key={p.id} className="p-4">
                 <p className="font-semibold text-sm mb-1" style={{ color:"var(--text)" }}>{p.nombre}</p>
-                <div className="flex flex-wrap gap-2 text-xs" style={{ color:"var(--text-3)" }}>
+                <div className="flex flex-wrap gap-2 text-sm" style={{ color:"var(--text-3)" }}>
                   <span>{p.tipo_doc} {p.cedula}</span>
                   <span className="badge badge-cyan">{p.folios} folios</span>
                   {p.telefono && <span style={{ color:"var(--cyan)" }}>{p.telefono}</span>}
