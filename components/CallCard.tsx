@@ -156,8 +156,8 @@ export function CardListo({ p, h }: { p: Paciente; h: CardHandlers }) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-1">
               <span className="font-bold" style={{ color: "var(--text)", fontSize: "15px" }}>{nombre}</span>
-              <span className="text-[13px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(16,185,129,0.15)", color: "#10B981", border: "1px solid rgba(16,185,129,0.3)" }}>✓ LISTO PARA LLAMAR</span>
-              {resultado && <span className="text-[13px] font-bold px-2 py-0.5 rounded-full uppercase" style={{ background: `${etapa.color}20`, color: etapa.color, border: `1px solid ${etapa.color}40` }}>{etapa.icon} {etapa.label}</span>}
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(16,185,129,0.15)", color: "#10B981", border: "1px solid rgba(16,185,129,0.3)" }}>✓ LISTO PARA LLAMAR</span>
+              {resultado && <span className="text-[11px] font-bold px-2 py-0.5 rounded-full uppercase" style={{ background: `${etapa.color}20`, color: etapa.color, border: `1px solid ${etapa.color}40` }}>{etapa.icon} {etapa.label}</span>}
             </div>
             <p className="text-[13px]" style={{ color: "var(--text-3)" }}>{p.alias} · {tiempoAtras}</p>
           </div>
@@ -191,10 +191,10 @@ export function CardListo({ p, h }: { p: Paciente; h: CardHandlers }) {
           {telefono && telefono !== telC && <p className="text-sm mt-0.5" style={{ color: "var(--text-3)" }}>WA: {telefono}</p>}
         </div>
         <div className="flex flex-wrap gap-2 mb-2">
-          {svc && <span className="flex items-center gap-1 text-sm px-2.5 py-1 rounded-lg font-semibold" style={{ background: svc.bg, color: svc.color }}><Stethoscope className="w-3 h-3" /> {svc.label}</span>}
-          <span className="flex items-center gap-1 text-sm px-2.5 py-1 rounded-lg font-medium" style={{ background: nivelCfg.bg, color: nivelCfg.color }}>{nivelCfg.label}</span>
-          {horario && <span className="flex items-center gap-1 text-sm px-2.5 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-2)", border: "1px solid var(--border)" }}><Clock className="w-3 h-3" /> {horario}</span>}
-          {ciudad && <span className="flex items-center gap-1 text-sm px-2.5 py-1 rounded-lg uppercase" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-2)", border: "1px solid var(--border)" }}><MapPin className="w-3 h-3" /> {ciudad}</span>}
+          {svc && <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg font-semibold" style={{ background: svc.bg, color: svc.color }}><Stethoscope className="w-3 h-3" /> {svc.label}</span>}
+          <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg font-medium" style={{ background: nivelCfg.bg, color: nivelCfg.color }}>{nivelCfg.label}</span>
+          {horario && <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-2)", border: "1px solid var(--border)" }}><Clock className="w-3 h-3" /> {horario}</span>}
+          {ciudad && <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg uppercase" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-2)", border: "1px solid var(--border)" }}><MapPin className="w-3 h-3" /> {ciudad}</span>}
         </div>
         {resumen && (
           <div className="mb-3 p-2.5 rounded-xl" style={{ background: "rgba(6,182,212,0.04)", border: "1px solid rgba(6,182,212,0.1)" }}>
@@ -264,7 +264,7 @@ export function CardOtro({ p, accent, sinTerminarAgendar, h }: { p: Paciente; ac
           <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
             <span className="font-bold text-[15px]" style={{ color: "var(--text)" }}>{nombre}</span>
             {nombreEsWhatsapp && <span className="text-[12px] italic" style={{ color: "var(--text-3)" }}>(WhatsApp, no confirmado)</span>}
-            {resultado && <span className="text-[13px] font-bold px-2 py-0.5 rounded-full uppercase" style={{ background: `${etapa.color}20`, color: etapa.color, border: `1px solid ${etapa.color}40` }}>{etapa.icon} {etapa.label}</span>}
+            {resultado && <span className="text-[11px] font-bold px-2 py-0.5 rounded-full uppercase" style={{ background: `${etapa.color}20`, color: etapa.color, border: `1px solid ${etapa.color}40` }}>{etapa.icon} {etapa.label}</span>}
           </div>
           {sinTerminarAgendar && (
             <p className="text-[13px] font-bold mt-1 mb-0.5" style={{ color: tieneNombrePropio ? "#FBBF24" : "#FB923C" }}>
@@ -308,9 +308,9 @@ export function CardOtro({ p, accent, sinTerminarAgendar, h }: { p: Paciente; ac
       {/* ── Fila 3: tags + expand ── */}
       <div className="px-4 pb-3">
         <div className="flex flex-wrap gap-2 mb-2">
-          {svc && <span className="flex items-center gap-1 text-sm px-2.5 py-1 rounded-lg font-semibold" style={{ background: svc.bg, color: svc.color }}><Stethoscope className="w-3 h-3" /> {svc.label}</span>}
-          {horario && <span className="flex items-center gap-1 text-sm px-2.5 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-2)", border: "1px solid var(--border)" }}><Clock className="w-3 h-3" /> {horario}</span>}
-          {ciudad && <span className="flex items-center gap-1 text-sm px-2.5 py-1 rounded-lg uppercase" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-2)", border: "1px solid var(--border)" }}><MapPin className="w-3 h-3" /> {ciudad}</span>}
+          {svc && <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg font-semibold" style={{ background: svc.bg, color: svc.color }}><Stethoscope className="w-3 h-3" /> {svc.label}</span>}
+          {horario && <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-2)", border: "1px solid var(--border)" }}><Clock className="w-3 h-3" /> {horario}</span>}
+          {ciudad && <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg uppercase" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-2)", border: "1px solid var(--border)" }}><MapPin className="w-3 h-3" /> {ciudad}</span>}
         </div>
         <button onClick={() => h.toggleExp(p.id)} className="flex items-center gap-1 text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-3)" }}>
           <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isExp ? "rotate-180" : ""}`} />

@@ -186,7 +186,7 @@ export default function NotificacionesPage() {
           <div key={label} className="dm-card p-4">
             <div className="flex items-center gap-2 mb-2"><Icon className="w-4 h-4" style={{ color }} /></div>
             <p className="text-2xl font-black" style={{ color }}>{value}</p>
-            <p className="text-sm mt-1 font-semibold uppercase tracking-wide" style={{ color: "var(--text-3)" }}>{label}</p>
+            <p className="text-sm mt-1 uppercase" style={{ color: "var(--text-3)" }}>{label}</p>
           </div>
         ))}
       </div>
@@ -199,7 +199,7 @@ export default function NotificacionesPage() {
           { key: "actividad",    label: "Conversaciones" },
         ].map(({ key, label }) => (
           <button key={key} onClick={() => setTab(key as typeof tab)}
-            className="px-4 py-2 text-sm font-semibold rounded-lg transition-all uppercase tracking-wide"
+            className="px-4 py-2 text-[13px] font-medium rounded-lg transition-all uppercase"
             style={{ background: tab === key ? "rgba(255,255,255,0.08)" : "transparent", color: tab === key ? "var(--text)" : "var(--text-3)" }}>
             {label}
           </button>
@@ -216,8 +216,8 @@ export default function NotificacionesPage() {
             <section>
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-2 h-2 rounded-full" style={{ background: "#10B981", boxShadow: "0 0 6px #10B981" }} />
-                <h2 className="text-base font-bold" style={{ color: "#10B981" }}>LISTOS PARA LLAMAR</h2>
-                <span className="text-sm px-2 py-0.5 rounded-full font-bold" style={{ background: "rgba(16,185,129,0.12)", color: "#10B981" }}>{alertasListos.length}</span>
+                <h2 className="text-sm font-bold" style={{ color: "#10B981" }}>LISTOS PARA LLAMAR</h2>
+                <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ background: "rgba(16,185,129,0.12)", color: "#10B981" }}>{alertasListos.length}</span>
               </div>
               <div className="space-y-3">
                 {alertasListos.map(p => <CardListo key={p.id} p={p} h={handlers} />)}
@@ -230,8 +230,8 @@ export default function NotificacionesPage() {
             <section>
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-2 h-2 rounded-full" style={{ background: "var(--red)" }} />
-                <h2 className="text-base font-bold" style={{ color: "var(--red)" }}>LEADS CALIENTES</h2>
-                <span className="text-sm px-2 py-0.5 rounded-full font-bold" style={{ background: "rgba(239,68,68,0.1)", color: "var(--red)" }}>{alertasCaliente.length}</span>
+                <h2 className="text-sm font-bold" style={{ color: "var(--red)" }}>LEADS CALIENTES</h2>
+                <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ background: "rgba(239,68,68,0.1)", color: "var(--red)" }}>{alertasCaliente.length}</span>
               </div>
               <div className="space-y-2">
                 {alertasCaliente.map(p => <CardOtro key={p.id} p={p} accent h={handlers} />)}
@@ -244,8 +244,8 @@ export default function NotificacionesPage() {
             <section>
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-2 h-2 rounded-full" style={{ background: "var(--cyan)" }} />
-                <h2 className="text-base font-bold" style={{ color: "var(--cyan)" }}>REFERIDOS</h2>
-                <span className="text-sm px-2 py-0.5 rounded-full font-bold" style={{ background: "rgba(6,182,212,0.1)", color: "var(--cyan)" }}>{alertasReferido.length}</span>
+                <h2 className="text-sm font-bold" style={{ color: "var(--cyan)" }}>REFERIDOS</h2>
+                <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ background: "rgba(6,182,212,0.1)", color: "var(--cyan)" }}>{alertasReferido.length}</span>
               </div>
               <div className="space-y-2">
                 {alertasReferido.map(p => <CardOtro key={p.id} p={p} h={handlers} />)}

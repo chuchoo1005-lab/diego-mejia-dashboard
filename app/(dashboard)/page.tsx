@@ -268,10 +268,10 @@ export default function Home() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-bold truncate" style={{ color:"var(--text)" }}>{nombre}</span>
-                    {svc && <span className="text-[13px] font-semibold px-1.5 py-0.5 rounded uppercase" style={{ background:svc.bg, color:svc.color }}>{svc.label}</span>}
-                    {horarioCorto && <span className="text-[13px] flex items-center gap-0.5 uppercase" style={{ color:"var(--text-3)" }}><Clock className="w-2.5 h-2.5" />{horarioCorto}</span>}
+                    {svc && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase" style={{ background:svc.bg, color:svc.color }}>{svc.label}</span>}
+                    {horarioCorto && <span className="text-[10px] flex items-center gap-0.5 uppercase" style={{ color:"var(--text-3)" }}><Clock className="w-2.5 h-2.5" />{horarioCorto}</span>}
                   </div>
-                  <p className="text-[13px] font-semibold mt-0.5 uppercase" style={{ color: colorEstado }}>
+                  <p className="text-[12px] mt-0.5 uppercase" style={{ color: colorEstado }}>
                     {isListo ? "✓ Listo para llamar" : "⚡ Urgente"} · {tiempoRegistro}
                     {telefono && <span style={{ color:"var(--text-3)" }}> · {telefono}</span>}
                   </p>
@@ -331,7 +331,7 @@ export default function Home() {
                 onMouseLeave={e => { const el = e.currentTarget; el.style.background="rgba(255,255,255,0.03)"; el.style.borderColor="var(--border)"; }}>
                 <Icon className="w-4 h-4 mx-auto mb-1" style={{ color }} />
                 <p className="text-2xl font-black" style={{ color }}>{value}</p>
-                <p className="text-[13px] leading-tight font-semibold uppercase" style={{ color:"var(--text-3)" }}>{label}</p>
+                <p className="text-[11px] leading-tight uppercase" style={{ color:"var(--text-3)" }}>{label}</p>
               </a>
             ))}
           </div>
@@ -456,11 +456,11 @@ export default function Home() {
                           <div className="flex items-center gap-2 flex-wrap mb-1">
                             <span className="font-bold text-sm" style={{ color:"var(--text)" }}>{nombre}</span>
                             <span className={`badge ${badge.cls}`}>{badge.emoji} {badge.label}</span>
-                            {emocion && <span className="text-[14px] font-medium uppercase" style={{ color:emocion.color }}>{emocion.emoji} {emocion.label}</span>}
+                            {emocion && <span className="text-[11px] font-medium uppercase" style={{ color:emocion.color }}>{emocion.emoji} {emocion.label}</span>}
                           </div>
                           <div className="flex items-center gap-2 flex-wrap">
-                            {servicio && (() => { const b = svcBadge(servicio); return <span className="px-2 py-0.5 rounded-full text-[13px] font-bold uppercase" style={{ background: b.bg, color: b.color }}>{b.label}</span>; })()}
-                            {ciudad && <span className="text-sm uppercase" style={{ color:"var(--text-3)" }}>📍 {ciudad}</span>}
+                            {servicio && (() => { const b = svcBadge(servicio); return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase" style={{ background: b.bg, color: b.color }}>{b.label}</span>; })()}
+                            {ciudad && <span className="text-xs uppercase" style={{ color:"var(--text-3)" }}>📍 {ciudad}</span>}
                             {telefono && <span className="text-sm" style={{ color:"var(--text-3)" }}>{telefono}</span>}
                           </div>
                         </div>
