@@ -169,7 +169,7 @@ export default function Home() {
         supabase.from("pacientes").select("*", { count:"exact", head:true }),
         supabase.from("pacientes").select("*", { count:"exact", head:true }).gte("created_at", t),
         supabase.from("pacientes").select("*", { count:"exact", head:true }).eq("estado","activo").eq("perfil_paciente->>estado_seguimiento","activo"),
-        supabase.from("conversaciones").select("paciente_id").gte("timestamp", t),
+        supabase.from("conversaciones").select("paciente_id").eq("direccion","entrante").gte("timestamp", t),
         supabase.from("pacientes").select("id,alias,calificado,origen,telefono_encriptado,perfil_paciente,created_at,updated_at").eq("estado","activo").order("updated_at",{ascending:false}).limit(50),
         supabase.from("conversaciones").select("id,paciente_id,direccion,mensaje_encriptado,timestamp,metadata").order("timestamp",{ascending:false}).limit(30),
         supabase.from("agenda_citas").select("id,paciente_nombre,paciente_telefono,fecha_hora,servicio,estado,duracion_min").gte("fecha_hora", t).lte("fecha_hora", semana.toISOString()).neq("estado","cancelada").order("fecha_hora").limit(10),
@@ -178,7 +178,7 @@ export default function Home() {
       const d = (pacsD || []) as Paciente[];
       const cv = (convsD || []) as Conv[];
       const agendarIds = new Set((agendarData || []).map((c: { paciente_id: string }) => c.paciente_id));
-      // Contar chats únicos (pacientes distintos), no mensajes individuales
+      // Pacientes distintos que escribieron hoy (mensaje entrante real) — no cuenta a quien solo recibió un seguimiento automático sin responder
       const chatsUnicos = new Set((convsHoyData || []).map((c: {paciente_id: string}) => c.paciente_id)).size;
       setKpis({ total:total??0, hoy:hoy??0, convsHoy:chatsUnicos, listos:d.filter(p=>ec(p)==="entrega_premium" && etapaLead(p)==="llamar").length, sinTerminar:d.filter(p=>agendamientoIncompleto(p, agendarIds) && etapaLead(p)==="llamar").length, calientes:d.filter(p=>sc(p)>=60 && etapaLead(p)==="llamar").length, seguimientos:segActivos??0 });
       setPacs(d); setCitas((citasD || []) as CitaAgenda[]);
