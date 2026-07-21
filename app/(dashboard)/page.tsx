@@ -201,15 +201,15 @@ export default function Home() {
 
   useEffect(() => { load(); const t = setInterval(load, 30000); return () => clearInterval(t); }, [load]);
 
-  // Sincronización en tiempo real: cualquier cambio en pacientes (ej. mover lead en otro dispositivo) refresca aquí
+  // Sincronización en tiempo real: cualquier cambio en pacientes (ej. mover lead en otro dispositivo) o en
+  // agenda_citas (ej. crear/mover una cita desde la página Agenda) refresca aquí al instante
   useEffect(() => {
     let timeout: ReturnType<typeof setTimeout> | undefined;
+    const reload = () => { if (timeout) clearTimeout(timeout); timeout = setTimeout(load, 800); };
     const channel = supabase
-      .channel("realtime-pacientes-home")
-      .on("postgres_changes", { event: "*", schema: "public", table: "pacientes" }, () => {
-        if (timeout) clearTimeout(timeout);
-        timeout = setTimeout(load, 800);
-      })
+      .channel("realtime-home")
+      .on("postgres_changes", { event: "*", schema: "public", table: "pacientes" }, reload)
+      .on("postgres_changes", { event: "*", schema: "public", table: "agenda_citas" }, reload)
       .subscribe();
     return () => { if (timeout) clearTimeout(timeout); supabase.removeChannel(channel); };
   }, [load]);

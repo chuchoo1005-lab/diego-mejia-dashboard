@@ -107,17 +107,18 @@ export default function AgendaPage() {
     }));
   }, [mes]);
 
-  useEffect(() => { load(); }, [load]);
+  // Refresco automático como respaldo (por si el canal de tiempo real se desconecta un momento)
+  useEffect(() => { load(); const t = setInterval(load, 30000); return () => clearInterval(t); }, [load]);
 
-  // Sincronización en tiempo real: nuevos agendamientos sin terminar aparecen al instante
+  // Sincronización en tiempo real: cambios en "pacientes" (nuevos agendamientos sin terminar) y en
+  // "agenda_citas" (crear/editar/mover/borrar una cita desde cualquier dispositivo) se reflejan al instante aquí
   useEffect(() => {
     let timeout: ReturnType<typeof setTimeout> | undefined;
+    const reload = () => { if (timeout) clearTimeout(timeout); timeout = setTimeout(load, 800); };
     const channel = supabase
-      .channel("realtime-pacientes-agenda")
-      .on("postgres_changes", { event: "*", schema: "public", table: "pacientes" }, () => {
-        if (timeout) clearTimeout(timeout);
-        timeout = setTimeout(load, 800);
-      })
+      .channel("realtime-agenda")
+      .on("postgres_changes", { event: "*", schema: "public", table: "pacientes" }, reload)
+      .on("postgres_changes", { event: "*", schema: "public", table: "agenda_citas" }, reload)
       .subscribe();
     return () => { if (timeout) clearTimeout(timeout); supabase.removeChannel(channel); };
   }, [load]);

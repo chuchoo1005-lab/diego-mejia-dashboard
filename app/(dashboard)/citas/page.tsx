@@ -28,17 +28,24 @@ export default function CitasPage() {
   const [notasTemp, setNotasTemp] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
-    const [{ data }, { data: convData }] = await Promise.all([
-      supabase.from("pacientes")
-        .select("id,alias,calificado,telefono_encriptado,perfil_paciente,updated_at,modo_humano")
+    const SEL = "id,alias,calificado,telefono_encriptado,perfil_paciente,updated_at,modo_humano";
+    const [{ data: recientes }, { data: enPipeline }, { data: convData }] = await Promise.all([
+      supabase.from("pacientes").select(SEL)
         .eq("estado", "activo").order("updated_at", { ascending: false }).limit(200),
+      // Leads ya movidos a mano (proceso/cerrado/no interesado) no deben desaparecer solo porque el bot
+      // no los ha vuelto a tocar y quedaron fuera del limit(200) de arriba — se traen aparte, sin límite.
+      supabase.from("pacientes").select(SEL)
+        .eq("estado", "activo").not("perfil_paciente->>resultado_llamada", "is", null),
       // El bot solo envía "...¿cómo te llamas?" justo después de pulsar "Agendar valoración" (o responder "sí" a un seguimiento).
       // Es la única señal 100% confiable de que alguien de verdad inició el agendamiento, a diferencia de estado_conv
       // (que también se pone al simplemente ver el video de un tratamiento) o de tener nombre capturado (que puede
       // haberse dado de forma casual en la conversación, sin pedir agendar nada).
       supabase.from("conversaciones").select("paciente_id").eq("direccion", "saliente").ilike("mensaje_encriptado", "%cómo te llamas%"),
     ]);
-    setLeads((data || []) as Paciente[]);
+    const porId = new Map<string, Paciente>();
+    (recientes || []).forEach((p) => porId.set((p as Paciente).id, p as Paciente));
+    (enPipeline || []).forEach((p) => porId.set((p as Paciente).id, p as Paciente));
+    setLeads(Array.from(porId.values()));
     setAgendarIniciado(new Set((convData || []).map((c: { paciente_id: string }) => c.paciente_id)));
     setLoading(false);
   }, []);
@@ -63,8 +70,12 @@ export default function CitasPage() {
     const pac = leads.find(p => p.id === id);
     if (!pac) return;
     const newPerfil = { ...(pac.perfil_paciente || {}), ...updates };
-    await supabase.from("pacientes").update({ perfil_paciente: newPerfil }).eq("id", id);
-    setLeads(prev => prev.map(p => p.id === id ? { ...p, perfil_paciente: newPerfil } : p));
+    // updated_at se pone a mano porque la tabla no lo actualiza sola en cada UPDATE:
+    // sin esto, un lead movido manualmente (ej. a "Proceso") queda con la fecha vieja del último
+    // toque del bot y termina cayendo fuera del limit(200) de load(), desapareciendo del panel.
+    const nowIso = new Date().toISOString();
+    await supabase.from("pacientes").update({ perfil_paciente: newPerfil, updated_at: nowIso }).eq("id", id);
+    setLeads(prev => prev.map(p => p.id === id ? { ...p, perfil_paciente: newPerfil, updated_at: nowIso } : p));
     setSaving(null);
   };
 
@@ -74,8 +85,9 @@ export default function CitasPage() {
   const toggleCandado = async (p: Paciente) => {
     const nuevo = !p.modo_humano;
     setSaving(p.id);
-    await supabase.from("pacientes").update({ modo_humano: nuevo, modo_humano_at: nuevo ? new Date().toISOString() : null }).eq("id", p.id);
-    setLeads(prev => prev.map(x => x.id === p.id ? { ...x, modo_humano: nuevo } : x));
+    const nowIso = new Date().toISOString();
+    await supabase.from("pacientes").update({ modo_humano: nuevo, modo_humano_at: nuevo ? nowIso : null, updated_at: nowIso }).eq("id", p.id);
+    setLeads(prev => prev.map(x => x.id === p.id ? { ...x, modo_humano: nuevo, updated_at: nowIso } : x));
     setSaving(null);
   };
 
