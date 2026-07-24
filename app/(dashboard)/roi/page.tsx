@@ -1,19 +1,18 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
+import { SRV } from "@/components/CallCard";
 import { TrendingUp, DollarSign, Users, MessageSquare, Target, RefreshCw } from "lucide-react";
 
 const PRECIOS: Record<string, number> = {
-  ortodoncia_invisible: 10000000,
-  diseno_sonrisa: 3000000,
+  ortodoncia: 10000000,
+  invisalign: 10000000,
+  brackets: 8500000,
+  diseno: 3000000,
   general: 150000,
 };
 
-const PRECIO_LABELS: Record<string, string> = {
-  ortodoncia_invisible: "Ortodoncia invisible",
-  diseno_sonrisa: "Diseño de sonrisa",
-  general: "Valoración",
-};
+const PRECIO_LABELS: Record<string, string> = { ...SRV, general: "Valoración" };
 
 const COP = (n: number) => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0, notation: n >= 1000000 ? "compact" : "standard" }).format(n);
 

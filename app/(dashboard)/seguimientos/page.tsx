@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
+import { SRV } from "@/components/CallCard";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { Activity, RefreshCw, Phone, MapPin } from "lucide-react";
@@ -11,12 +12,6 @@ interface Paciente {
 }
 
 type Tab = "activos" | "convertidos" | "cancelados" | "completados";
-
-const SRV: Record<string, string> = {
-  ortodoncia: "Ortodoncia invisible", invisalign: "Ortodoncia invisible", brackets: "Ortodoncia brackets", diseno: "Diseño de sonrisa", diseño: "Diseño de sonrisa", general: "Odontología general", implantes: "Implantes", blanqueamiento: "Blanqueamiento",
-  endodoncia: "Endodoncia", periodoncia: "Periodoncia", cirugia: "Cirugía oral",
-  rehabilitacion: "Rehabilitación", odontopediatria: "Odontopediatría",
-};
 
 const TOTAL = 12;
 
