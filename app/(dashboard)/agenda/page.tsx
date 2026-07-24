@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, addMonths, subMonths, startOfWeek, endOfWeek, formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { CalendarDays, ChevronLeft, ChevronRight, Plus, Clock, X, RefreshCw, Phone, Stethoscope, MessageCircle } from "lucide-react";
-import { telAccionable } from "@/components/CallCard";
+import { telAccionable, SRV as SRV_BASE } from "@/components/CallCard";
 
 interface Cita {
   id: string; paciente_nombre: string; paciente_telefono: string | null;
@@ -19,15 +19,7 @@ interface Lead {
   updated_at: string;
 }
 
-const SRV: Record<string, string> = {
-  ortodoncia: "Ortodoncia invisible", invisalign: "Ortodoncia invisible",
-  brackets: "Ortodoncia brackets", diseno: "Diseño de sonrisa",
-  blanqueamiento: "Blanqueamiento", implantes: "Implantes",
-  endodoncia: "Endodoncia", periodoncia: "Periodoncia",
-  cirugia: "Cirugía oral", rehabilitacion: "Rehabilitación",
-  odontopediatria: "Odontopediatría", ortopedia: "Ortopedia",
-  general: "Odontología general", valoracion: "Valoración"
-};
+const SRV: Record<string, string> = { ...SRV_BASE, valoracion: "Valoración" };
 
 const SRV_COLOR: Record<string, { bg: string; color: string }> = {
   ortodoncia: { bg: "rgba(6,182,212,0.12)", color: "#22D3EE" },

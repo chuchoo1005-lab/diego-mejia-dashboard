@@ -10,7 +10,7 @@ export interface Paciente {
 }
 
 export const SRV: Record<string, string> = {
-  ortodoncia: "Ortodoncia invisible", invisalign: "Ortodoncia invisible", brackets: "Ortodoncia brackets",
+  ortodoncia: "Ortodoncia", invisalign: "Ortodoncia invisible", brackets: "Ortodoncia brackets",
   diseno: "Diseño de sonrisa", diseño: "Diseño de sonrisa", blanqueamiento: "Blanqueamiento",
   implantes: "Implantes", endodoncia: "Endodoncia", periodoncia: "Periodoncia",
   cirugia: "Cirugía oral", rehabilitacion: "Rehabilitación", odontopediatria: "Odontopediatría",

@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { format, formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { Users, Search, RefreshCw } from "lucide-react";
+import { SRV } from "@/components/CallCard";
 
 interface Paciente {
   id: string; alias: string; estado: string; origen: string;
@@ -11,7 +12,6 @@ interface Paciente {
   perfil_paciente: Record<string, unknown>; created_at: string; updated_at: string;
 }
 
-const SRV: Record<string, string> = { ortodoncia: "Ortodoncia invisible", invisalign: "Ortodoncia invisible", brackets: "Ortodoncia brackets", diseno: "Diseño de sonrisa", diseño: "Diseño de sonrisa", blanqueamiento: "Blanqueamiento", implantes: "Implantes", endodoncia: "Endodoncia", periodoncia: "Periodoncia", cirugia: "Cirugía oral", rehabilitacion: "Rehabilitación", odontopediatria: "Odontopediatría", ortopedia: "Ortopedia", general: "Odontología general" };
 function svcBadge(s: string | null): { label: string; bg: string; color: string } {
   if (!s) return { label: "—", bg: "transparent", color: "var(--text-muted)" };
   const label = SRV[s] ?? s;

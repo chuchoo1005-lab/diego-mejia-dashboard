@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { format, formatDistanceToNow, isToday, isTomorrow } from "date-fns";
 import { es } from "date-fns/locale";
 import { Brain, Flame, Clock, MessageSquare, Users, TrendingUp, ArrowRight, Zap, Activity, Phone, AlertTriangle, Target, ChevronDown, ChevronUp, CalendarDays, Plus, MapPin, Stethoscope, CheckCircle } from "lucide-react";
-import { MAP_A_ETAPA, telAccionable } from "@/components/CallCard";
+import { MAP_A_ETAPA, telAccionable, SRV } from "@/components/CallCard";
 
 interface CitaAgenda {
   id: string; paciente_nombre: string; paciente_telefono: string | null; fecha_hora: string;
@@ -23,7 +23,6 @@ interface Conv {
 }
 
 // ─── Data helpers ─────────────────────────────────────────────────────────────
-const SRV: Record<string, string> = { ortodoncia: "Ortodoncia invisible", invisalign: "Ortodoncia invisible", brackets: "Ortodoncia brackets", diseno: "Diseño de sonrisa", diseño: "Diseño de sonrisa", blanqueamiento: "Blanqueamiento", implantes: "Implantes", endodoncia: "Endodoncia", periodoncia: "Periodoncia", cirugia: "Cirugía oral", rehabilitacion: "Rehabilitación", odontopediatria: "Odontopediatría", ortopedia: "Ortopedia", general: "Odontología general" };
 function svcBadge(s: string | null): { label: string; bg: string; color: string } {
   if (!s) return { label: "—", bg: "transparent", color: "var(--text-3)" };
   const label = SRV[s] ?? s;
@@ -373,7 +372,6 @@ export default function Home() {
               const esHoy = isToday(fecha);
               const esManana = isTomorrow(fecha);
               const ESTADO_COLOR: Record<string, string> = { pendiente:"var(--amber)", confirmada:"var(--cyan)", completada:"var(--green)", no_asistio:"var(--text-3)" };
-              const SRV: Record<string, string> = { ortodoncia_invisible:"Ortodoncia", diseno_sonrisa:"Diseño", general:"General", valoracion:"Valoración" };
               const waClean = (c.paciente_telefono || "").replace(/\D/g, "");
               const waLink = waClean ? `https://wa.me/${waClean.startsWith("57") ? waClean : "57" + waClean}` : null;
               return (
