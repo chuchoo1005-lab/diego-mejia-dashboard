@@ -1,19 +1,20 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { Search, RefreshCw, Phone, TrendingUp, XCircle, Trophy, Clock } from "lucide-react";
+import { Search, RefreshCw, Phone, TrendingUp, XCircle, Trophy, Clock, CheckCircle2 } from "lucide-react";
 import {
   Paciente, CardOtro, CardHandlers,
   displayName, formatTel, sc, ec, ua, resultadoLlamada, MAP_A_ETAPA,
 } from "@/components/CallCard";
 
-type PipelineTab = "llamar" | "sin_terminar" | "proceso" | "cerrados" | "no_interesado";
+type PipelineTab = "llamar" | "sin_terminar" | "proceso" | "cerrados" | "asistio" | "no_interesado";
 
 const TABS: { key: PipelineTab; label: string; color: string; icon: React.ElementType }[] = [
   { key: "llamar",        label: "Para llamar",   color: "#10B981", icon: Phone },
   { key: "sin_terminar",  label: "Sin terminar",  color: "#F97316", icon: Clock },
   { key: "proceso",       label: "En proceso",    color: "#FBBF24", icon: TrendingUp },
   { key: "cerrados",      label: "Cerrados",      color: "#22D3EE", icon: Trophy },
+  { key: "asistio",       label: "Asistieron",    color: "#8B5CF6", icon: CheckCircle2 },
   { key: "no_interesado", label: "No interesado", color: "#EF4444", icon: XCircle },
 ];
 
@@ -116,6 +117,7 @@ export default function CitasPage() {
   const sinTerminar   = leads.filter(p => etapa(p) === "llamar" && agendamientoIncompleto(p) && match(p)).sort(porRecencia);
   const enProceso     = leads.filter(p => etapa(p) === "proceso"       && match(p));
   const cerrados      = leads.filter(p => etapa(p) === "cerrados"      && match(p));
+  const asistieron    = leads.filter(p => etapa(p) === "asistio"       && match(p));
   const noInteresado  = leads.filter(p => etapa(p) === "no_interesado" && match(p));
 
   const counts: Record<PipelineTab, number> = {
@@ -123,13 +125,14 @@ export default function CitasPage() {
     sin_terminar: sinTerminar.length,
     proceso: enProceso.length,
     cerrados: cerrados.length,
+    asistio: asistieron.length,
     no_interesado: noInteresado.length,
   };
 
   const toggleExp = (id: string) => setExpanded(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
   const handlers: CardHandlers = { expanded, toggleExp, notasTemp, setNotasTemp, saving, setResultado, guardarNotas, toggleCandado };
 
-  const currentList = { llamar: paraLlamar, sin_terminar: sinTerminar, proceso: enProceso, cerrados, no_interesado: noInteresado }[tab];
+  const currentList = { llamar: paraLlamar, sin_terminar: sinTerminar, proceso: enProceso, cerrados, asistio: asistieron, no_interesado: noInteresado }[tab];
   const currentTab = TABS.find(t => t.key === tab)!;
 
   return (
@@ -148,7 +151,7 @@ export default function CitasPage() {
       </div>
 
       {/* Pipeline tabs */}
-      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
         {TABS.map(({ key, label, color, icon: Icon }) => {
           const active = tab === key;
           const count = counts[key];
@@ -194,6 +197,7 @@ export default function CitasPage() {
             : tab === "sin_terminar" ? "Nadie se quedó a medias agendando"
             : tab === "proceso" ? "Sin leads en proceso"
             : tab === "cerrados" ? "Sin leads cerrados"
+            : tab === "asistio" ? "Nadie ha asistido todavía"
             : "Sin leads no interesados"}
           </p>
           {tab !== "llamar" && tab !== "sin_terminar" && (

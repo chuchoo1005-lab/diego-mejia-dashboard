@@ -37,18 +37,23 @@ export const RESULTADOS = [
   { value: "",              label: "Para llamar",   color: "#10B981", icon: "📞" },
   { value: "proceso",       label: "En proceso",    color: "#FBBF24", icon: "🔄" },
   { value: "cerrado",       label: "Cerrado",       color: "#22D3EE", icon: "🏆" },
+  { value: "asistio",       label: "Asistió",       color: "#8B5CF6", icon: "✅" },
   { value: "no_interesado", label: "No interesado", color: "#EF4444", icon: "✕"  },
 ];
 
 // Compatibilidad con valores viejos de DB → etapa del pipeline
+// "cerrado" = dijo que sí por teléfono / agendó. "asistio" = se presentó físicamente en el consultorio
+// (etapa aparte, porque no todo el que cierra por teléfono llega — ver project_diego_mejia_pendientes).
 export const MAP_A_ETAPA: Record<string, string> = {
   proceso: "proceso", interesado: "proceso", seguimiento: "proceso",
   no_respondio: "proceso", valoracion_agendada: "cerrados",
-  cerrado: "cerrados", paciente_activo: "cerrados", tratamiento_iniciado: "cerrados",
+  cerrado: "cerrados",
+  paciente_activo: "asistio", tratamiento_iniciado: "asistio", asistio: "asistio",
   no_interesado: "no_interesado",
 };
 
-export const RESULTADOS_TERMINALES = ["cerrados", "no_interesado"];
+// Valores crudos de resultado_llamada (no etapas) que detienen seguimientos automáticos del bot
+export const RESULTADOS_TERMINALES = ["cerrado", "asistio", "no_interesado"];
 
 // Retorna la config de etapa según el valor guardado en DB
 export function etapaInfo(resultado: string) {
