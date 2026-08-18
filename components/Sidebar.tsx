@@ -108,7 +108,7 @@ export default function Sidebar() {
           {nav.map(({ href, label, icon: Icon, desc }) => {
             const active = pathname === href || (href !== "/" && pathname.startsWith(href));
             return (
-              <Link key={href} href={href} onClick={() => setOpen(false)}
+              <Link key={href} href={href} prefetch={false} onClick={() => setOpen(false)}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[15px] font-semibold uppercase tracking-wide transition-all duration-150"
                 style={{
                   color: active ? "var(--cyan)" : "rgba(255,255,255,0.75)",
