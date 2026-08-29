@@ -104,7 +104,7 @@ export interface CardHandlers {
 }
 
 /* ── Botones Mover a: (shared) ── */
-function MoverBotones({ resultado, isSaving, onMover }: { resultado: string; isSaving: boolean; onMover: (v: string) => void }) {
+export function MoverBotones({ resultado, isSaving, onMover }: { resultado: string; isSaving: boolean; onMover: (v: string) => void }) {
   return (
     <div>
       <p className="section-label mb-2 pt-2">Mover a:</p>

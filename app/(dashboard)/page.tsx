@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { format, formatDistanceToNow, isToday, isTomorrow } from "date-fns";
 import { es } from "date-fns/locale";
 import { Brain, Flame, Clock, MessageSquare, Users, TrendingUp, ArrowRight, Zap, Activity, Phone, AlertTriangle, Target, ChevronDown, ChevronUp, CalendarDays, Plus, MapPin, Stethoscope, CheckCircle } from "lucide-react";
-import { MAP_A_ETAPA, telAccionable, SRV } from "@/components/CallCard";
+import { MAP_A_ETAPA, telAccionable, SRV, MoverBotones } from "@/components/CallCard";
 
 interface CitaAgenda {
   id: string; paciente_nombre: string; paciente_telefono: string | null; fecha_hora: string;
@@ -158,6 +158,8 @@ export default function Home() {
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [feedItems, setFeedItems] = useState<{ msg: string; time: Date; tipo: string }[]>([]);
+  const [expandedAlertas, setExpandedAlertas] = useState<Set<string>>(new Set());
+  const [savingAlerta, setSavingAlerta] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -214,6 +216,17 @@ export default function Home() {
   }, [load]);
 
   const toggleExpanded = (id: string) => setExpanded(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
+  const toggleExpandedAlerta = (id: string) => setExpandedAlertas(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
+  // Mover un paciente de etapa directo desde la franja de alertas — al cambiar resultado_llamada
+  // deja de cumplir etapaLead(p)==="llamar" y desaparece solo de la lista (mismo criterio que /citas).
+  const moverResultadoAlerta = async (p: Paciente, valor: string) => {
+    setSavingAlerta(p.id);
+    const newPerfil = { ...(p.perfil_paciente || {}), resultado_llamada: valor, resultado_at: new Date().toISOString() };
+    const nowIso = new Date().toISOString();
+    await supabase.from("pacientes").update({ perfil_paciente: newPerfil, updated_at: nowIso }).eq("id", p.id);
+    setPacs(prev => prev.map(x => x.id === p.id ? { ...x, perfil_paciente: newPerfil, updated_at: nowIso } : x));
+    setSavingAlerta(null);
+  };
 
   const leadsTop = pacs.filter(p => sc(p) >= 40).sort((a,b) => sc(b)-sc(a)).slice(0,6);
   // Franja de alertas: solo los realmente urgentes (listos para agendar o calientes sin respuesta).
@@ -257,42 +270,58 @@ export default function Home() {
             const tiempoRegistro = formatDistanceToNow(ua(p), { locale:es, addSuffix:true });
             const horarioCorto = horario ? (horario.length > 20 ? horario.slice(0,20)+"…" : horario) : null;
 
+            const isExpAlerta = expandedAlertas.has(p.id);
+            const resultadoAlerta = (p.perfil_paciente?.resultado_llamada as string) || "";
             return (
-              <div key={p.id} className="flex items-center gap-2.5 px-3 py-2 rounded-lg animate-fade-up"
+              <div key={p.id} className="rounded-lg animate-fade-up overflow-hidden"
                 style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)" }}>
-                {/* Dot */}
-                <div className="w-2 h-2 rounded-full shrink-0" style={{ background: colorEstado, boxShadow:`0 0 6px ${colorEstado}` }} />
+                <div className="flex items-center gap-2.5 px-3 py-2">
+                  {/* Dot */}
+                  <div className="w-2 h-2 rounded-full shrink-0" style={{ background: colorEstado, boxShadow:`0 0 6px ${colorEstado}` }} />
 
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-bold truncate" style={{ color:"var(--text)" }}>{nombre}</span>
-                    {svc && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase" style={{ background:svc.bg, color:svc.color }}>{svc.label}</span>}
-                    {horarioCorto && <span className="text-[10px] flex items-center gap-0.5 uppercase" style={{ color:"var(--text-3)" }}><Clock className="w-2.5 h-2.5" />{horarioCorto}</span>}
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-bold truncate" style={{ color:"var(--text)" }}>{nombre}</span>
+                      {svc && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase" style={{ background:svc.bg, color:svc.color }}>{svc.label}</span>}
+                      {horarioCorto && <span className="text-[10px] flex items-center gap-0.5 uppercase" style={{ color:"var(--text-3)" }}><Clock className="w-2.5 h-2.5" />{horarioCorto}</span>}
+                    </div>
+                    <p className="text-[12px] mt-0.5 uppercase" style={{ color: colorEstado }}>
+                      {isListo ? "✓ Listo para llamar" : "⚡ Urgente"} · {tiempoRegistro}
+                      {telefono && <span style={{ color:"var(--text-3)" }}> · {telefono}</span>}
+                    </p>
                   </div>
-                  <p className="text-[12px] mt-0.5 uppercase" style={{ color: colorEstado }}>
-                    {isListo ? "✓ Listo para llamar" : "⚡ Urgente"} · {tiempoRegistro}
-                    {telefono && <span style={{ color:"var(--text-3)" }}> · {telefono}</span>}
-                  </p>
-                </div>
 
-                {/* Acciones */}
-                <div className="flex gap-1.5 shrink-0">
-                  {telefono && (
-                    <a href={`tel:${p.telefono_encriptado}`}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-bold active:scale-95 transition-all"
-                      style={{ background: colorEstado, color:"#000", WebkitTapHighlightColor:"transparent" }}>
-                      <Phone className="w-3 h-3" /> Llamar
-                    </a>
-                  )}
-                  {waLink && (
-                    <a href={waLink} target="_blank" rel="noopener noreferrer"
+                  {/* Acciones */}
+                  <div className="flex gap-1.5 shrink-0">
+                    {telefono && (
+                      <a href={`tel:${p.telefono_encriptado}`}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-bold active:scale-95 transition-all"
+                        style={{ background: colorEstado, color:"#000", WebkitTapHighlightColor:"transparent" }}>
+                        <Phone className="w-3 h-3" /> Llamar
+                      </a>
+                    )}
+                    {waLink && (
+                      <a href={waLink} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center justify-center w-8 h-8 rounded-lg text-sm active:scale-95 transition-all"
+                        style={{ background:"rgba(37,211,102,0.12)", color:"#25D366", border:"1px solid rgba(37,211,102,0.25)", WebkitTapHighlightColor:"transparent" }}>
+                        💬
+                      </a>
+                    )}
+                    <button onClick={() => toggleExpandedAlerta(p.id)} title="Mover a otra etapa"
                       className="flex items-center justify-center w-8 h-8 rounded-lg text-sm active:scale-95 transition-all"
-                      style={{ background:"rgba(37,211,102,0.12)", color:"#25D366", border:"1px solid rgba(37,211,102,0.25)", WebkitTapHighlightColor:"transparent" }}>
-                      💬
-                    </a>
-                  )}
+                      style={{ background:"rgba(255,255,255,0.05)", color:"var(--text-3)", border:"1px solid var(--border)" }}>
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isExpAlerta ? "rotate-180" : ""}`} />
+                    </button>
+                  </div>
                 </div>
+                {isExpAlerta && (
+                  <div className="px-3 pb-3" style={{ borderTop:"1px solid rgba(255,255,255,0.06)" }}>
+                    <div className="pt-3">
+                      <MoverBotones resultado={resultadoAlerta} isSaving={savingAlerta === p.id} onMover={v => moverResultadoAlerta(p, v)} />
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
