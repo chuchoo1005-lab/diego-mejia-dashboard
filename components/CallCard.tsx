@@ -36,8 +36,8 @@ export const NIVEL: Record<string, { label: string; color: string; bg: string }>
 export const RESULTADOS = [
   { value: "",              label: "Para llamar",   color: "#10B981", icon: "📞" },
   { value: "proceso",       label: "En proceso",    color: "#FBBF24", icon: "🔄" },
-  { value: "cerrado",       label: "Cerrado",       color: "#22D3EE", icon: "🏆" },
-  { value: "asistio",       label: "Asistió",       color: "#8B5CF6", icon: "✅" },
+  { value: "cerrado",       label: "Agendó valoración", color: "#22D3EE", icon: "🏆" },
+  { value: "asistio",       label: "Asistió a la cita", color: "#8B5CF6", icon: "✅" },
   { value: "no_interesado", label: "No interesado", color: "#EF4444", icon: "✕"  },
 ];
 

@@ -13,8 +13,8 @@ const TABS: { key: PipelineTab; label: string; color: string; icon: React.Elemen
   { key: "llamar",        label: "Para llamar",   color: "#10B981", icon: Phone },
   { key: "sin_terminar",  label: "Sin terminar",  color: "#F97316", icon: Clock },
   { key: "proceso",       label: "En proceso",    color: "#FBBF24", icon: TrendingUp },
-  { key: "cerrados",      label: "Cerrados",      color: "#22D3EE", icon: Trophy },
-  { key: "asistio",       label: "Asistieron",    color: "#8B5CF6", icon: CheckCircle2 },
+  { key: "cerrados",      label: "Agendó valoración", color: "#22D3EE", icon: Trophy },
+  { key: "asistio",       label: "Asistió a la cita", color: "#8B5CF6", icon: CheckCircle2 },
   { key: "no_interesado", label: "No interesado", color: "#EF4444", icon: XCircle },
 ];
 
@@ -196,8 +196,8 @@ export default function CitasPage() {
             {tab === "llamar" ? "Sin leads pendientes de llamar"
             : tab === "sin_terminar" ? "Nadie se quedó a medias agendando"
             : tab === "proceso" ? "Sin leads en proceso"
-            : tab === "cerrados" ? "Sin leads cerrados"
-            : tab === "asistio" ? "Nadie ha asistido todavía"
+            : tab === "cerrados" ? "Nadie ha agendado valoración todavía"
+            : tab === "asistio" ? "Nadie ha asistido a su cita todavía"
             : "Sin leads no interesados"}
           </p>
           {tab !== "llamar" && tab !== "sin_terminar" && (
