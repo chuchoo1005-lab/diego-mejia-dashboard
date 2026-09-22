@@ -55,6 +55,15 @@ export const MAP_A_ETAPA: Record<string, string> = {
 // Valores crudos de resultado_llamada (no etapas) que detienen seguimientos automáticos del bot
 export const RESULTADOS_TERMINALES = ["cerrado", "asistio", "no_interesado"];
 
+// Campos a fusionar en perfil_paciente al mover un lead a "resultado_llamada".
+// Si el valor es terminal, también cancela el seguimiento automático del bot (WF-07 lee estado_seguimiento)
+// para que no le siga escribiendo a alguien que la asesora ya cerró o descartó por teléfono.
+export function resultadoUpdates(valor: string): Record<string, unknown> {
+  const updates: Record<string, unknown> = { resultado_llamada: valor, resultado_at: new Date().toISOString() };
+  if (RESULTADOS_TERMINALES.includes(valor)) updates.estado_seguimiento = "cancelado";
+  return updates;
+}
+
 // Retorna la config de etapa según el valor guardado en DB
 export function etapaInfo(resultado: string) {
   if (!resultado) return RESULTADOS[0]; // Para llamar

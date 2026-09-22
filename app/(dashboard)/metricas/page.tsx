@@ -1,13 +1,21 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { SRV } from "@/components/CallCard";
+import { SRV, MAP_A_ETAPA } from "@/components/CallCard";
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { format, subDays } from "date-fns";
 import { es } from "date-fns/locale";
-import { RefreshCw, TrendingUp, MessageSquare, Users, Target, Clock, Phone } from "lucide-react";
+import { RefreshCw, TrendingUp, MessageSquare, Users, Target, Phone, Trophy, CheckCircle2, AlertTriangle, Activity } from "lucide-react";
 
 interface DayData { fecha: string; conversaciones: number; pacientes: number; }
+interface SegStep { paso: number; convirtio: number; cancelado: number; sinConversion: number; activo: number; total: number; }
+
+type RangoKey = "7d" | "30d" | "90d";
+const RANGOS: { key: RangoKey; label: string; dias: number }[] = [
+  { key: "7d",  label: "7 días",  dias: 7 },
+  { key: "30d", label: "30 días", dias: 30 },
+  { key: "90d", label: "90 días", dias: 90 },
+];
 
 const COLORS = ["#06B6D4","#10B981","#F59E0B","#EF4444","#A78BFA"];
 
@@ -27,23 +35,32 @@ const Tip = ({ active, payload, label }: { active?: boolean; payload?: { name: s
   );
 };
 
+// Etapa "agendó" / "asistió" según el mismo criterio canónico de /citas (components/CallCard.tsx)
+function esAgendo(resultado: string): boolean { return MAP_A_ETAPA[resultado] === "cerrados"; }
+function esAsistio(resultado: string): boolean { return MAP_A_ETAPA[resultado] === "asistio"; }
+
 export default function MetricasPage() {
+  const [rango, setRango] = useState<RangoKey>("30d");
   const [dayData, setDayData] = useState<DayData[]>([]);
-  const [totales, setTotales] = useState({ pacientes:0, conversaciones:0, calificados:0, scoreAvg:0, listos:0, tasaConversion:0 });
+  const [totales, setTotales] = useState({ pacientes:0, conversaciones:0, calificados:0, listos:0, agendaron:0, asistieron:0, tasaCierre:0 });
   const [servicios, setServicios] = useState<{ nombre:string; count:number; pct:number }[]>([]);
   const [funnel, setFunnel] = useState<{ label:string; value:number; pct:number }[]>([]);
+  const [sla, setSla] = useState({ total:0, buckets:[0,0,0,0] });
+  const [segSteps, setSegSteps] = useState<SegStep[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    const dias = 14;
-    const desde = subDays(new Date(), dias-1); desde.setHours(0,0,0,0);
-    const [{ data:pacs }, { data:convs }, { count:totalPacs }, { count:calificados }, { count:listos }] = await Promise.all([
-      supabase.from("pacientes").select("created_at,perfil_paciente").gte("created_at", desde.toISOString()),
-      supabase.from("conversaciones").select("timestamp").gte("timestamp", desde.toISOString()),
-      supabase.from("pacientes").select("*",{count:"exact",head:true}),
-      supabase.from("pacientes").select("*",{count:"exact",head:true}).eq("calificado",true),
-      supabase.from("pacientes").select("*",{count:"exact",head:true}).contains("perfil_paciente",{"estado_conv":"entrega_premium"}),
+    setLoading(true);
+    const dias = RANGOS.find(r => r.key === rango)!.dias;
+    const desde = subDays(new Date(), dias - 1); desde.setHours(0, 0, 0, 0);
+    const desdeISO = desde.toISOString();
+
+    const [{ data: pacs }, { data: convs }] = await Promise.all([
+      supabase.from("pacientes").select("id,created_at,calificado,perfil_paciente").eq("estado","activo").gte("created_at", desdeISO),
+      supabase.from("conversaciones").select("timestamp").gte("timestamp", desdeISO),
     ]);
+
+    // ─── Evolución temporal ────────────────────────────────────────────
     const days: Record<string,DayData> = {};
     for (let i=0;i<dias;i++) {
       const d = format(subDays(new Date(),dias-1-i),"yyyy-MM-dd");
@@ -52,55 +69,110 @@ export default function MetricasPage() {
     (pacs||[]).forEach(p=>{const d=format(new Date(p.created_at),"yyyy-MM-dd");if(days[d])days[d].pacientes++;});
     (convs||[]).forEach(c=>{const d=format(new Date(c.timestamp),"yyyy-MM-dd");if(days[d])days[d].conversaciones++;});
     setDayData(Object.values(days));
-    const {data:allPacs} = await supabase.from("pacientes").select("perfil_paciente").eq("estado","activo").limit(500);
-    let sum=0,cnt=0; const srvCnt:Record<string,number>={};
-    (allPacs||[]).forEach(p=>{
-      const s=parseInt(String(p.perfil_paciente?.score??"0"))||0;
-      if(s>0){sum+=s;cnt++;}
-      const srv=p.perfil_paciente?.servicio_interes as string;
-      if(srv)srvCnt[srv]=(srvCnt[srv]||0)+1;
+
+    // ─── KPIs, embudo, distribución de servicios, SLA y efectividad de seguimiento ──
+    const total = (pacs||[]).length;
+    let calificados=0, conConv=0, listos=0, listosSinProcesar=0, agendaron=0, asistieron=0;
+    const srvCnt: Record<string,number> = {};
+    const slaBuckets = [0,0,0,0]; // <6h, 6-24h, 24-48h, >48h
+    let slaTotal = 0;
+    const segByStep: Record<number, { convirtio:number; cancelado:number; sinConversion:number; activo:number; total:number }> = {};
+    const now = Date.now();
+
+    (pacs||[]).forEach(p => {
+      const perfil = p.perfil_paciente as Record<string, unknown>;
+      const estadoConv = (perfil?.estado_conv as string) || "nuevo";
+      const resultado = (perfil?.resultado_llamada as string) || "";
+      const estadoSeg = (perfil?.estado_seguimiento as string) || "pendiente";
+      const numSeg = parseInt(String(perfil?.seguimientos_enviados ?? "0")) || 0;
+      const srv = perfil?.servicio_interes as string;
+
+      if (p.calificado) calificados++;
+      if (estadoConv !== "nuevo") conConv++;
+      if (estadoConv === "entrega_premium") {
+        listos++;
+        if (!resultado) {
+          listosSinProcesar++;
+          const ua = (perfil?.ultima_actividad_at as string) ? new Date(perfil.ultima_actividad_at as string) : new Date(p.created_at as string);
+          const horas = (now - ua.getTime()) / 3600000;
+          slaTotal++;
+          if (horas < 6) slaBuckets[0]++; else if (horas < 24) slaBuckets[1]++; else if (horas < 48) slaBuckets[2]++; else slaBuckets[3]++;
+        }
+      }
+      if (esAgendo(resultado)) agendaron++;
+      if (esAsistio(resultado)) asistieron++;
+      if (srv) srvCnt[srv] = (srvCnt[srv]||0) + 1;
+
+      if (numSeg > 0) {
+        const bucket = segByStep[numSeg] || { convirtio:0, cancelado:0, sinConversion:0, activo:0, total:0 };
+        bucket.total++;
+        if (esAgendo(resultado) || esAsistio(resultado)) bucket.convirtio++;
+        else if (estadoSeg === "cancelado") bucket.cancelado++;
+        else if (estadoSeg === "activo") bucket.activo++;
+        else bucket.sinConversion++;
+        segByStep[numSeg] = bucket;
+      }
     });
-    const total=(totalPacs||0);
-    const cal=(calificados||0);
-    const list=(listos||0);
-    const tasa=total>0?Math.round((list/total)*100):0;
-    setTotales({pacientes:total,conversaciones:(convs||[]).length,calificados:cal,scoreAvg:cnt>0?Math.round(sum/cnt):0,listos:list,tasaConversion:tasa});
-    const srvTotal=Object.values(srvCnt).reduce((a,b)=>a+b,0);
+
+    setTotales({
+      pacientes: total, conversaciones: (convs||[]).length, calificados, listos: listosSinProcesar,
+      agendaron, asistieron, tasaCierre: calificados>0 ? Math.round(((agendaron+asistieron)/calificados)*100) : 0,
+    });
+    setSla({ total: slaTotal, buckets: slaBuckets });
+    setSegSteps(Object.entries(segByStep).map(([paso,b]) => ({ paso:parseInt(paso), ...b })).sort((a,b)=>a.paso-b.paso));
+
+    const srvTotal = Object.values(srvCnt).reduce((a,b)=>a+b,0);
     setServicios(Object.entries(srvCnt).map(([n,c])=>({nombre:n,count:c,pct:srvTotal>0?Math.round((c/srvTotal)*100):0})).sort((a,b)=>b.count-a.count));
+
     setFunnel([
-      {label:"Total leads", value:total, pct:100},
-      {label:"Con conversación", value:Math.max(cal,(allPacs||[]).filter(p=>(p.perfil_paciente?.estado_conv||"nuevo")!=="nuevo").length), pct:total>0?Math.round(((allPacs||[]).filter(p=>(p.perfil_paciente?.estado_conv||"nuevo")!=="nuevo").length/total)*100):0},
-      {label:"Calificados", value:cal, pct:total>0?Math.round((cal/total)*100):0},
-      {label:"Listos para llamar", value:list, pct:total>0?Math.round((list/total)*100):0},
+      { label:"Total leads",          value:total,              pct:100 },
+      { label:"Con conversación",     value:conConv,            pct:total>0?Math.round((conConv/total)*100):0 },
+      { label:"Calificados",          value:calificados,        pct:total>0?Math.round((calificados/total)*100):0 },
+      { label:"Listos para valorar",  value:listos,              pct:total>0?Math.round((listos/total)*100):0 },
+      { label:"Agendó valoración",    value:agendaron,          pct:total>0?Math.round((agendaron/total)*100):0 },
+      { label:"Asistió a la cita",    value:asistieron,         pct:total>0?Math.round((asistieron/total)*100):0 },
     ]);
     setLoading(false);
-  }, []);
+  }, [rango]);
 
   useEffect(()=>{load();},[load]);
 
+  const slaColors = ["var(--green)","var(--amber)","#FB923C","var(--red)"];
+  const slaLabels = ["< 6 horas","6 - 24 horas","24 - 48 horas","+ 48 horas"];
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-end justify-between">
+      <div className="flex items-end justify-between flex-wrap gap-3">
         <div>
           <p className="section-label mb-2">Análisis y reportes</p>
           <h1 style={{fontFamily:"var(--font-cormorant)",fontSize:"2rem",fontWeight:500,color:"var(--text)"}}>Métricas</h1>
-          <p className="text-sm mt-1" style={{color:"var(--text-3)"}}>Últimos 14 días · Tiempo real</p>
+          <p className="text-sm mt-1" style={{color:"var(--text-3)"}}>Embudo, SLA de respuesta y efectividad de seguimiento · Tiempo real</p>
         </div>
-        <button onClick={load} className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl"
-          style={{background:"rgba(255,255,255,0.05)",border:"1px solid var(--border)",color:"var(--text-2)"}}>
-          <RefreshCw className="w-3.5 h-3.5"/> Actualizar
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
+            {RANGOS.map(r => (
+              <button key={r.key} onClick={() => setRango(r.key)} className="px-3 py-2 text-sm font-medium"
+                style={{ background: rango === r.key ? "rgba(6,182,212,0.15)" : "transparent", color: rango === r.key ? "var(--cyan)" : "var(--text-3)" }}>
+                {r.label}
+              </button>
+            ))}
+          </div>
+          <button onClick={load} className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl"
+            style={{background:"rgba(255,255,255,0.05)",border:"1px solid var(--border)",color:"var(--text-2)"}}>
+            <RefreshCw className="w-3.5 h-3.5"/> Actualizar
+          </button>
+        </div>
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
         {[
-          {label:"Total pacientes", value:totales.pacientes, icon:Users, color:"var(--cyan)"},
-          {label:"Chats (14d)", value:totales.conversaciones, icon:MessageSquare, color:"#A78BFA"},
-          {label:"Calificados", value:totales.calificados, icon:Target, color:"var(--amber)"},
-          {label:"Listos llamar", value:totales.listos, icon:Phone, color:"var(--green)"},
-          {label:"Score prom.", value:totales.scoreAvg, icon:TrendingUp, color:"var(--cyan)"},
-          {label:"Conversión", value:`${totales.tasaConversion}%`, icon:Clock, color:"var(--green)", highlight:true},
+          {label:"Total leads",         value:totales.pacientes,                icon:Users,        color:"var(--cyan)"},
+          {label:"Calificados",         value:totales.calificados,              icon:Target,       color:"var(--amber)"},
+          {label:"Listos sin procesar", value:totales.listos,                   icon:Phone,        color:"var(--red)"},
+          {label:"Agendaron",           value:totales.agendaron,                icon:Trophy,       color:"var(--cyan)"},
+          {label:"Asistieron",          value:totales.asistieron,               icon:CheckCircle2, color:"#A78BFA"},
+          {label:"Tasa de cierre real", value:`${totales.tasaCierre}%`,         icon:TrendingUp,   color:"var(--green)", highlight:true},
         ].map(({label,value,icon:Icon,color,highlight})=>(
           <div key={label} className="dm-card p-4" style={highlight?{borderColor:"rgba(16,185,129,0.3)"}:{}}>
             <div className="w-7 h-7 rounded-lg flex items-center justify-center mb-2" style={{background:`${color}18`}}>
@@ -116,15 +188,15 @@ export default function MetricasPage() {
         <div className="flex justify-center py-16"><div className="w-8 h-8 border-2 rounded-full animate-spin" style={{borderColor:"rgba(6,182,212,0.2)",borderTopColor:"var(--cyan)"}}/></div>
       ) : (
         <>
-          {/* Embudo de conversión */}
+          {/* Embudo de conversión completo */}
           <div className="dm-card p-5">
             <p className="section-label mb-1">Embudo completo</p>
             <h2 className="font-semibold mb-5" style={{fontFamily:"var(--font-cormorant)",fontSize:"1.1rem",color:"var(--text)"}}>
-              Pipeline de admisión
+              Pipeline de admisión, de lead a paciente
             </h2>
             <div className="space-y-3">
               {funnel.map(({label,value,pct},i)=>{
-                const colors=["rgba(255,255,255,0.15)","#A78BFA","var(--cyan)","var(--green)"];
+                const colors=["rgba(255,255,255,0.15)","#A78BFA","var(--amber)","var(--cyan)","var(--green)","#8B5CF6"];
                 return (
                   <div key={label}>
                     <div className="flex items-center justify-between mb-1.5">
@@ -138,12 +210,83 @@ export default function MetricasPage() {
                       </div>
                     </div>
                     <div className="h-2 rounded-full" style={{background:"rgba(255,255,255,0.05)"}}>
-                      <div className="h-full rounded-full transition-all duration-700" style={{width:`${pct}%`,background:colors[i],boxShadow:i>1?`0 0 8px ${colors[i]}50`:"none"}}/>
+                      <div className="h-full rounded-full transition-all duration-700" style={{width:`${pct}%`,background:colors[i],boxShadow:i>2?`0 0 8px ${colors[i]}50`:"none"}}/>
                     </div>
                   </div>
                 );
               })}
             </div>
+          </div>
+
+          {/* SLA de respuesta humana */}
+          <div className="dm-card p-5">
+            <div className="flex items-center gap-2 mb-1">
+              <AlertTriangle className="w-4 h-4" style={{ color: "var(--red)" }} />
+              <p className="section-label" style={{ margin: 0 }}>SLA de respuesta humana</p>
+            </div>
+            <h2 className="font-semibold mb-1" style={{fontFamily:"var(--font-cormorant)",fontSize:"1.1rem",color:"var(--text)"}}>
+              Leads listos para llamar, sin resultado registrado
+            </h2>
+            <p className="text-sm mb-5" style={{ color: "var(--text-3)" }}>
+              {sla.total > 0
+                ? `${sla.total} lead(s) esperando que la asesora los procese.`
+                : "Todos los leads listos ya tienen un resultado de llamada registrado."}
+            </p>
+            {sla.total > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {slaLabels.map((label,i)=>{
+                  const val = sla.buckets[i];
+                  const pct = sla.total>0 ? Math.round((val/sla.total)*100) : 0;
+                  return (
+                    <div key={label} className="p-3 rounded-xl" style={{ background:"rgba(255,255,255,0.025)", border:`1px solid ${slaColors[i]}30` }}>
+                      <p className="text-lg font-black" style={{ color: slaColors[i] }}>{val}</p>
+                      <p className="text-[13px] mt-0.5" style={{ color:"var(--text-3)" }}>{label}</p>
+                      <div className="h-1.5 rounded-full mt-2" style={{ background:"rgba(255,255,255,0.05)" }}>
+                        <div className="h-full rounded-full" style={{ width:`${pct}%`, background: slaColors[i] }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Efectividad de seguimiento del bot (WF-07) */}
+          <div className="dm-card p-5">
+            <div className="flex items-center gap-2 mb-1">
+              <Activity className="w-4 h-4" style={{ color: "var(--cyan)" }} />
+              <p className="section-label" style={{ margin: 0 }}>Efectividad de seguimiento automático</p>
+            </div>
+            <h2 className="font-semibold mb-5" style={{fontFamily:"var(--font-cormorant)",fontSize:"1.1rem",color:"var(--text)"}}>
+              Qué pasa con los leads en cada paso del plan del bot
+            </h2>
+            {segSteps.length === 0 ? (
+              <p className="text-sm" style={{ color:"var(--text-3)" }}>Sin leads en seguimiento automático en este periodo.</p>
+            ) : (
+              <div className="space-y-3">
+                {segSteps.map(({paso,convirtio,cancelado,sinConversion,activo,total})=>(
+                  <div key={paso} className="p-3 rounded-xl" style={{ background:"rgba(255,255,255,0.025)", border:"1px solid var(--border)" }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-semibold" style={{ color:"var(--text)" }}>Paso {paso}</span>
+                      <span className="text-[13px]" style={{ color:"var(--text-3)" }}>{total} lead(s)</span>
+                    </div>
+                    <div className="grid grid-cols-4 gap-2 text-center">
+                      {[
+                        { label:"Convirtió", value:convirtio, color:"var(--green)" },
+                        { label:"Sigue activo", value:activo, color:"var(--cyan)" },
+                        { label:"Sin conversión", value:sinConversion, color:"var(--text-3)" },
+                        { label:"Canceló", value:cancelado, color:"var(--red)" },
+                      ].map(m=>(
+                        <div key={m.label}>
+                          <p className="text-sm font-black" style={{ color:m.color }}>{m.value}</p>
+                          <p className="text-[12px]" style={{ color:"var(--text-3)" }}>{m.label}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Gráfico conversaciones */}
@@ -223,6 +366,11 @@ export default function MetricasPage() {
               </div>
             </div>
           )}
+
+          <p className="text-sm text-center flex items-center justify-center gap-1.5" style={{ color: "var(--text-3)", fontFamily: "var(--font-cormorant)", fontStyle: "italic" }}>
+            <MessageSquare className="w-3.5 h-3.5 not-italic" style={{ color: "var(--text-3)" }} />
+            {totales.conversaciones.toLocaleString("es-CO")} conversaciones procesadas en el periodo seleccionado
+          </p>
         </>
       )}
     </div>

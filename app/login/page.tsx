@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { Lock, Mail, ArrowRight, Loader2 } from "lucide-react";
@@ -31,15 +32,9 @@ export default function LoginPage() {
 
         {/* Logo */}
         <div className="text-center mb-10">
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <span className="text-black font-black tracking-widest px-3 py-1 text-lg"
-              style={{ background: "#FFFFFF", fontFamily: "var(--font-cormorant)" }}>
-              DIEGO
-            </span>
-            <span className="font-light tracking-widest border px-3 py-1 text-lg"
-              style={{ color: "#FFFFFF", borderColor: "rgba(255,255,255,0.5)", fontFamily: "var(--font-cormorant)" }}>
-              MEJÍA
-            </span>
+          <div className="inline-block rounded-xl mb-6" style={{ background: "#FFF", padding: "12px 18px", lineHeight: 0 }}>
+            <Image src="/logo-diego-mejia.png" alt="Diego Mejía Dental Group" width={981} height={270}
+              style={{ width: 220, height: "auto", display: "block" }} priority />
           </div>
           <p className="text-sm font-semibold tracking-[0.3em] uppercase" style={{ color: "rgba(255,255,255,0.4)" }}>
             Panel Administrativo

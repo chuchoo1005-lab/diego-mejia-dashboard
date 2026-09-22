@@ -4,6 +4,7 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice?: Promise<{ outcome: string }>;
 }
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, CalendarDays, Users, Bell, BarChart3, Menu, X, LogOut, Calendar, UserCheck, TrendingUp, Download, Activity } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -181,11 +182,12 @@ export default function Sidebar() {
 }
 
 function Logo({ compact = false }: { compact?: boolean }) {
-  const s = compact ? "0.9rem" : "1rem";
+  const w = compact ? 132 : 168;
+  const h = Math.round(w * (270 / 981));
   return (
-    <div className={`flex items-baseline gap-${compact ? "1.5" : "2"}`}>
-      <span style={{ background: "#FFF", color: "#080C14", fontFamily: "var(--font-cormorant)", fontSize: s, fontWeight: 900, letterSpacing: "0.12em", padding: compact ? "2px 7px" : "3px 9px", lineHeight: 1 }}>DIEGO</span>
-      <span style={{ color: "#FFF", border: "1px solid rgba(255,255,255,0.4)", fontFamily: "var(--font-cormorant)", fontSize: s, fontWeight: 300, letterSpacing: "0.12em", padding: compact ? "2px 7px" : "3px 9px", lineHeight: 1 }}>MEJÍA</span>
+    <div className="inline-block rounded-lg" style={{ background: "#FFF", padding: compact ? "5px 8px" : "7px 10px", lineHeight: 0 }}>
+      <Image src="/logo-diego-mejia.png" alt="Diego Mejía Dental Group" width={981} height={270}
+        style={{ width: w, height: h, display: "block" }} priority />
     </div>
   );
 }

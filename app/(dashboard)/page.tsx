@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { format, formatDistanceToNow, isToday, isTomorrow } from "date-fns";
 import { es } from "date-fns/locale";
 import { Brain, Flame, Clock, MessageSquare, Users, TrendingUp, ArrowRight, Zap, Activity, Phone, AlertTriangle, Target, ChevronDown, ChevronUp, CalendarDays, Plus, MapPin, Stethoscope, CheckCircle } from "lucide-react";
-import { MAP_A_ETAPA, telAccionable, SRV, MoverBotones } from "@/components/CallCard";
+import { MAP_A_ETAPA, telAccionable, SRV, MoverBotones, resultadoUpdates } from "@/components/CallCard";
 
 interface CitaAgenda {
   id: string; paciente_nombre: string; paciente_telefono: string | null; fecha_hora: string;
@@ -221,7 +221,7 @@ export default function Home() {
   // deja de cumplir etapaLead(p)==="llamar" y desaparece solo de la lista (mismo criterio que /citas).
   const moverResultadoAlerta = async (p: Paciente, valor: string) => {
     setSavingAlerta(p.id);
-    const newPerfil = { ...(p.perfil_paciente || {}), resultado_llamada: valor, resultado_at: new Date().toISOString() };
+    const newPerfil = { ...(p.perfil_paciente || {}), ...resultadoUpdates(valor) };
     const nowIso = new Date().toISOString();
     await supabase.from("pacientes").update({ perfil_paciente: newPerfil, updated_at: nowIso }).eq("id", p.id);
     setPacs(prev => prev.map(x => x.id === p.id ? { ...x, perfil_paciente: newPerfil, updated_at: nowIso } : x));

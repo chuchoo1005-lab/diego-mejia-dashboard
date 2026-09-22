@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { Search, RefreshCw, Phone, TrendingUp, XCircle, Trophy, Clock, CheckCircle2 } from "lucide-react";
 import {
   Paciente, CardOtro, CardHandlers,
-  displayName, formatTel, sc, ec, ua, resultadoLlamada, MAP_A_ETAPA,
+  displayName, formatTel, sc, ec, ua, resultadoLlamada, MAP_A_ETAPA, resultadoUpdates,
 } from "@/components/CallCard";
 
 type PipelineTab = "llamar" | "sin_terminar" | "proceso" | "cerrados" | "asistio" | "no_interesado";
@@ -80,7 +80,7 @@ export default function CitasPage() {
     setSaving(null);
   };
 
-  const setResultado = (p: Paciente, valor: string) => updatePerfil(p.id, { resultado_llamada: valor, resultado_at: new Date().toISOString() });
+  const setResultado = (p: Paciente, valor: string) => updatePerfil(p.id, resultadoUpdates(valor));
   const guardarNotas = (p: Paciente) => { const nota = notasTemp[p.id] ?? (p.perfil_paciente?.notas_internas as string ?? ""); updatePerfil(p.id, { notas_internas: nota }); };
 
   const toggleCandado = async (p: Paciente) => {
