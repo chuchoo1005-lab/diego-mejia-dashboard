@@ -31,10 +31,10 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
 
         {/* Logo */}
-        <div className="text-center mb-10">
-          <div className="inline-block rounded-xl mb-6" style={{ background: "#FFF", padding: "12px 18px", lineHeight: 0 }}>
+        <div className="text-center mb-8">
+          <div className="w-full mb-6 flex items-center justify-center" style={{ background: "#F4F3F1", padding: "28px 20px", borderRadius: 16 }}>
             <Image src="/logo-diego-mejia.png" alt="Diego Mejía Dental Group" width={981} height={270}
-              style={{ width: 220, height: "auto", display: "block" }} priority />
+              style={{ width: "100%", maxWidth: 260, height: "auto", display: "block" }} priority />
           </div>
           <p className="text-sm font-semibold tracking-[0.3em] uppercase" style={{ color: "rgba(255,255,255,0.4)" }}>
             Panel Administrativo

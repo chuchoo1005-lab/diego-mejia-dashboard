@@ -6,7 +6,7 @@ interface BeforeInstallPromptEvent extends Event {
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, CalendarDays, Users, Bell, BarChart3, Menu, X, LogOut, Calendar, UserCheck, TrendingUp, Download, Activity } from "lucide-react";
+import { LayoutDashboard, CalendarDays, Users, Bell, BarChart3, Menu, X, LogOut, Calendar, TrendingUp, Download, Activity } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -16,7 +16,6 @@ const nav = [
   { href: "/agenda",         label: "Agenda",              icon: Calendar,        desc: "Calendario de citas" },
   { href: "/pacientes",      label: "Pacientes",           icon: Users,           desc: "Base de datos" },
   { href: "/seguimientos",   label: "Seguimientos",        icon: Activity,        desc: "Pipeline de conversión" },
-  { href: "/pacientes-invisalign", label: "Invisalign",    icon: UserCheck,       desc: "55 pacientes activos" },
   { href: "/notificaciones", label: "Actividad",           icon: Bell,            desc: "Feed en tiempo real" },
   { href: "/metricas",       label: "Métricas",            icon: BarChart3,       desc: "Análisis" },
   { href: "/roi",            label: "Retorno de Inversión",icon: TrendingUp,      desc: "Rendimiento del sistema" },
@@ -80,9 +79,11 @@ export default function Sidebar() {
         <div className="absolute top-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(6,182,212,0.4), transparent)" }} />
 
         {/* Brand */}
-        <div className="px-6 pt-7 pb-5">
+        <div className="px-5 py-5" style={{ background: "#F4F3F1", borderBottom: "1px solid rgba(6,182,212,0.1)" }}>
           <Logo />
-          <p className="mt-2 text-[12px] font-semibold tracking-[0.14em] uppercase" style={{ color: "rgba(6,182,212,0.75)" }}>
+        </div>
+        <div className="px-6 pt-3 pb-2">
+          <p className="text-[12px] font-semibold tracking-[0.14em] uppercase" style={{ color: "rgba(6,182,212,0.75)" }}>
             Creamos Estilos de Vida
           </p>
         </div>
@@ -182,12 +183,16 @@ export default function Sidebar() {
 }
 
 function Logo({ compact = false }: { compact?: boolean }) {
-  const w = compact ? 132 : 168;
-  const h = Math.round(w * (270 / 981));
+  if (compact) {
+    return (
+      <div className="rounded-md" style={{ background: "#F4F3F1", padding: "5px 9px", lineHeight: 0 }}>
+        <Image src="/logo-diego-mejia.png" alt="Diego Mejía Dental Group" width={981} height={270}
+          style={{ width: 128, height: "auto", display: "block" }} priority />
+      </div>
+    );
+  }
   return (
-    <div className="inline-block rounded-lg" style={{ background: "#FFF", padding: compact ? "5px 8px" : "7px 10px", lineHeight: 0 }}>
-      <Image src="/logo-diego-mejia.png" alt="Diego Mejía Dental Group" width={981} height={270}
-        style={{ width: w, height: h, display: "block" }} priority />
-    </div>
+    <Image src="/logo-diego-mejia.png" alt="Diego Mejía Dental Group" width={981} height={270}
+      style={{ width: "100%", maxWidth: 190, height: "auto", display: "block" }} priority />
   );
 }

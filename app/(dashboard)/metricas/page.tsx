@@ -1,11 +1,13 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { SRV, MAP_A_ETAPA } from "@/components/CallCard";
+import { PRECIOS, PRECIO_DEFAULT, COP } from "@/lib/precios";
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { format, subDays } from "date-fns";
 import { es } from "date-fns/locale";
-import { RefreshCw, TrendingUp, MessageSquare, Users, Target, Phone, Trophy, CheckCircle2, AlertTriangle, Activity } from "lucide-react";
+import { RefreshCw, TrendingUp, MessageSquare, Users, Target, Phone, Trophy, CheckCircle2, AlertTriangle, Activity, DollarSign, ArrowRight } from "lucide-react";
 
 interface DayData { fecha: string; conversaciones: number; pacientes: number; }
 interface SegStep { paso: number; convirtio: number; cancelado: number; sinConversion: number; activo: number; total: number; }
@@ -42,7 +44,7 @@ function esAsistio(resultado: string): boolean { return MAP_A_ETAPA[resultado] =
 export default function MetricasPage() {
   const [rango, setRango] = useState<RangoKey>("30d");
   const [dayData, setDayData] = useState<DayData[]>([]);
-  const [totales, setTotales] = useState({ pacientes:0, conversaciones:0, calificados:0, listos:0, agendaron:0, asistieron:0, tasaCierre:0 });
+  const [totales, setTotales] = useState({ pacientes:0, conversaciones:0, calificados:0, listos:0, agendaron:0, asistieron:0, tasaCierre:0, gasto:0, ingresoEstimado:0, roas:0 });
   const [servicios, setServicios] = useState<{ nombre:string; count:number; pct:number }[]>([]);
   const [funnel, setFunnel] = useState<{ label:string; value:number; pct:number }[]>([]);
   const [sla, setSla] = useState({ total:0, buckets:[0,0,0,0] });
@@ -54,11 +56,14 @@ export default function MetricasPage() {
     const dias = RANGOS.find(r => r.key === rango)!.dias;
     const desde = subDays(new Date(), dias - 1); desde.setHours(0, 0, 0, 0);
     const desdeISO = desde.toISOString();
+    const desdeFecha = format(desde, "yyyy-MM-dd");
 
-    const [{ data: pacs }, { data: convs }] = await Promise.all([
+    const [{ data: pacs }, { data: convs }, { data: ads }] = await Promise.all([
       supabase.from("pacientes").select("id,created_at,calificado,perfil_paciente").eq("estado","activo").gte("created_at", desdeISO),
       supabase.from("conversaciones").select("timestamp").gte("timestamp", desdeISO),
+      supabase.from("meta_ads_diario").select("spend_cop").gte("fecha", desdeFecha),
     ]);
+    const gasto = (ads||[]).reduce((s,a)=>s+(Number(a.spend_cop)||0),0);
 
     // ─── Evolución temporal ────────────────────────────────────────────
     const days: Record<string,DayData> = {};
@@ -78,6 +83,7 @@ export default function MetricasPage() {
     let slaTotal = 0;
     const segByStep: Record<number, { convirtio:number; cancelado:number; sinConversion:number; activo:number; total:number }> = {};
     const now = Date.now();
+    let ingresoEstimado = 0;
 
     (pacs||[]).forEach(p => {
       const perfil = p.perfil_paciente as Record<string, unknown>;
@@ -101,6 +107,7 @@ export default function MetricasPage() {
       }
       if (esAgendo(resultado)) agendaron++;
       if (esAsistio(resultado)) asistieron++;
+      if (esAgendo(resultado) || esAsistio(resultado)) ingresoEstimado += (srv && PRECIOS[srv]) || PRECIO_DEFAULT;
       if (srv) srvCnt[srv] = (srvCnt[srv]||0) + 1;
 
       if (numSeg > 0) {
@@ -117,6 +124,7 @@ export default function MetricasPage() {
     setTotales({
       pacientes: total, conversaciones: (convs||[]).length, calificados, listos: listosSinProcesar,
       agendaron, asistieron, tasaCierre: calificados>0 ? Math.round(((agendaron+asistieron)/calificados)*100) : 0,
+      gasto, ingresoEstimado, roas: gasto>0 ? Math.round((ingresoEstimado/gasto)*10)/10 : 0,
     });
     setSla({ total: slaTotal, buckets: slaBuckets });
     setSegSteps(Object.entries(segByStep).map(([paso,b]) => ({ paso:parseInt(paso), ...b })).sort((a,b)=>a.paso-b.paso));
@@ -188,6 +196,39 @@ export default function MetricasPage() {
         <div className="flex justify-center py-16"><div className="w-8 h-8 border-2 rounded-full animate-spin" style={{borderColor:"rgba(6,182,212,0.2)",borderTopColor:"var(--cyan)"}}/></div>
       ) : (
         <>
+          {/* Gasto e ingreso — siempre visible, detalle por campaña en /roi */}
+          <div className="dm-card-glow p-5">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <DollarSign className="w-4 h-4" style={{ color: "var(--amber)" }} />
+                <p className="section-label" style={{ margin: 0, color: "rgba(245,158,11,0.6)" }}>Gasto e ingreso</p>
+              </div>
+              <Link href="/roi" className="flex items-center gap-1 text-sm font-medium" style={{ color: "var(--cyan)" }}>
+                Ver detalle por campaña <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+            {totales.gasto === 0 ? (
+              <p className="text-sm" style={{ color: "var(--text-3)" }}>
+                Sin gasto de Meta Ads registrado en este periodo todavía — la sincronización diaria (WF-12) está activa, los datos se irán acumulando.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <p className="text-2xl font-black" style={{ color: "var(--amber)" }}>{COP(totales.gasto)}</p>
+                  <p className="text-sm mt-0.5" style={{ color: "var(--text-3)" }}>Gasto en pauta</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-black" style={{ color: "var(--green)" }}>{COP(totales.ingresoEstimado)}</p>
+                  <p className="text-sm mt-0.5" style={{ color: "var(--text-3)" }}>Ingreso estimado (agendó + asistió)</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-black" style={{ color: "var(--cyan)" }}>{totales.roas.toFixed(1)}x</p>
+                  <p className="text-sm mt-0.5" style={{ color: "var(--text-3)" }}>ROAS estimado</p>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Embudo de conversión completo */}
           <div className="dm-card p-5">
             <p className="section-label mb-1">Embudo completo</p>
