@@ -35,16 +35,9 @@ export default function LoginPage() {
 
         {/* Logo */}
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="text-center mb-8">
-          <div className="relative flex items-center justify-center mb-6">
-            <div className="absolute -inset-6 rounded-full logo-halo" />
-            <div className="relative rounded-2xl" style={{ padding: 1.5, background: "linear-gradient(135deg, var(--blue), var(--cyan), var(--violet), var(--blue))", backgroundSize: "300% 300%", animation: "logoBorder 6s linear infinite" }}>
-              <div className="rounded-[15px] overflow-hidden relative p-6" style={{ background: "#06080D" }}>
-                <Image src="/logo-diego-mejia.png" alt="Diego Mejía Dental Group" width={981} height={270}
-                  style={{ width: "100%", maxWidth: 240, height: "auto", display: "block" }} priority />
-                <motion.div className="absolute inset-y-0 pointer-events-none" style={{ width: "45%", background: "linear-gradient(100deg, transparent, rgba(255,255,255,0.4), transparent)" }}
-                  initial={{ left: "-60%" }} animate={{ left: "130%" }} transition={{ duration: 1.3, delay: 0.7, ease: "easeInOut" }} />
-              </div>
-            </div>
+          <div className="flex items-center justify-center mb-6 p-4">
+            <Image src="/logo-diego-mejia.png" alt="Diego Mejía Dental Group" width={981} height={270}
+              style={{ width: "100%", maxWidth: 240, height: "auto", display: "block", filter: "drop-shadow(0 6px 20px rgba(0,0,0,0.5))" }} priority />
           </div>
           <p className="text-sm font-semibold tracking-[0.3em] uppercase" style={{ background: "linear-gradient(90deg, var(--cyan), var(--blue))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
             Panel Administrativo

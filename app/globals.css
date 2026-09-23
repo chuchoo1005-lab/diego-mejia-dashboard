@@ -175,21 +175,6 @@ body::after {
 .badge-gray   { background: rgba(255,255,255,0.06); color: var(--text-2); border: 1px solid var(--border); }
 .badge-white  { background: rgba(255,255,255,0.1);  color: #FFF; border: 1px solid rgba(255,255,255,0.15); }
 
-/* ═══ LOGO HALO ═════════════════════════════════════ */
-.logo-halo {
-  background: radial-gradient(circle, rgba(76,141,255,0.38), rgba(47,224,232,0.2) 45%, rgba(167,139,250,0.1) 65%, transparent 75%);
-  filter: blur(22px);
-  animation: logoGlow 4.5s ease-in-out infinite;
-}
-@keyframes logoGlow {
-  0%, 100% { opacity: 0.75; transform: scale(1); }
-  50%      { opacity: 1;    transform: scale(1.08); }
-}
-@keyframes logoBorder {
-  0%   { background-position: 0% 50%; }
-  100% { background-position: 300% 50%; }
-}
-
 /* ═══ GLOW ELEMENTS ═════════════════════════════════ */
 .glow-dot {
   width: 8px; height: 8px;

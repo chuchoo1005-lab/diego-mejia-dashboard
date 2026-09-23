@@ -81,14 +81,9 @@ export default function Sidebar() {
 
         {/* Brand */}
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-          className="mx-6 mt-6 mb-1 relative flex justify-center">
-          <div className="absolute -inset-5 rounded-full logo-halo" />
-          <div className="relative rounded-xl" style={{ padding: 1.5, background: "linear-gradient(135deg, var(--blue), var(--cyan), var(--violet), var(--blue))", backgroundSize: "300% 300%", animation: "logoBorder 6s linear infinite" }}>
-            <div className="rounded-[10px] overflow-hidden relative p-3.5" style={{ background: "var(--sidebar)" }}>
-              <Logo />
-              <motion.div className="absolute inset-y-0 pointer-events-none" style={{ width: "45%", background: "linear-gradient(100deg, transparent, rgba(255,255,255,0.4), transparent)" }}
-                initial={{ left: "-60%" }} animate={{ left: "130%" }} transition={{ duration: 1.3, delay: 0.6, ease: "easeInOut" }} />
-            </div>
+          className="mx-6 mt-6 mb-1 flex justify-center">
+          <div className="p-2" style={{ filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.45))" }}>
+            <Logo />
           </div>
         </motion.div>
         <div className="px-6 pt-3 pb-2">
@@ -199,12 +194,8 @@ export default function Sidebar() {
 function Logo({ compact = false }: { compact?: boolean }) {
   if (compact) {
     return (
-      <div className="rounded-lg" style={{ padding: 1.5, background: "linear-gradient(135deg, var(--blue), var(--cyan), var(--violet))", lineHeight: 0 }}>
-        <div className="rounded-[7px] p-1.5" style={{ background: "var(--sidebar)" }}>
-          <Image src="/logo-diego-mejia.png" alt="Diego Mejía Dental Group" width={981} height={270}
-            style={{ width: 118, height: "auto", display: "block" }} priority />
-        </div>
-      </div>
+      <Image src="/logo-diego-mejia.png" alt="Diego Mejía Dental Group" width={981} height={270}
+        style={{ width: 118, height: "auto", display: "block", filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.4))" }} priority />
     );
   }
   return (

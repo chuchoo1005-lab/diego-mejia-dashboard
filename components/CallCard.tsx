@@ -36,24 +36,30 @@ export const NIVEL: Record<string, { label: string; color: string; bg: string }>
 export const RESULTADOS = [
   { value: "",              label: "Para llamar",   color: "#10B981", icon: "📞" },
   { value: "proceso",       label: "En proceso",    color: "#FBBF24", icon: "🔄" },
+  { value: "reprogramo",    label: "Reprogramó",    color: "#38BDF8", icon: "🔁" },
   { value: "cerrado",       label: "Agendó valoración", color: "#22D3EE", icon: "🏆" },
   { value: "asistio",       label: "Asistió a la cita", color: "#8B5CF6", icon: "✅" },
+  { value: "no_asistio",    label: "No asistió",    color: "#F97316", icon: "🚫" },
   { value: "no_interesado", label: "No interesado", color: "#EF4444", icon: "✕"  },
 ];
 
 // Compatibilidad con valores viejos de DB → etapa del pipeline
 // "cerrado" = dijo que sí por teléfono / agendó. "asistio" = se presentó físicamente en el consultorio
 // (etapa aparte, porque no todo el que cierra por teléfono llega — ver project_diego_mejia_pendientes).
+// "reprogramo" = agendó pero pidió mover la fecha. "no_asistio" = tenía cita y no llegó (distinto de "no_interesado").
 export const MAP_A_ETAPA: Record<string, string> = {
   proceso: "proceso", interesado: "proceso", seguimiento: "proceso",
   no_respondio: "proceso", valoracion_agendada: "cerrados",
   cerrado: "cerrados",
   paciente_activo: "asistio", tratamiento_iniciado: "asistio", asistio: "asistio",
   no_interesado: "no_interesado",
+  reprogramo: "reprogramo",
+  no_asistio: "no_asistio",
 };
 
-// Valores crudos de resultado_llamada (no etapas) que detienen seguimientos automáticos del bot
-export const RESULTADOS_TERMINALES = ["cerrado", "asistio", "no_interesado"];
+// Valores crudos de resultado_llamada (no etapas) que detienen seguimientos automáticos del bot.
+// "reprogramo" NO es terminal a propósito: el lead sigue activo/interesado, igual que "proceso".
+export const RESULTADOS_TERMINALES = ["cerrado", "asistio", "no_interesado", "no_asistio"];
 
 // Campos a fusionar en perfil_paciente al mover un lead a "resultado_llamada".
 // Si el valor es terminal, también cancela el seguimiento automático del bot (WF-07 lee estado_seguimiento)
@@ -117,7 +123,7 @@ export function MoverBotones({ resultado, isSaving, onMover }: { resultado: stri
   return (
     <div>
       <p className="section-label mb-2 pt-2">Mover a:</p>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         {RESULTADOS.map(r => {
           const active = isActive(resultado, r.value);
           return (

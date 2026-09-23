@@ -1,22 +1,30 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { Search, RefreshCw, Phone, TrendingUp, XCircle, Trophy, Clock, CheckCircle2 } from "lucide-react";
+import { Search, RefreshCw, Phone, TrendingUp, XCircle, Trophy, Clock, CheckCircle2, Repeat, CalendarX } from "lucide-react";
 import {
   Paciente, CardOtro, CardHandlers,
   displayName, formatTel, sc, ec, ua, resultadoLlamada, MAP_A_ETAPA, resultadoUpdates,
 } from "@/components/CallCard";
 
-type PipelineTab = "llamar" | "sin_terminar" | "proceso" | "cerrados" | "asistio" | "no_interesado";
+type PipelineTab = "llamar" | "sin_terminar" | "proceso" | "reprogramo" | "cerrados" | "asistio" | "no_asistio" | "no_interesado";
 
-const TABS: { key: PipelineTab; label: string; color: string; icon: React.ElementType }[] = [
+type TabDef = { key: PipelineTab; label: string; color: string; icon: React.ElementType };
+
+// Dos grupos: leads que todavía se están trabajando, y resultados ya definidos de una llamada/cita.
+const TABS_EN_CURSO: TabDef[] = [
   { key: "llamar",        label: "Para llamar",   color: "#10B981", icon: Phone },
   { key: "sin_terminar",  label: "Sin terminar",  color: "#F97316", icon: Clock },
   { key: "proceso",       label: "En proceso",    color: "#FBBF24", icon: TrendingUp },
+  { key: "reprogramo",    label: "Reprogramó",    color: "#38BDF8", icon: Repeat },
+];
+const TABS_RESULTADO: TabDef[] = [
   { key: "cerrados",      label: "Agendó valoración", color: "#22D3EE", icon: Trophy },
   { key: "asistio",       label: "Asistió a la cita", color: "#8B5CF6", icon: CheckCircle2 },
+  { key: "no_asistio",    label: "No asistió",   color: "#FB923C", icon: CalendarX },
   { key: "no_interesado", label: "No interesado", color: "#EF4444", icon: XCircle },
 ];
+const TABS: TabDef[] = [...TABS_EN_CURSO, ...TABS_RESULTADO];
 
 export default function CitasPage() {
   const [leads, setLeads] = useState<Paciente[]>([]);
@@ -116,23 +124,30 @@ export default function CitasPage() {
   const paraLlamar    = leads.filter(p => etapa(p) === "llamar" && !agendamientoIncompleto(p) && (ec(p) === "entrega_premium" || sc(p) >= 60) && match(p)).sort(porRecencia);
   const sinTerminar   = leads.filter(p => etapa(p) === "llamar" && agendamientoIncompleto(p) && match(p)).sort(porRecencia);
   const enProceso     = leads.filter(p => etapa(p) === "proceso"       && match(p));
+  const reprogramaron = leads.filter(p => etapa(p) === "reprogramo"    && match(p));
   const cerrados      = leads.filter(p => etapa(p) === "cerrados"      && match(p));
   const asistieron    = leads.filter(p => etapa(p) === "asistio"       && match(p));
+  const noAsistieron  = leads.filter(p => etapa(p) === "no_asistio"    && match(p));
   const noInteresado  = leads.filter(p => etapa(p) === "no_interesado" && match(p));
 
   const counts: Record<PipelineTab, number> = {
     llamar: paraLlamar.length,
     sin_terminar: sinTerminar.length,
     proceso: enProceso.length,
+    reprogramo: reprogramaron.length,
     cerrados: cerrados.length,
     asistio: asistieron.length,
+    no_asistio: noAsistieron.length,
     no_interesado: noInteresado.length,
   };
 
   const toggleExp = (id: string) => setExpanded(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
   const handlers: CardHandlers = { expanded, toggleExp, notasTemp, setNotasTemp, saving, setResultado, guardarNotas, toggleCandado };
 
-  const currentList = { llamar: paraLlamar, sin_terminar: sinTerminar, proceso: enProceso, cerrados, asistio: asistieron, no_interesado: noInteresado }[tab];
+  const currentList = {
+    llamar: paraLlamar, sin_terminar: sinTerminar, proceso: enProceso, reprogramo: reprogramaron,
+    cerrados, asistio: asistieron, no_asistio: noAsistieron, no_interesado: noInteresado,
+  }[tab];
   const currentTab = TABS.find(t => t.key === tab)!;
 
   return (
@@ -150,25 +165,52 @@ export default function CitasPage() {
         </button>
       </div>
 
-      {/* Pipeline tabs */}
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-        {TABS.map(({ key, label, color, icon: Icon }) => {
-          const active = tab === key;
-          const count = counts[key];
-          return (
-            <button key={key} onClick={() => setTab(key)}
-              className="flex flex-col items-center gap-1 sm:gap-1.5 px-1.5 py-2.5 sm:px-2 sm:py-3 rounded-2xl text-center transition-all"
-              style={{
-                background: active ? `linear-gradient(160deg, ${color}28, ${color}0a)` : `${color}0c`,
-                border: `1px solid ${active ? `${color}55` : `${color}20`}`,
-                boxShadow: active ? `0 0 18px ${color}25` : "none",
-              }}>
-              <Icon className="w-4 h-4" style={{ color: active ? color : `${color}99` }} />
-              <span className="text-lg sm:text-xl font-black leading-none" style={{ color: active ? color : "var(--text-2)" }}>{count}</span>
-              <span className="text-[12px] sm:text-[13px] font-medium leading-tight" style={{ color: active ? color : "var(--text-3)" }}>{label}</span>
-            </button>
-          );
-        })}
+      {/* Pipeline tabs — agrupadas: en curso vs. resultado ya definido */}
+      <div className="space-y-3">
+        <div>
+          <p className="section-label mb-2 px-0.5">En curso</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {TABS_EN_CURSO.map(({ key, label, color, icon: Icon }) => {
+              const active = tab === key;
+              const count = counts[key];
+              return (
+                <button key={key} onClick={() => setTab(key)}
+                  className="flex flex-col items-center gap-1.5 px-2 py-3.5 rounded-2xl text-center transition-all"
+                  style={{
+                    background: active ? `linear-gradient(160deg, ${color}28, ${color}0a)` : `${color}0c`,
+                    border: `1px solid ${active ? `${color}55` : `${color}20`}`,
+                    boxShadow: active ? `0 0 18px ${color}25` : "none",
+                  }}>
+                  <Icon className="w-4 h-4" style={{ color: active ? color : `${color}99` }} />
+                  <span className="text-xl sm:text-2xl font-black leading-none" style={{ color: active ? color : "var(--text-2)" }}>{count}</span>
+                  <span className="text-[12px] sm:text-[13px] font-medium leading-tight" style={{ color: active ? color : "var(--text-3)" }}>{label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div>
+          <p className="section-label mb-2 px-0.5">Resultado</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {TABS_RESULTADO.map(({ key, label, color, icon: Icon }) => {
+              const active = tab === key;
+              const count = counts[key];
+              return (
+                <button key={key} onClick={() => setTab(key)}
+                  className="flex flex-col items-center gap-1.5 px-2 py-3.5 rounded-2xl text-center transition-all"
+                  style={{
+                    background: active ? `linear-gradient(160deg, ${color}28, ${color}0a)` : `${color}0c`,
+                    border: `1px solid ${active ? `${color}55` : `${color}20`}`,
+                    boxShadow: active ? `0 0 18px ${color}25` : "none",
+                  }}>
+                  <Icon className="w-4 h-4" style={{ color: active ? color : `${color}99` }} />
+                  <span className="text-xl sm:text-2xl font-black leading-none" style={{ color: active ? color : "var(--text-2)" }}>{count}</span>
+                  <span className="text-[12px] sm:text-[13px] font-medium leading-tight" style={{ color: active ? color : "var(--text-3)" }}>{label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* Búsqueda */}
@@ -197,8 +239,10 @@ export default function CitasPage() {
             {tab === "llamar" ? "Sin leads pendientes de llamar"
             : tab === "sin_terminar" ? "Nadie se quedó a medias agendando"
             : tab === "proceso" ? "Sin leads en proceso"
+            : tab === "reprogramo" ? "Nadie ha reprogramado su cita"
             : tab === "cerrados" ? "Nadie ha agendado valoración todavía"
             : tab === "asistio" ? "Nadie ha asistido a su cita todavía"
+            : tab === "no_asistio" ? "Nadie ha faltado a su cita"
             : "Sin leads no interesados"}
           </p>
           {tab !== "llamar" && tab !== "sin_terminar" && (
