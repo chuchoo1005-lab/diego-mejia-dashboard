@@ -35,10 +35,12 @@ export default function LoginPage() {
 
         {/* Logo */}
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="text-center mb-8">
-          <div className="relative flex items-center justify-center mb-6 p-4">
-            <div className="absolute -inset-6 rounded-full logo-halo" />
-            <Image src="/logo-diego-mejia.png" alt="Diego Mejía Dental Group" width={981} height={270}
-              style={{ width: "100%", maxWidth: 240, height: "auto", display: "block", filter: "drop-shadow(0 6px 20px rgba(0,0,0,0.5))", position: "relative" }} priority />
+          <div className="relative flex items-center justify-center mb-6">
+            <div className="absolute -inset-8 rounded-full logo-halo" />
+            <div className="relative rounded-2xl px-8 py-6" style={{ background: "#F4F3F1", boxShadow: "0 14px 40px rgba(0,0,0,0.4)" }}>
+              <Image src="/logo-diego-mejia.png" alt="Diego Mejía Dental Group" width={981} height={270}
+                style={{ width: "100%", maxWidth: 220, height: "auto", display: "block" }} priority />
+            </div>
           </div>
           <p className="text-sm font-semibold tracking-[0.3em] uppercase" style={{ background: "linear-gradient(90deg, var(--cyan), var(--blue))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
             Panel Administrativo

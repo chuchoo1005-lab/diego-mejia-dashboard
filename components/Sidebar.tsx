@@ -74,16 +74,16 @@ export default function Sidebar() {
 
       {open && <div className="lg:hidden fixed inset-0 z-40" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }} onClick={() => setOpen(false)} />}
 
-      <aside className={`fixed top-0 left-0 h-full z-40 w-[248px] flex flex-col transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}
+      <aside className={`fixed top-0 left-0 h-full z-40 w-[248px] flex flex-col pt-16 lg:pt-0 transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}
         style={{ background: "var(--sidebar)", borderRight: "1px solid rgba(76,141,255,0.1)" }}>
 
         <div className="absolute top-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(76,141,255,0.5), rgba(47,224,232,0.5), transparent)" }} />
 
         {/* Brand */}
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-          className="mx-6 mt-6 mb-1 relative flex justify-center">
+          className="mx-5 mt-6 mb-1 relative flex justify-center">
           <div className="absolute -inset-4 rounded-full logo-halo" />
-          <div className="relative p-2" style={{ filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.45))" }}>
+          <div className="relative rounded-2xl px-5 py-4" style={{ background: "#F4F3F1", boxShadow: "0 10px 30px rgba(0,0,0,0.35)" }}>
             <Logo />
           </div>
         </motion.div>
@@ -195,8 +195,10 @@ export default function Sidebar() {
 function Logo({ compact = false }: { compact?: boolean }) {
   if (compact) {
     return (
-      <Image src="/logo-diego-mejia.png" alt="Diego Mejía Dental Group" width={981} height={270}
-        style={{ width: 118, height: "auto", display: "block", filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.4))" }} priority />
+      <div className="rounded-xl px-3 py-2" style={{ background: "#F4F3F1", boxShadow: "0 4px 14px rgba(0,0,0,0.35)" }}>
+        <Image src="/logo-diego-mejia.png" alt="Diego Mejía Dental Group" width={981} height={270}
+          style={{ width: 104, height: "auto", display: "block" }} priority />
+      </div>
     );
   }
   return (
