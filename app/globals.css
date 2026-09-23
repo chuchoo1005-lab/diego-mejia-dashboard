@@ -25,6 +25,8 @@
   --amber-dim:    rgba(255, 180, 84, 0.12);
   --red:          #FF5F6D;
   --red-dim:      rgba(255, 95, 109, 0.12);
+  --violet:       #A78BFA;
+  --violet-dim:   rgba(167, 139, 250, 0.14);
   --sidebar:      #090C13;
 
   /* shadcn compat */
@@ -47,14 +49,44 @@
 * { box-sizing: border-box; }
 
 body {
-  background:
-    radial-gradient(900px 520px at 10% -8%, rgba(76,141,255,0.13), transparent 60%),
-    radial-gradient(700px 480px at 100% 0%, rgba(47,224,232,0.08), transparent 55%),
-    var(--bg);
-  background-attachment: fixed;
+  position: relative;
+  background: var(--bg);
   color: var(--text);
   font-family: var(--font-dm), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ═══ AURORA — fondo colorido, vivo, sutil ═══════════ */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -10%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(38% 32% at 8% -6%,  rgba(76,141,255,0.20), transparent 70%),
+    radial-gradient(34% 30% at 96% 4%,  rgba(47,224,232,0.14), transparent 70%),
+    radial-gradient(36% 34% at 78% 96%, rgba(167,139,250,0.12), transparent 72%),
+    radial-gradient(30% 28% at 4% 86%,  rgba(47,208,160,0.08), transparent 72%);
+  filter: blur(60px);
+  animation: auroraDrift 26s ease-in-out infinite alternate;
+}
+@keyframes auroraDrift {
+  0%   { transform: translate3d(0,0,0) scale(1); }
+  50%  { transform: translate3d(1.5%,-2%,0) scale(1.06); }
+  100% { transform: translate3d(-1.5%,1.5%,0) scale(1.02); }
+}
+/* Grano fino — profundidad premium, casi imperceptible */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.03;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
 }
 
 /* ═══ GLASS CARD ═══════════════════════════════════ */
@@ -134,6 +166,21 @@ body {
 .badge-red    { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(239,68,68,0.25); }
 .badge-gray   { background: rgba(255,255,255,0.06); color: var(--text-2); border: 1px solid var(--border); }
 .badge-white  { background: rgba(255,255,255,0.1);  color: #FFF; border: 1px solid rgba(255,255,255,0.15); }
+
+/* ═══ LOGO HALO ═════════════════════════════════════ */
+.logo-halo {
+  background: radial-gradient(circle, rgba(76,141,255,0.38), rgba(47,224,232,0.2) 45%, rgba(167,139,250,0.1) 65%, transparent 75%);
+  filter: blur(22px);
+  animation: logoGlow 4.5s ease-in-out infinite;
+}
+@keyframes logoGlow {
+  0%, 100% { opacity: 0.75; transform: scale(1); }
+  50%      { opacity: 1;    transform: scale(1.08); }
+}
+@keyframes logoBorder {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
+}
 
 /* ═══ GLOW ELEMENTS ═════════════════════════════════ */
 .glow-dot {

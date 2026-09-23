@@ -80,10 +80,16 @@ export default function Sidebar() {
         <div className="absolute top-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(76,141,255,0.5), rgba(47,224,232,0.5), transparent)" }} />
 
         {/* Brand */}
-        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
-          className="mx-4 mt-5 mb-1 px-4 py-4 rounded-2xl relative"
-          style={{ background: "#F4F3F1", boxShadow: "0 0 40px rgba(76,141,255,0.16)" }}>
-          <Logo />
+        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
+          className="mx-6 mt-6 mb-1 relative flex justify-center">
+          <div className="absolute -inset-5 rounded-full logo-halo" />
+          <div className="relative rounded-xl" style={{ padding: 1.5, background: "linear-gradient(135deg, var(--blue), var(--cyan), var(--violet), var(--blue))", backgroundSize: "300% 300%", animation: "logoBorder 6s linear infinite" }}>
+            <div className="rounded-[10px] overflow-hidden relative p-3.5" style={{ background: "var(--sidebar)" }}>
+              <Logo />
+              <motion.div className="absolute inset-y-0 pointer-events-none" style={{ width: "45%", background: "linear-gradient(100deg, transparent, rgba(255,255,255,0.4), transparent)" }}
+                initial={{ left: "-60%" }} animate={{ left: "130%" }} transition={{ duration: 1.3, delay: 0.6, ease: "easeInOut" }} />
+            </div>
+          </div>
         </motion.div>
         <div className="px-6 pt-3 pb-2">
           <p className="text-[12px] font-semibold tracking-[0.14em] uppercase" style={{ background: "linear-gradient(90deg, var(--cyan), var(--blue))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
@@ -193,9 +199,11 @@ export default function Sidebar() {
 function Logo({ compact = false }: { compact?: boolean }) {
   if (compact) {
     return (
-      <div className="rounded-md" style={{ background: "#F4F3F1", padding: "5px 9px", lineHeight: 0 }}>
-        <Image src="/logo-diego-mejia.png" alt="Diego Mejía Dental Group" width={981} height={270}
-          style={{ width: 128, height: "auto", display: "block" }} priority />
+      <div className="rounded-lg" style={{ padding: 1.5, background: "linear-gradient(135deg, var(--blue), var(--cyan), var(--violet))", lineHeight: 0 }}>
+        <div className="rounded-[7px] p-1.5" style={{ background: "var(--sidebar)" }}>
+          <Image src="/logo-diego-mejia.png" alt="Diego Mejía Dental Group" width={981} height={270}
+            style={{ width: 118, height: "auto", display: "block" }} priority />
+        </div>
       </div>
     );
   }
