@@ -1,13 +1,13 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { Search, RefreshCw, Phone, TrendingUp, XCircle, Trophy, Clock, CheckCircle2, Repeat, CalendarX } from "lucide-react";
+import { Search, RefreshCw, Phone, TrendingUp, XCircle, Trophy, Clock, CheckCircle2, Repeat, CalendarX, Hourglass } from "lucide-react";
 import {
   Paciente, CardOtro, CardHandlers,
   displayName, formatTel, sc, ec, ua, resultadoLlamada, MAP_A_ETAPA, resultadoUpdates,
 } from "@/components/CallCard";
 
-type PipelineTab = "llamar" | "sin_terminar" | "proceso" | "reprogramo" | "cerrados" | "asistio" | "no_asistio" | "no_interesado";
+type PipelineTab = "llamar" | "sin_terminar" | "proceso" | "espera" | "reprogramo" | "cerrados" | "asistio" | "no_asistio" | "no_interesado";
 
 type TabDef = { key: PipelineTab; label: string; color: string; icon: React.ElementType };
 
@@ -16,6 +16,7 @@ const TABS_EN_CURSO: TabDef[] = [
   { key: "llamar",        label: "Para llamar",   color: "#10B981", icon: Phone },
   { key: "sin_terminar",  label: "Sin terminar",  color: "#F97316", icon: Clock },
   { key: "proceso",       label: "En proceso",    color: "#FBBF24", icon: TrendingUp },
+  { key: "espera",        label: "En espera",     color: "#94A3B8", icon: Hourglass },
   { key: "reprogramo",    label: "Reprogramó",    color: "#38BDF8", icon: Repeat },
 ];
 const TABS_RESULTADO: TabDef[] = [
@@ -124,6 +125,7 @@ export default function CitasPage() {
   const paraLlamar    = leads.filter(p => etapa(p) === "llamar" && !agendamientoIncompleto(p) && (ec(p) === "entrega_premium" || sc(p) >= 60) && match(p)).sort(porRecencia);
   const sinTerminar   = leads.filter(p => etapa(p) === "llamar" && agendamientoIncompleto(p) && match(p)).sort(porRecencia);
   const enProceso     = leads.filter(p => etapa(p) === "proceso"       && match(p));
+  const enEspera      = leads.filter(p => etapa(p) === "espera"        && match(p));
   const reprogramaron = leads.filter(p => etapa(p) === "reprogramo"    && match(p));
   const cerrados      = leads.filter(p => etapa(p) === "cerrados"      && match(p));
   const asistieron    = leads.filter(p => etapa(p) === "asistio"       && match(p));
@@ -134,6 +136,7 @@ export default function CitasPage() {
     llamar: paraLlamar.length,
     sin_terminar: sinTerminar.length,
     proceso: enProceso.length,
+    espera: enEspera.length,
     reprogramo: reprogramaron.length,
     cerrados: cerrados.length,
     asistio: asistieron.length,
@@ -145,7 +148,7 @@ export default function CitasPage() {
   const handlers: CardHandlers = { expanded, toggleExp, notasTemp, setNotasTemp, saving, setResultado, guardarNotas, toggleCandado };
 
   const currentList = {
-    llamar: paraLlamar, sin_terminar: sinTerminar, proceso: enProceso, reprogramo: reprogramaron,
+    llamar: paraLlamar, sin_terminar: sinTerminar, proceso: enProceso, espera: enEspera, reprogramo: reprogramaron,
     cerrados, asistio: asistieron, no_asistio: noAsistieron, no_interesado: noInteresado,
   }[tab];
   const currentTab = TABS.find(t => t.key === tab)!;
@@ -169,7 +172,7 @@ export default function CitasPage() {
       <div className="space-y-3">
         <div>
           <p className="section-label mb-2 px-0.5">En curso</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
             {TABS_EN_CURSO.map(({ key, label, color, icon: Icon }) => {
               const active = tab === key;
               const count = counts[key];
@@ -239,6 +242,7 @@ export default function CitasPage() {
             {tab === "llamar" ? "Sin leads pendientes de llamar"
             : tab === "sin_terminar" ? "Nadie se quedó a medias agendando"
             : tab === "proceso" ? "Sin leads en proceso"
+            : tab === "espera" ? "Nadie está en espera por ahora"
             : tab === "reprogramo" ? "Nadie ha reprogramado su cita"
             : tab === "cerrados" ? "Nadie ha agendado valoración todavía"
             : tab === "asistio" ? "Nadie ha asistido a su cita todavía"

@@ -36,6 +36,7 @@ export const NIVEL: Record<string, { label: string; color: string; bg: string }>
 export const RESULTADOS_EN_CURSO = [
   { value: "",              label: "Para llamar",   color: "#10B981", icon: "📞" },
   { value: "proceso",       label: "En proceso",    color: "#FBBF24", icon: "🔄" },
+  { value: "espera",        label: "En espera",     color: "#94A3B8", icon: "⏳" },
   { value: "reprogramo",    label: "Reprogramó",    color: "#38BDF8", icon: "🔁" },
 ];
 export const RESULTADOS_FINAL = [
@@ -50,6 +51,7 @@ export const RESULTADOS = [...RESULTADOS_EN_CURSO, ...RESULTADOS_FINAL];
 // "cerrado" = dijo que sí por teléfono / agendó. "asistio" = se presentó físicamente en el consultorio
 // (etapa aparte, porque no todo el que cierra por teléfono llega — ver project_diego_mejia_pendientes).
 // "reprogramo" = agendó pero pidió mover la fecha. "no_asistio" = tenía cita y no llegó (distinto de "no_interesado").
+// "espera" = quedó pensando/evaluando — distinto de "proceso" (la asesora lo está trabajando activamente).
 export const MAP_A_ETAPA: Record<string, string> = {
   proceso: "proceso", interesado: "proceso", seguimiento: "proceso",
   no_respondio: "proceso", valoracion_agendada: "cerrados",
@@ -58,6 +60,7 @@ export const MAP_A_ETAPA: Record<string, string> = {
   no_interesado: "no_interesado",
   reprogramo: "reprogramo",
   no_asistio: "no_asistio",
+  espera: "espera",
 };
 
 // Valores crudos de resultado_llamada (no etapas) que detienen seguimientos automáticos del bot.
@@ -142,7 +145,7 @@ export function MoverBotones({ resultado, isSaving, onMover }: { resultado: stri
     <div className="space-y-3">
       <div>
         <p className="section-label mb-2 pt-2">En curso</p>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {RESULTADOS_EN_CURSO.map(r => (
             <MoverBoton key={r.value} r={r} active={isActive(resultado, r.value)} isSaving={isSaving} onMover={onMover} />
           ))}
