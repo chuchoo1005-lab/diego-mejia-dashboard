@@ -138,13 +138,13 @@ export default function ROIPage() {
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: "Gasto en pauta", value: COP(totales.spend), sub: `${campanas.length} campaña(s) con gasto`, icon: DollarSign, color: "var(--amber)" },
-              { label: "Contactos reales", value: totales.contactos.toString(), sub: "Llegaron a WhatsApp", icon: Users, color: "var(--cyan)" },
+              { label: "Gasto en pauta", value: COP(totales.spend), sub: `${campanas.length} campaña(s) con gasto`, icon: DollarSign, color: "#FFB454" },
+              { label: "Contactos reales", value: totales.contactos.toString(), sub: "Llegaron a WhatsApp", icon: Users, color: "#2FE0E8" },
               { label: "Agendaron/asistieron", value: totales.cierres.toString(), sub: totales.contactos > 0 ? `${Math.round(totales.cierres / totales.contactos * 100)}% de contactos` : "—", icon: Target, color: "#A78BFA" },
-              { label: "ROAS estimado", value: `${roas.toFixed(1)}x`, sub: "Ingreso estimado / gasto", icon: TrendingUp, color: "var(--green)" },
+              { label: "ROAS estimado", value: `${roas.toFixed(1)}x`, sub: "Ingreso estimado / gasto", icon: TrendingUp, color: "#2FD0A0" },
             ].map(m => (
-              <div key={m.label} className="dm-card p-5">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ background: `${m.color}18` }}>
+              <div key={m.label} className="p-5 rounded-2xl" style={{ background: `linear-gradient(160deg, ${m.color}1c, rgba(255,255,255,0.03) 55%)`, border: `1px solid ${m.color}28` }}>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ background: `${m.color}22` }}>
                   <m.icon className="w-4 h-4" style={{ color: m.color }} />
                 </div>
                 <p className="text-2xl font-black" style={{ color: m.color }}>{m.value}</p>

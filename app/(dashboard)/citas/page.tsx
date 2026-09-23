@@ -159,10 +159,11 @@ export default function CitasPage() {
             <button key={key} onClick={() => setTab(key)}
               className="flex flex-col items-center gap-1 sm:gap-1.5 px-1.5 py-2.5 sm:px-2 sm:py-3 rounded-2xl text-center transition-all"
               style={{
-                background: active ? `${color}18` : "rgba(255,255,255,0.03)",
-                border: `1px solid ${active ? `${color}40` : "var(--border)"}`,
+                background: active ? `linear-gradient(160deg, ${color}28, ${color}0a)` : `${color}0c`,
+                border: `1px solid ${active ? `${color}55` : `${color}20`}`,
+                boxShadow: active ? `0 0 18px ${color}25` : "none",
               }}>
-              <Icon className="w-4 h-4" style={{ color: active ? color : "var(--text-3)" }} />
+              <Icon className="w-4 h-4" style={{ color: active ? color : `${color}99` }} />
               <span className="text-lg sm:text-xl font-black leading-none" style={{ color: active ? color : "var(--text-2)" }}>{count}</span>
               <span className="text-[12px] sm:text-[13px] font-medium leading-tight" style={{ color: active ? color : "var(--text-3)" }}>{label}</span>
             </button>

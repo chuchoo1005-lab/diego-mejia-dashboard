@@ -272,7 +272,7 @@ export default function NotificacionesPage() {
           ) : seguimientosPacs.map(p => {
             const hrs = Math.round((now - ua(p).getTime()) / 3600000);
             const urgencia = hrs > 48 ? "alta" : hrs > 24 ? "media" : "normal";
-            const colorUrgencia = urgencia === "alta" ? "var(--red)" : urgencia === "media" ? "var(--amber)" : "var(--text-3)";
+            const colorUrgencia = urgencia === "alta" ? "#FF5F6D" : urgencia === "media" ? "#FFB454" : "#AEB6C9";
             return (
               <div key={p.id} style={{ borderLeft: `3px solid ${colorUrgencia}` }}>
                 <CardOtro p={p} h={handlers} />

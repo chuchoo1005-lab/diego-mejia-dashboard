@@ -145,7 +145,7 @@ export default function MetricasPage() {
 
   useEffect(()=>{load();},[load]);
 
-  const slaColors = ["var(--green)","var(--amber)","#FB923C","var(--red)"];
+  const slaColors = ["#2FD0A0","#FFB454","#FB923C","#FF5F6D"];
   const slaLabels = ["< 6 horas","6 - 24 horas","24 - 48 horas","+ 48 horas"];
 
   return (
@@ -175,15 +175,19 @@ export default function MetricasPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
         {[
-          {label:"Total leads",         value:totales.pacientes,                icon:Users,        color:"var(--cyan)"},
-          {label:"Calificados",         value:totales.calificados,              icon:Target,       color:"var(--amber)"},
-          {label:"Listos sin procesar", value:totales.listos,                   icon:Phone,        color:"var(--red)"},
-          {label:"Agendaron",           value:totales.agendaron,                icon:Trophy,       color:"var(--cyan)"},
+          {label:"Total leads",         value:totales.pacientes,                icon:Users,        color:"#2FE0E8"},
+          {label:"Calificados",         value:totales.calificados,              icon:Target,       color:"#FFB454"},
+          {label:"Listos sin procesar", value:totales.listos,                   icon:Phone,        color:"#FF5F6D"},
+          {label:"Agendaron",           value:totales.agendaron,                icon:Trophy,       color:"#4C8DFF"},
           {label:"Asistieron",          value:totales.asistieron,               icon:CheckCircle2, color:"#A78BFA"},
-          {label:"Tasa de cierre real", value:`${totales.tasaCierre}%`,         icon:TrendingUp,   color:"var(--green)", highlight:true},
+          {label:"Tasa de cierre real", value:`${totales.tasaCierre}%`,         icon:TrendingUp,   color:"#2FD0A0", highlight:true},
         ].map(({label,value,icon:Icon,color,highlight})=>(
-          <div key={label} className="dm-card p-4" style={highlight?{borderColor:"rgba(16,185,129,0.3)"}:{}}>
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center mb-2" style={{background:`${color}18`}}>
+          <div key={label} className="p-4 rounded-2xl" style={{
+            background: `linear-gradient(160deg, ${color}1c, rgba(255,255,255,0.03) 55%)`,
+            border: `1px solid ${highlight ? `${color}55` : `${color}28`}`,
+            boxShadow: highlight ? `0 0 20px ${color}20` : "none",
+          }}>
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center mb-2" style={{background:`${color}22`}}>
               <Icon className="w-3.5 h-3.5" style={{color}}/>
             </div>
             <p className="text-xl font-black" style={{color}}>{value}</p>
@@ -237,7 +241,7 @@ export default function MetricasPage() {
             </h2>
             <div className="space-y-3">
               {funnel.map(({label,value,pct},i)=>{
-                const colors=["rgba(255,255,255,0.15)","#A78BFA","var(--amber)","var(--cyan)","var(--green)","#8B5CF6"];
+                const colors=["rgba(255,255,255,0.15)","#A78BFA","#FFB454","#2FE0E8","#2FD0A0","#8B5CF6"];
                 return (
                   <div key={label}>
                     <div className="flex items-center justify-between mb-1.5">

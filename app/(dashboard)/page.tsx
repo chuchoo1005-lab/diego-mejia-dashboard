@@ -239,9 +239,9 @@ export default function Home() {
   const insights = buildInsights(pacs);
   const funnel = [
     { label: "Conversaciones totales", value: kpis.total, color: "rgba(255,255,255,0.2)" },
-    { label: "Leads calificados (≥20)", value: pacs.filter(p=>sc(p)>=20).length, color: "var(--cyan)" },
-    { label: "Alta intención",          value: pacs.filter(p=>niv(p)==="alto").length, color: "var(--amber)" },
-    { label: "Listos para valorar",     value: kpis.listos, color: "var(--green)" },
+    { label: "Leads calificados (≥20)", value: pacs.filter(p=>sc(p)>=20).length, color: "#2FE0E8" },
+    { label: "Alta intención",          value: pacs.filter(p=>niv(p)==="alto").length, color: "#FFB454" },
+    { label: "Listos para valorar",     value: kpis.listos, color: "#2FD0A0" },
   ];
 
   if (loading) return (
@@ -259,7 +259,7 @@ export default function Home() {
       {/* ══ ALERTAS URGENTES ══════════════════════════════════════════ */}
       {alertasUrgentes.length > 0 && (
         <div className="space-y-1.5">
-          {alertasUrgentes.slice(0, 3).map(p => {
+          {alertasUrgentes.slice(0, 3).map((p, alertaIdx) => {
             const telefono = tel(p); const nombre = nom(p);
             const isListo = ec(p) === "entrega_premium";
             const colorEstado = isListo ? "#10B981" : "#EF4444";
@@ -274,8 +274,14 @@ export default function Home() {
             const isExpAlerta = expandedAlertas.has(p.id);
             const resultadoAlerta = (p.perfil_paciente?.resultado_llamada as string) || "";
             return (
-              <div key={p.id} className="rounded-lg animate-fade-up overflow-hidden"
-                style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)" }}>
+              <motion.div key={p.id} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.35, delay: 0.06 * alertaIdx }}
+                className="rounded-lg overflow-hidden"
+                style={{
+                  background: `linear-gradient(90deg, ${colorEstado}14, rgba(255,255,255,0.03) 55%)`,
+                  border: `1px solid ${colorEstado}30`,
+                  borderLeft: `3px solid ${colorEstado}`,
+                  boxShadow: `0 0 20px ${colorEstado}12`,
+                }}>
                 <div className="flex items-center gap-2.5 px-3 py-2">
                   {/* Dot */}
                   <div className="w-2 h-2 rounded-full shrink-0" style={{ background: colorEstado, boxShadow:`0 0 6px ${colorEstado}` }} />
@@ -323,7 +329,7 @@ export default function Home() {
                     </div>
                   </div>
                 )}
-              </div>
+              </motion.div>
             );
           })}
         </div>
@@ -348,21 +354,22 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             {[
-              { label:"Mensajes hoy",   value:kpis.convsHoy,     icon:MessageSquare, color:"var(--cyan)",  href:"/conversaciones" },
+              { label:"Mensajes hoy",   value:kpis.convsHoy,     icon:MessageSquare, color:"#2FE0E8",  href:"/conversaciones" },
               { label:"Leads 🔥",       value:kpis.calientes,    icon:Flame,         color:"#F97316",      href:"/citas" },
-              { label:"Para llamar",    value:kpis.listos,       icon:Phone,         color:"var(--green)", href:"/citas" },
+              { label:"Para llamar",    value:kpis.listos,       icon:Phone,         color:"#2FD0A0", href:"/citas" },
               { label:"Sin terminar",   value:kpis.sinTerminar,  icon:Clock,         color:"#FBBF24",      href:"/citas" },
               { label:"Seguimientos",   value:kpis.seguimientos, icon:Activity,      color:"#A78BFA",      href:"/seguimientos" },
-            ].map(({ label, value, icon:Icon, color, href }) => (
-              <a key={label} href={href}
+            ].map(({ label, value, icon:Icon, color, href }, kpiIdx) => (
+              <motion.a key={label} href={href}
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.06 * kpiIdx + 0.1 }}
                 className="text-center px-3 py-3 rounded-xl block transition-all active:scale-95"
-                style={{ background:"rgba(255,255,255,0.03)", border:"1px solid var(--border)", textDecoration:"none", cursor:"pointer", WebkitTapHighlightColor:"transparent" }}
-                onMouseEnter={e => { const el = e.currentTarget; el.style.background="rgba(255,255,255,0.07)"; el.style.borderColor=color; }}
-                onMouseLeave={e => { const el = e.currentTarget; el.style.background="rgba(255,255,255,0.03)"; el.style.borderColor="var(--border)"; }}>
+                style={{ background:`linear-gradient(160deg, ${color}14, rgba(255,255,255,0.03))`, border:`1px solid ${color}25`, textDecoration:"none", cursor:"pointer", WebkitTapHighlightColor:"transparent" }}
+                onMouseEnter={e => { const el = e.currentTarget; el.style.background=`linear-gradient(160deg, ${color}28, rgba(255,255,255,0.05))`; el.style.borderColor=color; el.style.boxShadow=`0 0 20px ${color}25`; }}
+                onMouseLeave={e => { const el = e.currentTarget; el.style.background=`linear-gradient(160deg, ${color}14, rgba(255,255,255,0.03))`; el.style.borderColor=`${color}25`; el.style.boxShadow="none"; }}>
                 <Icon className="w-4 h-4 mx-auto mb-1" style={{ color }} />
                 <p className="text-2xl font-black" style={{ color }}>{value}</p>
                 <p className="text-[11px] leading-tight uppercase" style={{ color:"var(--text-3)" }}>{label}</p>
-              </a>
+              </motion.a>
             ))}
           </div>
         </div>
