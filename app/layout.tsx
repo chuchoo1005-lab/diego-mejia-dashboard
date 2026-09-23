@@ -35,10 +35,6 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "DM Dental",
   },
-  icons: {
-    icon: "/favicon.ico",
-    apple: "/icon-192.png",
-  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
