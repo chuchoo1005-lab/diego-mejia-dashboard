@@ -32,16 +32,19 @@ export const NIVEL: Record<string, { label: string; color: string; bg: string }>
   bajo:  { label: "💤 Indeciso",       color: "var(--text-3)", bg: "rgba(255,255,255,0.05)" },
 };
 
-// Opciones de movimiento manual entre etapas
-export const RESULTADOS = [
+// Opciones de movimiento manual entre etapas — agrupadas igual que las pestañas de /citas
+export const RESULTADOS_EN_CURSO = [
   { value: "",              label: "Para llamar",   color: "#10B981", icon: "📞" },
   { value: "proceso",       label: "En proceso",    color: "#FBBF24", icon: "🔄" },
   { value: "reprogramo",    label: "Reprogramó",    color: "#38BDF8", icon: "🔁" },
+];
+export const RESULTADOS_FINAL = [
   { value: "cerrado",       label: "Agendó valoración", color: "#22D3EE", icon: "🏆" },
   { value: "asistio",       label: "Asistió a la cita", color: "#8B5CF6", icon: "✅" },
   { value: "no_asistio",    label: "No asistió",    color: "#F97316", icon: "🚫" },
   { value: "no_interesado", label: "No interesado", color: "#EF4444", icon: "✕"  },
 ];
+export const RESULTADOS = [...RESULTADOS_EN_CURSO, ...RESULTADOS_FINAL];
 
 // Compatibilidad con valores viejos de DB → etapa del pipeline
 // "cerrado" = dijo que sí por teléfono / agendó. "asistio" = se presentó físicamente en el consultorio
@@ -119,26 +122,39 @@ export interface CardHandlers {
 }
 
 /* ── Botones Mover a: (shared) ── */
+function MoverBoton({ r, active, isSaving, onMover }: { r: typeof RESULTADOS[number]; active: boolean; isSaving: boolean; onMover: (v: string) => void }) {
+  return (
+    <button onClick={() => onMover(r.value)}
+      className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold uppercase tracking-wide transition-all"
+      style={{
+        background: active ? `${r.color}22` : "rgba(255,255,255,0.04)",
+        color: active ? r.color : "rgba(255,255,255,0.65)",
+        border: `1.5px solid ${active ? `${r.color}55` : "var(--border)"}`,
+        opacity: isSaving ? 0.6 : 1,
+      }}>
+      <span>{r.icon}</span> {r.label}
+    </button>
+  );
+}
+
 export function MoverBotones({ resultado, isSaving, onMover }: { resultado: string; isSaving: boolean; onMover: (v: string) => void }) {
   return (
-    <div>
-      <p className="section-label mb-2 pt-2">Mover a:</p>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        {RESULTADOS.map(r => {
-          const active = isActive(resultado, r.value);
-          return (
-            <button key={r.value} onClick={() => onMover(r.value)}
-              className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold uppercase tracking-wide transition-all"
-              style={{
-                background: active ? `${r.color}22` : "rgba(255,255,255,0.04)",
-                color: active ? r.color : "rgba(255,255,255,0.65)",
-                border: `1.5px solid ${active ? `${r.color}55` : "var(--border)"}`,
-                opacity: isSaving ? 0.6 : 1,
-              }}>
-              <span>{r.icon}</span> {r.label}
-            </button>
-          );
-        })}
+    <div className="space-y-3">
+      <div>
+        <p className="section-label mb-2 pt-2">En curso</p>
+        <div className="grid grid-cols-3 gap-2">
+          {RESULTADOS_EN_CURSO.map(r => (
+            <MoverBoton key={r.value} r={r} active={isActive(resultado, r.value)} isSaving={isSaving} onMover={onMover} />
+          ))}
+        </div>
+      </div>
+      <div>
+        <p className="section-label mb-2">Resultado</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {RESULTADOS_FINAL.map(r => (
+            <MoverBoton key={r.value} r={r} active={isActive(resultado, r.value)} isSaving={isSaving} onMover={onMover} />
+          ))}
+        </div>
       </div>
     </div>
   );

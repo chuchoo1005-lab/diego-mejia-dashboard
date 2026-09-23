@@ -81,8 +81,9 @@ export default function Sidebar() {
 
         {/* Brand */}
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-          className="mx-6 mt-6 mb-1 flex justify-center">
-          <div className="p-2" style={{ filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.45))" }}>
+          className="mx-6 mt-6 mb-1 relative flex justify-center">
+          <div className="absolute -inset-4 rounded-full logo-halo" />
+          <div className="relative p-2" style={{ filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.45))" }}>
             <Logo />
           </div>
         </motion.div>

@@ -339,41 +339,50 @@ export default function Home() {
       <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
         className="dm-card-glow p-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-72 h-72 pointer-events-none" style={{ background:"radial-gradient(circle at top right, rgba(6,182,212,0.07), transparent 70%)" }} />
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative">
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="glow-dot pulse-ring" />
-              <span className="text-sm font-bold tracking-[0.2em]" style={{ color:"var(--cyan)" }}>ADMISIONES · EN LÍNEA</span>
-            </div>
-            <h1 style={{ fontFamily:"var(--font-cormorant)", fontSize:"1.85rem", fontWeight:500, color:"var(--text)", lineHeight:1.15 }}>
-              Diego Mejía<br /><span className="gradient-text">Dental Group</span>
-            </h1>
-            <p className="text-sm mt-2 uppercase" style={{ color:"var(--text-3)" }}>
-              {format(new Date(), "EEEE d 'de' MMMM, yyyy", { locale:es })} · {format(lastUpdate, "HH:mm:ss")}
-            </p>
+        <div className="relative">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="glow-dot pulse-ring" />
+            <span className="text-sm font-bold tracking-[0.2em]" style={{ color:"var(--cyan)" }}>ADMISIONES · EN LÍNEA</span>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-            {[
-              { label:"Mensajes hoy",   value:kpis.convsHoy,     icon:MessageSquare, color:"#2FE0E8",  href:"/conversaciones" },
-              { label:"Leads 🔥",       value:kpis.calientes,    icon:Flame,         color:"#F97316",      href:"/citas" },
-              { label:"Para llamar",    value:kpis.listos,       icon:Phone,         color:"#2FD0A0", href:"/citas" },
-              { label:"Sin terminar",   value:kpis.sinTerminar,  icon:Clock,         color:"#FBBF24",      href:"/citas" },
-              { label:"Seguimientos",   value:kpis.seguimientos, icon:Activity,      color:"#A78BFA",      href:"/seguimientos" },
-            ].map(({ label, value, icon:Icon, color, href }, kpiIdx) => (
-              <motion.a key={label} href={href}
-                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.06 * kpiIdx + 0.1 }}
-                className="text-center px-3 py-3 rounded-xl block transition-all active:scale-95"
-                style={{ background:`linear-gradient(160deg, ${color}14, rgba(255,255,255,0.03))`, border:`1px solid ${color}25`, textDecoration:"none", cursor:"pointer", WebkitTapHighlightColor:"transparent" }}
-                onMouseEnter={e => { const el = e.currentTarget; el.style.background=`linear-gradient(160deg, ${color}28, rgba(255,255,255,0.05))`; el.style.borderColor=color; el.style.boxShadow=`0 0 20px ${color}25`; }}
-                onMouseLeave={e => { const el = e.currentTarget; el.style.background=`linear-gradient(160deg, ${color}14, rgba(255,255,255,0.03))`; el.style.borderColor=`${color}25`; el.style.boxShadow="none"; }}>
-                <Icon className="w-4 h-4 mx-auto mb-1" style={{ color }} />
-                <p className="text-2xl font-black" style={{ color }}>{value}</p>
-                <p className="text-[11px] leading-tight uppercase" style={{ color:"var(--text-3)" }}>{label}</p>
-              </motion.a>
-            ))}
-          </div>
+          <h1 style={{ fontFamily:"var(--font-cormorant)", fontSize:"1.85rem", fontWeight:500, color:"var(--text)", lineHeight:1.15 }}>
+            Diego Mejía<br /><span className="gradient-text">Dental Group</span>
+          </h1>
+          <p className="text-sm mt-2 uppercase" style={{ color:"var(--text-3)" }}>
+            {format(new Date(), "EEEE d 'de' MMMM, yyyy", { locale:es })} · {format(lastUpdate, "HH:mm:ss")}
+          </p>
         </div>
       </motion.div>
+
+      {/* ══ ACCESOS RÁPIDOS ═══════════════════════════════════════════ */}
+      <div>
+        <p className="section-label mb-3 px-0.5">Accesos rápidos</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {[
+            { label:"Mensajes hoy",   sub:"Conversaciones",  value:kpis.convsHoy,     icon:MessageSquare, color:"#2FE0E8", href:"/conversaciones" },
+            { label:"Leads 🔥",       sub:"Alta intención",  value:kpis.calientes,    icon:Flame,         color:"#F97316", href:"/citas" },
+            { label:"Para llamar",    sub:"Listos ya",       value:kpis.listos,       icon:Phone,         color:"#2FD0A0", href:"/citas" },
+            { label:"Sin terminar",   sub:"Agendamiento",    value:kpis.sinTerminar,  icon:Clock,         color:"#FBBF24", href:"/citas" },
+            { label:"Seguimientos",   sub:"Pipeline del bot",value:kpis.seguimientos, icon:Activity,      color:"#A78BFA", href:"/seguimientos" },
+          ].map(({ label, sub, value, icon:Icon, color, href }, kpiIdx) => (
+            <motion.a key={label} href={href}
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.05 * kpiIdx }}
+              className="relative px-4 py-4 rounded-2xl block transition-all active:scale-95 overflow-hidden group"
+              style={{ background:`linear-gradient(160deg, ${color}16, rgba(255,255,255,0.03))`, border:`1px solid ${color}28`, textDecoration:"none", cursor:"pointer", WebkitTapHighlightColor:"transparent" }}
+              onMouseEnter={e => { const el = e.currentTarget; el.style.borderColor=color; el.style.boxShadow=`0 8px 24px ${color}20`; el.style.transform="translateY(-2px)"; }}
+              onMouseLeave={e => { const el = e.currentTarget; el.style.borderColor=`${color}28`; el.style.boxShadow="none"; el.style.transform="none"; }}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background:`${color}22` }}>
+                  <Icon className="w-4 h-4" style={{ color }} />
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" style={{ color:`${color}80` }} />
+              </div>
+              <p className="text-3xl font-black leading-none" style={{ color, fontFamily:"var(--font-cormorant)" }}>{value}</p>
+              <p className="text-sm font-semibold mt-1.5" style={{ color:"var(--text)" }}>{label}</p>
+              <p className="text-[12px] mt-0.5" style={{ color:"var(--text-3)" }}>{sub}</p>
+            </motion.a>
+          ))}
+        </div>
+      </div>
 
       {/* ══ AGENDA HOY / SEMANA ═══════════════════════════════════════ */}
       <div className="dm-card p-5">
