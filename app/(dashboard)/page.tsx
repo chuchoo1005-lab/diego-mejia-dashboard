@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
+import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { format, formatDistanceToNow, isToday, isTomorrow } from "date-fns";
 import { es } from "date-fns/locale";
@@ -329,7 +330,8 @@ export default function Home() {
       )}
 
       {/* ══ HERO ══════════════════════════════════════════════════════ */}
-      <div className="dm-card-glow p-6 relative overflow-hidden">
+      <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="dm-card-glow p-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-72 h-72 pointer-events-none" style={{ background:"radial-gradient(circle at top right, rgba(6,182,212,0.07), transparent 70%)" }} />
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative">
           <div>
@@ -364,7 +366,7 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* ══ AGENDA HOY / SEMANA ═══════════════════════════════════════ */}
       <div className="dm-card p-5">

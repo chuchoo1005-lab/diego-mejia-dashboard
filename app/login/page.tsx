@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Image from "next/image";
+import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { Lock, Mail, ArrowRight, Loader2 } from "lucide-react";
@@ -27,22 +28,24 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "#0A0A0A" }}>
+    <div className="min-h-screen flex items-center justify-center px-4" style={{
+      background: "radial-gradient(900px 520px at 15% -10%, rgba(76,141,255,0.16), transparent 60%), radial-gradient(700px 480px at 100% 100%, rgba(47,224,232,0.09), transparent 55%), #06080D",
+    }}>
       <div className="w-full max-w-sm">
 
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="w-full mb-6 flex items-center justify-center" style={{ background: "#F4F3F1", padding: "28px 20px", borderRadius: 16 }}>
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="text-center mb-8">
+          <div className="w-full mb-6 flex items-center justify-center" style={{ background: "#F4F3F1", padding: "28px 20px", borderRadius: 20, boxShadow: "0 0 60px rgba(76,141,255,0.18)" }}>
             <Image src="/logo-diego-mejia.png" alt="Diego Mejía Dental Group" width={981} height={270}
               style={{ width: "100%", maxWidth: 260, height: "auto", display: "block" }} priority />
           </div>
-          <p className="text-sm font-semibold tracking-[0.3em] uppercase" style={{ color: "rgba(255,255,255,0.4)" }}>
+          <p className="text-sm font-semibold tracking-[0.3em] uppercase" style={{ background: "linear-gradient(90deg, var(--cyan), var(--blue))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
             Panel Administrativo
           </p>
-        </div>
+        </motion.div>
 
         {/* Card */}
-        <div className="dm-card p-7">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }} className="dm-card p-7">
           <h2 className="text-lg font-semibold text-white mb-6" style={{ fontFamily: "var(--font-cormorant)" }}>
             Iniciar sesión
           </h2>
@@ -51,40 +54,44 @@ export default function LoginPage() {
             <div>
               <label className="section-label block mb-2">Correo electrónico</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "var(--text-muted)" }} />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "var(--text-3)" }} />
                 <input type="email" required value={email} onChange={e => setEmail(e.target.value)}
                   placeholder="admin@diegomejia.com"
-                  className="w-full pl-9 pr-4 py-3 text-sm text-white placeholder-white/20 rounded-sm transition-all"
-                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)" }} />
+                  className="w-full pl-9 pr-4 py-3 text-sm text-white placeholder-white/20 rounded-lg transition-all"
+                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)" }}
+                  onFocus={e => e.currentTarget.style.borderColor = "rgba(76,141,255,0.5)"}
+                  onBlur={e => e.currentTarget.style.borderColor = "var(--border)"} />
               </div>
             </div>
 
             <div>
               <label className="section-label block mb-2">Contraseña</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "var(--text-muted)" }} />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "var(--text-3)" }} />
                 <input type="password" required value={password} onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-9 pr-4 py-3 text-sm text-white placeholder-white/20 rounded-sm transition-all"
-                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)" }} />
+                  className="w-full pl-9 pr-4 py-3 text-sm text-white placeholder-white/20 rounded-lg transition-all"
+                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)" }}
+                  onFocus={e => e.currentTarget.style.borderColor = "rgba(76,141,255,0.5)"}
+                  onBlur={e => e.currentTarget.style.borderColor = "var(--border)"} />
               </div>
             </div>
 
             {error && (
-              <div className="text-sm py-2.5 px-3 rounded-sm" style={{ background: "rgba(255,60,60,0.1)", border: "1px solid rgba(255,60,60,0.2)", color: "#FF6666" }}>
+              <div className="text-sm py-2.5 px-3 rounded-lg" style={{ background: "var(--red-dim)", border: "1px solid rgba(255,95,109,0.3)", color: "#FF9AA2" }}>
                 {error}
               </div>
             )}
 
             <button type="submit" disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-3 text-sm font-semibold rounded-sm transition-all disabled:opacity-50"
-              style={{ background: "#FFFFFF", color: "#0A0A0A" }}>
+              className="w-full flex items-center justify-center gap-2 py-3 text-sm font-semibold rounded-lg transition-all disabled:opacity-50"
+              style={{ background: "linear-gradient(90deg, var(--cyan), var(--blue))", color: "#04121A", boxShadow: "0 4px 20px rgba(76,141,255,0.3)" }}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Ingresar <ArrowRight className="w-4 h-4" /></>}
             </button>
           </form>
-        </div>
+        </motion.div>
 
-        <p className="text-center mt-8 text-[13px] font-medium tracking-wider" style={{ color: "rgba(255,255,255,0.2)" }}>
+        <p className="text-center mt-8 text-[13px] font-medium tracking-wider" style={{ color: "rgba(255,255,255,0.25)" }}>
           DIEGO MEJÍA DENTAL GROUP © 2026
         </p>
       </div>

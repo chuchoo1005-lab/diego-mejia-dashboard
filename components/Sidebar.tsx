@@ -5,6 +5,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 import Link from "next/link";
 import Image from "next/image";
+import { motion } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, CalendarDays, Users, Bell, BarChart3, Menu, X, LogOut, Calendar, TrendingUp, Download, Activity } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -73,17 +74,19 @@ export default function Sidebar() {
 
       {open && <div className="lg:hidden fixed inset-0 z-40" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }} onClick={() => setOpen(false)} />}
 
-      <aside className={`fixed top-0 left-0 h-full z-40 w-[240px] flex flex-col transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}
-        style={{ background: "var(--sidebar)", borderRight: "1px solid rgba(6,182,212,0.08)" }}>
+      <aside className={`fixed top-0 left-0 h-full z-40 w-[248px] flex flex-col transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}
+        style={{ background: "var(--sidebar)", borderRight: "1px solid rgba(76,141,255,0.1)" }}>
 
-        <div className="absolute top-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(6,182,212,0.4), transparent)" }} />
+        <div className="absolute top-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(76,141,255,0.5), rgba(47,224,232,0.5), transparent)" }} />
 
         {/* Brand */}
-        <div className="px-5 py-5" style={{ background: "#F4F3F1", borderBottom: "1px solid rgba(6,182,212,0.1)" }}>
+        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
+          className="mx-4 mt-5 mb-1 px-4 py-4 rounded-2xl relative"
+          style={{ background: "#F4F3F1", boxShadow: "0 0 40px rgba(76,141,255,0.16)" }}>
           <Logo />
-        </div>
+        </motion.div>
         <div className="px-6 pt-3 pb-2">
-          <p className="text-[12px] font-semibold tracking-[0.14em] uppercase" style={{ color: "rgba(6,182,212,0.75)" }}>
+          <p className="text-[12px] font-semibold tracking-[0.14em] uppercase" style={{ background: "linear-gradient(90deg, var(--cyan), var(--blue))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
             Creamos Estilos de Vida
           </p>
         </div>
@@ -91,7 +94,7 @@ export default function Sidebar() {
         {/* Doctor */}
         <div className="px-4 pb-4">
           <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
-            style={{ background: "rgba(6,182,212,0.05)", border: "1px solid rgba(6,182,212,0.12)" }}>
+            style={{ background: "rgba(76,141,255,0.06)", border: "1px solid rgba(76,141,255,0.16)" }}>
             <div className="relative shrink-0">
               <div className="glow-dot pulse-ring" />
             </div>
@@ -102,30 +105,35 @@ export default function Sidebar() {
           </div>
         </div>
 
-        <div className="mx-5 mb-2" style={{ height: "1px", background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent)" }} />
+        <div className="mx-5 mb-2" style={{ height: "1px", background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent)" }} />
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
           <p className="section-label px-3 pb-2 pt-1">Navegación</p>
-          {nav.map(({ href, label, icon: Icon, desc }) => {
+          {nav.map(({ href, label, icon: Icon, desc }, i) => {
             const active = pathname === href || (href !== "/" && pathname.startsWith(href));
             return (
-              <Link key={href} href={href} prefetch={false} onClick={() => setOpen(false)}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[15px] font-semibold uppercase tracking-wide transition-all duration-150"
-                style={{
-                  color: active ? "var(--cyan)" : "rgba(255,255,255,0.75)",
-                  background: active ? "rgba(6,182,212,0.08)" : "transparent",
-                  borderLeft: `2px solid ${active ? "var(--cyan)" : "transparent"}`,
-                }}>
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ background: active ? "rgba(6,182,212,0.12)" : "rgba(255,255,255,0.04)" }}>
-                  <Icon className="w-3.5 h-3.5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span className="block truncate">{label}</span>
-                  {active && <span className="text-[12px] normal-case font-normal block mt-0.5" style={{ color: "rgba(6,182,212,0.7)" }}>{desc}</span>}
-                </div>
-              </Link>
+              <motion.div key={href} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3, delay: 0.04 * i }}>
+                <Link href={href} prefetch={false} onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[15px] font-semibold uppercase tracking-wide transition-all duration-150 relative"
+                  style={{
+                    color: active ? "#EAF2FF" : "rgba(255,255,255,0.75)",
+                    background: active ? "linear-gradient(90deg, rgba(76,141,255,0.16), rgba(47,224,232,0.04))" : "transparent",
+                  }}>
+                  {active && (
+                    <motion.span layoutId="nav-active-bar" className="absolute left-0 top-[15%] bottom-[15%] w-[3px] rounded-full"
+                      style={{ background: "linear-gradient(180deg, var(--cyan), var(--blue))", boxShadow: "0 0 10px rgba(76,141,255,0.6)" }} />
+                  )}
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: active ? "rgba(76,141,255,0.2)" : "rgba(255,255,255,0.04)", color: active ? "var(--cyan)" : "inherit" }}>
+                    <Icon className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="block truncate">{label}</span>
+                    {active && <span className="text-[12px] normal-case font-normal block mt-0.5" style={{ color: "rgba(47,224,232,0.75)" }}>{desc}</span>}
+                  </div>
+                </Link>
+              </motion.div>
             );
           })}
         </nav>
