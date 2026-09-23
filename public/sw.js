@@ -1,4 +1,4 @@
-const CACHE = "dm-dental-v1";
+const CACHE = "dm-dental-v2";
 
 self.addEventListener("install", (e) => {
   self.skipWaiting();
