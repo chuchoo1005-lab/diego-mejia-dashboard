@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { Search, RefreshCw, Phone, TrendingUp, XCircle, Trophy, Clock, CheckCircle2, Repeat, CalendarX, Hourglass } from "lucide-react";
 import {
   Paciente, CardOtro, CardHandlers,
-  displayName, formatTel, sc, ec, ua, resultadoLlamada, MAP_A_ETAPA, resultadoUpdates,
+  sc, ec, ua, resultadoLlamada, MAP_A_ETAPA, resultadoUpdates, coincideBusqueda,
 } from "@/components/CallCard";
 
 type PipelineTab = "llamar" | "sin_terminar" | "proceso" | "espera" | "reprogramo" | "cerrados" | "asistio" | "no_asistio" | "no_interesado";
@@ -101,11 +101,7 @@ export default function CitasPage() {
     setSaving(null);
   };
 
-  const match = (p: Paciente) => {
-    if (!busqueda) return true;
-    const nom = displayName(p); const tel = formatTel(p.telefono_encriptado);
-    return nom.toLowerCase().includes(busqueda.toLowerCase()) || tel.includes(busqueda);
-  };
+  const match = (p: Paciente) => coincideBusqueda(p, busqueda);
 
   // Etapa de cada lead según MAP_A_ETAPA
   const etapa = (p: Paciente): PipelineTab => {

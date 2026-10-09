@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { format, formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { Users, Search, RefreshCw } from "lucide-react";
-import { SRV } from "@/components/CallCard";
+import { SRV, coincideBusqueda } from "@/components/CallCard";
 
 interface Paciente {
   id: string; alias: string; estado: string; origen: string;
@@ -50,21 +50,42 @@ export default function PacientesPage() {
   const [busqueda, setBusqueda] = useState("");
   const [filtro, setFiltro] = useState("todos");
   const [loading, setLoading] = useState(true);
+  const [totalBase, setTotalBase] = useState<number | null>(null);
+  const [busquedaActiva, setBusquedaActiva] = useState("");
+
+  // Sin búsqueda se muestran los 100 más recientes; con búsqueda se consulta TODA la base
+  // (antes solo se filtraban esos 100 y cualquier paciente más antiguo "no existía" en el panel).
+  useEffect(() => { const t = setTimeout(() => setBusquedaActiva(busqueda.trim()), 350); return () => clearTimeout(t); }, [busqueda]);
 
   const load = useCallback(async () => {
-    const { data } = await supabase
+    let query = supabase
       .from("pacientes")
       .select("id,alias,estado,origen,calificado,telefono_encriptado,perfil_paciente,created_at,updated_at")
       .order("updated_at", { ascending: false }).limit(100);
+    if (busquedaActiva.length >= 2) {
+      const texto = busquedaActiva.replace(/[,()*"]/g, " ").trim();
+      const dig = busquedaActiva.replace(/\D/g, "");
+      const conds: string[] = [];
+      if (texto) conds.push(`perfil_paciente->>nombre.ilike."*${texto}*"`, `perfil_paciente->>nombre_whatsapp.ilike."*${texto}*"`, `alias.ilike."*${texto}*"`);
+      if (dig.length >= 3) {
+        const d = dig.length > 10 && dig.startsWith("57") ? dig.slice(2) : dig;
+        conds.push(`telefono_encriptado.ilike.*${d}*`, `perfil_paciente->>telefono_contacto.ilike.*${d}*`);
+      }
+      if (conds.length) query = query.or(conds.join(","));
+    }
+    const [{ data }, { count }] = await Promise.all([
+      query,
+      supabase.from("pacientes").select("id", { count: "exact", head: true }),
+    ]);
     setPacientes((data || []) as Paciente[]);
+    setTotalBase(count ?? null);
     setLoading(false);
-  }, []);
+  }, [busquedaActiva]);
 
   useEffect(() => { load(); }, [load]);
 
   const filtrados = pacientes.filter(p => {
-    const nom = displayName(p); const tel = formatTel(p.telefono_encriptado);
-    const match = !busqueda || nom.toLowerCase().includes(busqueda.toLowerCase()) || tel.includes(busqueda) || p.alias.toLowerCase().includes(busqueda.toLowerCase());
+    const match = coincideBusqueda(p, busqueda);
     const f = filtro === "todos" ? true
       : filtro === "calificados" ? p.calificado
       : filtro === "listos" ? ec(p) === "entrega_premium"
@@ -86,7 +107,10 @@ export default function PacientesPage() {
         <div>
           <p className="section-label mb-2">Base de datos</p>
           <h1 style={{ fontFamily: "var(--font-cormorant)", fontSize: "2rem", fontWeight: 500, color: "var(--text)" }}>Pacientes</h1>
-          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>{totales.total} registros totales</p>
+          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
+            {totalBase !== null ? `${totalBase.toLocaleString("es-CO")} pacientes en total` : ""}
+            {busquedaActiva.length >= 2 ? ` · ${filtrados.length} coinciden con la búsqueda` : ` · mostrando los ${pacientes.length} más recientes`}
+          </p>
         </div>
         <button onClick={load} className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg"
           style={{ background: "var(--card)", border: "1px solid var(--border)", color: "var(--text-secondary)", boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}>
@@ -97,7 +121,7 @@ export default function PacientesPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: "Total", value: totales.total },
+          { label: "Total", value: totalBase ?? totales.total },
           { label: "Calificados", value: totales.calif },
           { label: "Score ≥ 60", value: totales.calientes },
           { label: "Listos para llamar", value: totales.listos },

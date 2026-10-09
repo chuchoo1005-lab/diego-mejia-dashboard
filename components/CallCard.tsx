@@ -98,6 +98,23 @@ export function formatTel(t: string | null): string {
   if (c.length >= 10 && c.startsWith("57")) return `+57 ${c.slice(2, 5)} ${c.slice(5, 8)} ${c.slice(8)}`;
   return t;
 }
+// Búsqueda por nombre, nombre de WhatsApp, código o teléfono. Los teléfonos se comparan solo por dígitos:
+// se guardan como "573163779066" pero se muestran como "+57 316 377 9066", y el número que el paciente
+// dio por chat (telefono_contacto) puede ser distinto al de su WhatsApp.
+type Buscable = { alias?: string | null; telefono_encriptado: string | null; perfil_paciente: Record<string, unknown> };
+const sinTildes = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+export function coincideBusqueda(p: Buscable, busqueda: string): boolean {
+  const q = busqueda.trim();
+  if (!q) return true;
+  const qTexto = sinTildes(q);
+  const textos = [p.perfil_paciente?.nombre, p.perfil_paciente?.nombre_whatsapp, p.alias];
+  if (textos.some(t => t && sinTildes(String(t)).includes(qTexto))) return true;
+  const d = q.replace(/\D/g, "");
+  if (d.length < 3) return false;
+  const dSinPais = d.length > 10 && d.startsWith("57") ? d.slice(2) : d;
+  const tels = [p.telefono_encriptado, p.perfil_paciente?.telefono_contacto].map(t => String(t ?? "").replace(/\D/g, "")).filter(Boolean);
+  return tels.some(t => t.includes(d) || t.includes(dSinPais));
+}
 export function displayName(p: Paciente): string {
   return (p.perfil_paciente?.nombre as string) || (p.perfil_paciente?.nombre_whatsapp as string) || formatTel(p.telefono_encriptado) || "Nuevo paciente";
 }
