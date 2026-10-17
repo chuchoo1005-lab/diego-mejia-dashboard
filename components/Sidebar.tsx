@@ -7,7 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, CalendarDays, Users, Bell, BarChart3, Menu, X, LogOut, Calendar, TrendingUp, Download, Activity } from "lucide-react";
+import { LayoutDashboard, CalendarDays, Users, Bell, BarChart3, Menu, X, LogOut, Calendar, TrendingUp, Download, Activity, Sparkles } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -20,6 +20,7 @@ const nav = [
   { href: "/notificaciones", label: "Actividad",           icon: Bell,            desc: "Feed en tiempo real" },
   { href: "/metricas",       label: "Métricas",            icon: BarChart3,       desc: "Análisis" },
   { href: "/roi",            label: "Retorno de Inversión",icon: TrendingUp,      desc: "Rendimiento del sistema" },
+  { href: "/sara",           label: "Colaboración Sara",   icon: Sparkles,        desc: "Resultados de @saraigram" },
 ];
 
 export default function Sidebar() {
