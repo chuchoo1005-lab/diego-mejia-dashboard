@@ -12,12 +12,12 @@ import { COP } from "@/lib/precios";
 // (escribió la palabra SARA en sus primeros mensajes, p. ej. desde las historias de ella).
 // Solo se cuentan leads creados desde el inicio de la colaboración, para no mezclar pacientes viejos que se llaman Sara.
 const INICIO = "2026-10-16";
-const INICIO_ISO = "2026-10-16T05:00:00Z"; // 00:00 hora Bogotá
+const INICIO_ISO = "2026-10-16T20:00:00Z"; // viernes 16-oct 3:00 p. m. hora Bogotá: Sara publicó el video
 const SARA_AD_IDS = ["120250406897410109"]; // respaldo mientras WF-12 sincroniza el gasto del día
 const ETAPAS_AGENDO = ["cerrados", "asistio", "no_asistio", "reprogramo"];
 const PALABRA_SARA = /(^|[^a-záéíóúñ])sara([^a-záéíóúñ]|$)/i; // "Sara" como palabra suelta (no Saray, Sarai)
-const BASE_DESDE_ISO = "2026-10-01T05:00:00Z"; // promedio de orgánicos antes de la colaboración (1–15 oct)
-const BASE_DIAS = 15;
+const BASE_DESDE_ISO = "2026-10-01T05:00:00Z"; // promedio de orgánicos antes de la colaboración (1-oct hasta que Sara publicó)
+const BASE_DIAS = (Date.parse(INICIO_ISO) - Date.parse(BASE_DESDE_ISO)) / 86400000;
 
 interface Fila { p: Paciente; created_at: string; origen: "anuncio" | "contenido" | "sin_confirmar"; etapa: string; }
 
@@ -141,7 +141,7 @@ export default function SaraPage() {
             Sara Pinzón · @saraigram
           </h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-3)" }}>
-            Invisalign · desde el {format(new Date(INICIO + "T12:00:00"), "d 'de' MMMM", { locale: es })}
+            Invisalign · desde el {format(new Date(INICIO_ISO), "EEEE d 'de' MMMM, h:mm a", { locale: es })}, cuando Sara publicó
           </p>
         </div>
         <button onClick={load} className="flex items-center gap-1.5 text-sm px-4 py-2 rounded-xl"
