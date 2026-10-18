@@ -1,7 +1,5 @@
 "use client";
-import { useState } from "react";
-import { Phone, Clock, MapPin, Stethoscope, Brain, FileText, ChevronDown, MessageCircle } from "lucide-react";
-import { urlChatChatwoot } from "@/app/(dashboard)/conversaciones/actions";
+import { Phone, Clock, MapPin, Stethoscope, Brain, FileText, ChevronDown } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -134,26 +132,6 @@ export function telAccionable(contacto: string | null | undefined, encriptado: s
 }
 export function esBsuid(t: string | null | undefined): boolean { return /^[A-Z]{2}\./.test(t || ""); }
 
-// Abre el chat de la persona en Chatwoot. La pestaña se abre antes de buscar el link
-// para que el navegador (sobre todo en celular) no la bloquee como ventana emergente.
-function BotonMensajeChatwoot({ identificador }: { identificador: string }) {
-  const [estado, setEstado] = useState<"" | "buscando" | "sin_chat">("");
-  const abrir = async () => {
-    const tab = window.open("", "_blank");
-    setEstado("buscando");
-    const url = await urlChatChatwoot(identificador).catch(() => null);
-    if (url && tab) { tab.location.href = url; setEstado(""); }
-    else { tab?.close(); setEstado("sin_chat"); }
-  };
-  return (
-    <button onClick={abrir} disabled={estado === "buscando"}
-      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold shrink-0"
-      style={{ background: "rgba(37,211,102,0.12)", color: "#25D366", border: "1px solid rgba(37,211,102,0.25)" }}>
-      <MessageCircle className="w-3.5 h-3.5" />
-      {estado === "buscando" ? "Abriendo…" : estado === "sin_chat" ? "Chat no encontrado" : "Mensaje"}
-    </button>
-  );
-}
 export function resultadoLlamada(p: Paciente): string { return (p.perfil_paciente?.resultado_llamada as string) || ""; }
 export function notasInternas(p: Paciente): string { return (p.perfil_paciente?.notas_internas as string) || ""; }
 
@@ -379,6 +357,19 @@ export function CardOtro({ p, accent, sinTerminarAgendar, h }: { p: Paciente; ac
               💬
             </a>
           )}
+          {/* Sin número: los botones se ven (en gris) pero no abren nada; el aviso de abajo explica por qué */}
+          {!callTel && <>
+            <span aria-disabled="true" title="Sin número de teléfono"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold shrink-0 cursor-not-allowed select-none"
+              style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-3)", border: "1px solid var(--border)" }}>
+              <Phone className="w-3.5 h-3.5" /> Llamar
+            </span>
+            <span aria-disabled="true" title="Sin número de teléfono"
+              className="flex items-center justify-center w-8 h-8 rounded-xl text-sm shrink-0 cursor-not-allowed select-none"
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", filter: "grayscale(1)", opacity: 0.6 }}>
+              💬
+            </span>
+          </>}
         </div>
       </div>
 
@@ -386,12 +377,7 @@ export function CardOtro({ p, accent, sinTerminarAgendar, h }: { p: Paciente; ac
       <div className="px-4 mb-2">
         {telC && <p className="text-sm font-bold" style={{ color: "#10B981" }}>📞 {telC}</p>}
         {telefono && telefono !== telC && !esBsuid(p.telefono_encriptado) && <p className="text-sm mt-0.5" style={{ color: "var(--text-3)" }}>WA: {telefono}</p>}
-        {!callTel && (
-          <div className="flex items-center gap-2 flex-wrap mt-1">
-            <p className="text-sm flex-1 min-w-[200px]" style={{ color: "#FBBF24" }}>Sin número: WhatsApp no compartió su teléfono. Escríbele con &ldquo;Mensaje&rdquo; y pídele su número para poder llamarlo.</p>
-            {esBsuid(p.telefono_encriptado) && <BotonMensajeChatwoot identificador={p.telefono_encriptado as string} />}
-          </div>
-        )}
+        {!callTel && <p className="text-sm mt-0.5" style={{ color: "#FBBF24" }}>Sin número: escribió con nombre de usuario y WhatsApp no compartió su teléfono, por eso Llamar y WhatsApp no se pueden usar con esta persona.</p>}
       </div>
 
       {/* ── Fila 3: tags + expand ── */}

@@ -7,12 +7,15 @@ import { RefreshCw, Users, Megaphone, Sparkles, PhoneCall, CalendarCheck, CheckC
 import { MAP_A_ETAPA, RESULTADOS, CardOtro, CardHandlers, Paciente, resultadoLlamada, resultadoUpdates, coincideBusqueda } from "@/components/CallCard";
 import { COP } from "@/lib/precios";
 
-// Colaboración con Sara Pinzón (@saraigram): campaña "PRO | Ortodoncia Invisible | Colab SARA | Oct2026".
-// Un lead cuenta como de Sara si llegó desde un anuncio de esa campaña, si el bot lo marcó con promo = "SARA"
-// (escribió la palabra SARA en sus primeros mensajes, p. ej. desde las historias de ella), o si escribió "Sara" en el chat.
-// Solo se cuentan leads creados desde el inicio de la colaboración, para no mezclar pacientes viejos que se llaman Sara.
+// Colaboración con Sara Pinzón (@saraigram), dos partes que se miden por separado:
+// - Orgánico: Sara publicó el video en sus redes con un link wa.me el viernes 16-oct a las 4:00 p. m. y estuvo 24 h.
+//   El link no deja rastro, así que cuenta como de Sara todo orgánico (sin anuncio) que llegó dentro de esas 24 h,
+//   más quien escribió "Sara" en el chat (el bot lo marca con promo = "SARA").
+// - Pauta: campaña "PRO | Ortodoncia Invisible | Colab SARA | Oct2026" con el mismo video: quien tocó el anuncio.
+// Solo se cuentan leads creados desde que Sara publicó, para no mezclar pacientes viejos que se llaman Sara.
 const INICIO = "2026-10-16";
-const INICIO_ISO = "2026-10-16T20:00:00Z"; // viernes 16-oct 3:00 p. m. hora Bogotá: Sara publicó el video
+const INICIO_ISO = "2026-10-16T21:00:00Z"; // viernes 16-oct 4:00 p. m. hora Bogotá: Sara publicó el video
+const FIN_VIDEO_ISO = "2026-10-17T21:00:00Z"; // sábado 17-oct 4:00 p. m.: el video duró 24 h
 const SARA_AD_IDS = ["120250406897410109"]; // respaldo mientras WF-12 sincroniza el gasto del día
 const ETAPAS_AGENDO = ["cerrados", "asistio", "no_asistio", "reprogramo"];
 const PALABRA_SARA = /(^|[^a-záéíóúñ])sara(igram)?([^a-záéíóúñ]|$)/i; // "Sara" o "saraigram" como palabra suelta (no Saray, Sarai)
@@ -21,17 +24,18 @@ const SEL = "id,alias,calificado,telefono_encriptado,modo_humano,perfil_paciente
 // Solo dos orígenes: pauta de la campaña y orgánico de Sara. Los orgánicos que no la mencionaron
 // (tráfico normal del consultorio en esos mismos días) no son de la colaboración y no se muestran.
 type Pac = Paciente & { created_at: string };
-type Origen = "anuncio" | "contenido";
+type Origen = "anuncio" | "contenido" | "ventana";
 type Grupo = "campana" | "organico";
 
 const ORIGEN: Record<Origen, { label: string; color: string }> = {
-  anuncio:   { label: "Anuncio pagado",                  color: "var(--cyan)" },
-  contenido: { label: "Escribió “Sara” en el chat", color: "#C084FC" },
+  anuncio:   { label: "Anuncio pagado",                       color: "var(--cyan)" },
+  contenido: { label: "Escribió “Sara” en el chat",      color: "#C084FC" },
+  ventana:   { label: "Orgánico en las 24 h del video de Sara", color: "#C084FC" },
 };
 
 const GRUPOS: { key: Grupo; label: string; desc: string; color: string; icon: React.ElementType }[] = [
-  { key: "campana",  label: "Pauta · campaña Colab SARA", desc: "Tocaron el anuncio pagado de la campaña", color: "#22D3EE", icon: Megaphone },
-  { key: "organico", label: "Orgánico de Sara",           desc: "Llegaron sin anuncio por el contenido de Sara: escribieron “Sara” en el chat", color: "#C084FC", icon: Sparkles },
+  { key: "campana",  label: "Pauta · campaña Colab SARA", desc: "Tocaron el anuncio pagado de la campaña con el video", color: "#22D3EE", icon: Megaphone },
+  { key: "organico", label: "Orgánico de Sara",           desc: "Llegaron sin anuncio durante las 24 h del video de Sara (vie 16-oct 4:00 p. m. a sáb 17-oct 4:00 p. m.), o escribieron “Sara” en el chat", color: "#C084FC", icon: Sparkles },
 ];
 
 // Etapa del CRM de cada persona ("" = todavía nadie la ha movido)
@@ -76,9 +80,14 @@ export default function SaraPage() {
 
     const filtros = [`perfil_paciente->>promo.eq.SARA`, `perfil_paciente->>anuncio_id.in.(${ids.join(",")})`];
     if (mencion.length) filtros.push(`id.in.(${mencion.join(",")})`);
-    const { data: pacs } = await supabase.from("pacientes").select(SEL)
-      .gte("created_at", INICIO_ISO).or(filtros.join(",")).order("created_at", { ascending: false });
-    setPacientes((pacs || []) as unknown as Pac[]);
+    const [{ data: pacs }, { data: enVentana }] = await Promise.all([
+      supabase.from("pacientes").select(SEL).gte("created_at", INICIO_ISO).or(filtros.join(",")),
+      // Orgánicos que llegaron mientras el video de Sara estuvo publicado
+      supabase.from("pacientes").select(SEL).gte("created_at", INICIO_ISO).lt("created_at", FIN_VIDEO_ISO).eq("perfil_paciente->>origen_lead", "organico"),
+    ]);
+    const porId = new Map<string, Pac>();
+    [...(pacs || []), ...(enVentana || [])].forEach(r => porId.set(String(r.id), r as unknown as Pac));
+    setPacientes(Array.from(porId.values()).sort((a, b) => b.created_at.localeCompare(a.created_at)));
     setLoading(false);
   }, []);
 
@@ -126,12 +135,13 @@ export default function SaraPage() {
     const perfil = p.perfil_paciente || {};
     if (adIds.includes(String(perfil.anuncio_id))) return "anuncio";
     if (perfil.promo === "SARA" || idsMencion.has(p.id)) return "contenido";
+    if (perfil.origen_lead === "organico" && Date.parse(p.created_at) < Date.parse(FIN_VIDEO_ISO)) return "ventana";
     return null;
   };
   const conOrigen = pacientes.map(p => ({ p, origen: origenDe(p) }));
   const porGrupo: Record<Grupo, { p: Pac; origen: Origen }[]> = {
     campana:  conOrigen.filter(f => f.origen === "anuncio") as { p: Pac; origen: Origen }[],
-    organico: conOrigen.filter(f => f.origen === "contenido") as { p: Pac; origen: Origen }[],
+    organico: conOrigen.filter(f => f.origen === "contenido" || f.origen === "ventana") as { p: Pac; origen: Origen }[],
   };
 
   const rCampana = resumen(porGrupo.campana.map(f => f.p));
@@ -139,6 +149,12 @@ export default function SaraPage() {
   const rTotal = resumen([...porGrupo.campana, ...porGrupo.organico].map(f => f.p));
   const pct = (n: number, de: number) => de ? `${Math.round((n / de) * 100)}%` : "—";
   const costo = (n: number) => n && gasto ? COP(gasto / n) : "—";
+  // El gasto de Meta se sincroniza una vez al día (WF-12): los costos se calculan solo con las personas
+  // de los días que ya tienen gasto, para no dividir un gasto incompleto entre la gente de hoy.
+  const diaBogota = (iso: string) => new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
+  const conGasto = (fs: { p: Pac }[]) => resumen(fs.filter(f => gastoHasta && diaBogota(f.p.created_at) <= gastoHasta).map(f => f.p));
+  const cCampana = conGasto(porGrupo.campana);
+  const cTotal = conGasto([...porGrupo.campana, ...porGrupo.organico]);
 
   const lista = porGrupo[grupo];
   const conteoEtapa = (key: string) => lista.filter(f => etapaDe(f.p) === key).length;
@@ -228,16 +244,18 @@ export default function SaraPage() {
           <div>
             <p className="section-label mb-2">Por origen</p>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-              {tarjetaGrupo("campana", rCampana, `${costo(rCampana.llegaron)} por persona · ${costo(rCampana.agendaron)} por agendado`)}
-              {tarjetaGrupo("organico", rOrganico, "Escribieron “Sara” en el chat · sin costo de pauta")}
+              {tarjetaGrupo("campana", rCampana, `${costo(cCampana.llegaron)} por persona · ${costo(cCampana.agendaron)} por agendado`)}
+              {tarjetaGrupo("organico", rOrganico, `${porGrupo.organico.filter(f => f.origen === "contenido").length} escribieron “Sara” · ${porGrupo.organico.filter(f => f.origen === "ventana").length} llegaron en las 24 h del video · sin costo de pauta`)}
               <div className="dm-card p-4">
                 <div className="flex items-center gap-2 mb-2"><DollarSign className="w-4 h-4" style={{ color: "#FBBF24" }} /><span className="text-sm" style={{ color: "var(--text-2)" }}>Inversión en pauta</span></div>
                 <p className="text-3xl font-semibold" style={{ color: "var(--text)" }}>{COP(gasto)}</p>
                 <p className="text-sm mt-3" style={{ color: "var(--text-3)" }}>
-                  Contando también el orgánico de Sara: {costo(rTotal.llegaron)} por persona · {costo(rTotal.agendaron)} por agendado · {costo(rTotal.asistieron)} por asistencia
+                  Contando también el orgánico de Sara: {costo(cTotal.llegaron)} por persona · {costo(cTotal.agendaron)} por agendado · {costo(cTotal.asistieron)} por asistencia
                 </p>
                 <p className="text-[13px] mt-3" style={{ color: "var(--text-3)" }}>
-                  {gastoHasta ? `Gasto de Meta sincronizado hasta el ${format(new Date(gastoHasta + "T12:00:00"), "d MMM", { locale: es })}` : "Aún sin gasto sincronizado"}
+                  {gastoHasta
+                    ? `Gasto de Meta sincronizado hasta el ${format(new Date(gastoHasta + "T12:00:00"), "d MMM", { locale: es })}; el gasto de los días siguientes entra al otro día. Los costos solo cuentan a las personas hasta esa fecha.`
+                    : "Aún sin gasto sincronizado"}
                 </p>
               </div>
             </div>
