@@ -125,8 +125,12 @@ export function telContacto(p: Paciente): string { return formatTel((p.perfil_pa
 // Si telefono_contacto no tiene suficientes dígitos para ser un teléfono real (ej. "es este", "internacional"), usa el número real de WhatsApp
 export function telAccionable(contacto: string | null | undefined, encriptado: string | null | undefined): string | null {
   const digitos = (contacto || "").replace(/\D/g, "");
-  return digitos.length >= 7 ? (contacto as string) : (encriptado || null);
+  if (digitos.length >= 7) return contacto as string;
+  // Usuarios con nombre de usuario de WhatsApp llegan con un BSUID (ej. "CO.1045256151806496") en vez de teléfono:
+  // no sirve para llamar ni para wa.me, armaría un número que no existe
+  return encriptado && !esBsuid(encriptado) ? encriptado : null;
 }
+export function esBsuid(t: string | null | undefined): boolean { return /^[A-Z]{2}\./.test(t || ""); }
 export function resultadoLlamada(p: Paciente): string { return (p.perfil_paciente?.resultado_llamada as string) || ""; }
 export function notasInternas(p: Paciente): string { return (p.perfil_paciente?.notas_internas as string) || ""; }
 
@@ -358,7 +362,8 @@ export function CardOtro({ p, accent, sinTerminarAgendar, h }: { p: Paciente; ac
       {/* ── Fila 2: teléfonos ── */}
       <div className="px-4 mb-2">
         {telC && <p className="text-sm font-bold" style={{ color: "#10B981" }}>📞 {telC}</p>}
-        {telefono && telefono !== telC && <p className="text-sm mt-0.5" style={{ color: "var(--text-3)" }}>WA: {telefono}</p>}
+        {telefono && telefono !== telC && !esBsuid(p.telefono_encriptado) && <p className="text-sm mt-0.5" style={{ color: "var(--text-3)" }}>WA: {telefono}</p>}
+        {!callTel && <p className="text-sm mt-0.5" style={{ color: "#FBBF24" }}>Sin número: WhatsApp no compartió su teléfono. Respóndele desde Chatwoot o pídeselo por el chat.</p>}
       </div>
 
       {/* ── Fila 3: tags + expand ── */}
