@@ -3,39 +3,35 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { RefreshCw, Users, Megaphone, Sparkles, PhoneCall, CalendarCheck, CheckCircle, DollarSign, Search, Check, X, HelpCircle } from "lucide-react";
+import { RefreshCw, Users, Megaphone, Sparkles, PhoneCall, CalendarCheck, CheckCircle, DollarSign, Search } from "lucide-react";
 import { MAP_A_ETAPA, RESULTADOS, CardOtro, CardHandlers, Paciente, resultadoLlamada, resultadoUpdates, coincideBusqueda } from "@/components/CallCard";
 import { COP } from "@/lib/precios";
 
 // Colaboración con Sara Pinzón (@saraigram): campaña "PRO | Ortodoncia Invisible | Colab SARA | Oct2026".
 // Un lead cuenta como de Sara si llegó desde un anuncio de esa campaña, si el bot lo marcó con promo = "SARA"
-// (escribió la palabra SARA en sus primeros mensajes, p. ej. desde las historias de ella), si escribió "Sara" en el chat,
-// o si la asesora lo confirmó a mano (perfil_paciente.colab_sara = true, campo solo del panel: el bot no lo lee).
+// (escribió la palabra SARA en sus primeros mensajes, p. ej. desde las historias de ella), o si escribió "Sara" en el chat.
 // Solo se cuentan leads creados desde el inicio de la colaboración, para no mezclar pacientes viejos que se llaman Sara.
 const INICIO = "2026-10-16";
 const INICIO_ISO = "2026-10-16T20:00:00Z"; // viernes 16-oct 3:00 p. m. hora Bogotá: Sara publicó el video
 const SARA_AD_IDS = ["120250406897410109"]; // respaldo mientras WF-12 sincroniza el gasto del día
 const ETAPAS_AGENDO = ["cerrados", "asistio", "no_asistio", "reprogramo"];
 const PALABRA_SARA = /(^|[^a-záéíóúñ])sara(igram)?([^a-záéíóúñ]|$)/i; // "Sara" o "saraigram" como palabra suelta (no Saray, Sarai)
-const BASE_DESDE_ISO = "2026-10-01T05:00:00Z"; // promedio de orgánicos antes de la colaboración (1-oct hasta que Sara publicó)
-const BASE_DIAS = (Date.parse(INICIO_ISO) - Date.parse(BASE_DESDE_ISO)) / 86400000;
 const SEL = "id,alias,calificado,telefono_encriptado,modo_humano,perfil_paciente,updated_at,created_at";
 
+// Solo dos orígenes: pauta de la campaña y orgánico de Sara. Los orgánicos que no la mencionaron
+// (tráfico normal del consultorio en esos mismos días) no son de la colaboración y no se muestran.
 type Pac = Paciente & { created_at: string };
-type Origen = "anuncio" | "contenido" | "confirmado" | "sin_confirmar";
-type Grupo = "campana" | "organico" | "confirmar";
+type Origen = "anuncio" | "contenido";
+type Grupo = "campana" | "organico";
 
 const ORIGEN: Record<Origen, { label: string; color: string }> = {
-  anuncio:       { label: "Anuncio pagado",           color: "var(--cyan)" },
-  contenido:     { label: "Escribió “Sara” en el chat", color: "#C084FC" },
-  confirmado:    { label: "Confirmado por la asesora", color: "#34D399" },
-  sin_confirmar: { label: "Orgánico sin confirmar",   color: "var(--text-3)" },
+  anuncio:   { label: "Anuncio pagado",                  color: "var(--cyan)" },
+  contenido: { label: "Escribió “Sara” en el chat", color: "#C084FC" },
 };
 
 const GRUPOS: { key: Grupo; label: string; desc: string; color: string; icon: React.ElementType }[] = [
-  { key: "campana",   label: "Campaña pagada",       desc: "Tocaron el anuncio de la campaña Colab SARA",                color: "#22D3EE", icon: Megaphone },
-  { key: "organico",  label: "Orgánico de Sara",     desc: "Llegaron sin anuncio por el contenido de Sara (lo dijeron en el chat o la asesora lo confirmó)", color: "#C084FC", icon: Sparkles },
-  { key: "confirmar", label: "Orgánicos por confirmar", desc: "Llegaron sin anuncio y no mencionaron a Sara: no se suman a las cifras", color: "#94A3B8", icon: HelpCircle },
+  { key: "campana",  label: "Pauta · campaña Colab SARA", desc: "Tocaron el anuncio pagado de la campaña", color: "#22D3EE", icon: Megaphone },
+  { key: "organico", label: "Orgánico de Sara",           desc: "Llegaron sin anuncio por el contenido de Sara: escribieron “Sara” en el chat", color: "#C084FC", icon: Sparkles },
 ];
 
 // Etapa del CRM de cada persona ("" = todavía nadie la ha movido)
@@ -57,7 +53,6 @@ export default function SaraPage() {
   const [gasto, setGasto] = useState(0);
   const [gastoHasta, setGastoHasta] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [promedioAntes, setPromedioAntes] = useState(0);
   const [grupo, setGrupo] = useState<Grupo>("campana");
   const [filtro, setFiltro] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState("");
@@ -79,19 +74,11 @@ export default function SaraPage() {
     const mencion = Array.from(new Set((menciones || []).filter(m => PALABRA_SARA.test(String(m.mensaje_encriptado || ""))).map(m => String(m.paciente_id))));
     setIdsMencion(new Set(mencion));
 
-    const filtros = [`perfil_paciente->>promo.eq.SARA`, `perfil_paciente->>colab_sara.eq.true`, `perfil_paciente->>anuncio_id.in.(${ids.join(",")})`];
+    const filtros = [`perfil_paciente->>promo.eq.SARA`, `perfil_paciente->>anuncio_id.in.(${ids.join(",")})`];
     if (mencion.length) filtros.push(`id.in.(${mencion.join(",")})`);
-    // Se traen juntos los candidatos a Sara y los orgánicos del período: la clasificación se hace abajo,
-    // así al confirmar o descartar a alguien a mano cambia de lista al instante sin recargar.
-    const [{ data: pacs }, { data: orgPac }, { count: orgAntes }] = await Promise.all([
-      supabase.from("pacientes").select(SEL).gte("created_at", INICIO_ISO).or(filtros.join(",")),
-      supabase.from("pacientes").select(SEL).gte("created_at", INICIO_ISO).eq("perfil_paciente->>origen_lead", "organico"),
-      supabase.from("pacientes").select("id", { count: "exact", head: true }).gte("created_at", BASE_DESDE_ISO).lt("created_at", INICIO_ISO).eq("perfil_paciente->>origen_lead", "organico"),
-    ]);
-    const porId = new Map<string, Pac>();
-    [...(pacs || []), ...(orgPac || [])].forEach(r => porId.set(String(r.id), r as unknown as Pac));
-    setPacientes(Array.from(porId.values()).sort((a, b) => b.created_at.localeCompare(a.created_at)));
-    setPromedioAntes((orgAntes || 0) / BASE_DIAS);
+    const { data: pacs } = await supabase.from("pacientes").select(SEL)
+      .gte("created_at", INICIO_ISO).or(filtros.join(",")).order("created_at", { ascending: false });
+    setPacientes((pacs || []) as unknown as Pac[]);
     setLoading(false);
   }, []);
 
@@ -123,7 +110,6 @@ export default function SaraPage() {
   };
   const setResultado = (p: Paciente, valor: string) => updatePerfil(p.id, resultadoUpdates(valor));
   const guardarNotas = (p: Paciente) => { const nota = notasTemp[p.id] ?? (p.perfil_paciente?.notas_internas as string ?? ""); updatePerfil(p.id, { notas_internas: nota }); };
-  const marcarSara = (p: Paciente, valor: boolean | null) => updatePerfil(p.id, { colab_sara: valor, colab_sara_at: new Date().toISOString() });
   const toggleCandado = async (p: Paciente) => {
     const nuevo = !p.modo_humano;
     setSaving(p.id);
@@ -135,23 +121,18 @@ export default function SaraPage() {
   const toggleExp = (id: string) => setExpanded(prev => { const s = new Set(prev); if (s.has(id)) s.delete(id); else s.add(id); return s; });
   const handlers: CardHandlers = { expanded, toggleExp, notasTemp, setNotasTemp, saving, setResultado, guardarNotas, toggleCandado };
 
-  // Clasificación: el anuncio manda; si no, la mención de Sara; si no, la confirmación manual de la asesora.
-  // Un "No es de Sara" manual saca a la persona aunque haya escrito "Sara" (p. ej. habla de otra Sara).
+  // El anuncio manda: si tocó el anuncio de la campaña es pauta, aunque también haya escrito "Sara"
   const origenDe = (p: Pac): Origen | null => {
     const perfil = p.perfil_paciente || {};
     if (adIds.includes(String(perfil.anuncio_id))) return "anuncio";
-    if (perfil.colab_sara === false) return null;
     if (perfil.promo === "SARA" || idsMencion.has(p.id)) return "contenido";
-    if (perfil.colab_sara === true) return "confirmado";
-    return perfil.origen_lead === "organico" ? "sin_confirmar" : null;
+    return null;
   };
   const conOrigen = pacientes.map(p => ({ p, origen: origenDe(p) }));
   const porGrupo: Record<Grupo, { p: Pac; origen: Origen }[]> = {
-    campana:   conOrigen.filter(f => f.origen === "anuncio") as { p: Pac; origen: Origen }[],
-    organico:  conOrigen.filter(f => f.origen === "contenido" || f.origen === "confirmado") as { p: Pac; origen: Origen }[],
-    confirmar: conOrigen.filter(f => f.origen === "sin_confirmar") as { p: Pac; origen: Origen }[],
+    campana:  conOrigen.filter(f => f.origen === "anuncio") as { p: Pac; origen: Origen }[],
+    organico: conOrigen.filter(f => f.origen === "contenido") as { p: Pac; origen: Origen }[],
   };
-  const descartados = pacientes.filter(p => p.perfil_paciente?.colab_sara === false && !adIds.includes(String(p.perfil_paciente?.anuncio_id))).length;
 
   const rCampana = resumen(porGrupo.campana.map(f => f.p));
   const rOrganico = resumen(porGrupo.organico.map(f => f.p));
@@ -170,14 +151,6 @@ export default function SaraPage() {
     { label: "Agendaron valoración", valor: rTotal.agendaron, icon: CalendarCheck, color: "#C084FC" },
     { label: "Asistieron", valor: rTotal.asistieron, icon: CheckCircle, color: "#34D399" },
   ];
-
-  const botonSara = (label: string, color: string, onClick: () => void, Icon: React.ElementType, disabled: boolean) => (
-    <button onClick={onClick} disabled={disabled}
-      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-all"
-      style={{ background: `${color}14`, color, border: `1px solid ${color}40`, opacity: disabled ? 0.5 : 1 }}>
-      <Icon className="w-3.5 h-3.5" /> {label}
-    </button>
-  );
 
   // Resultados de un grupo (campaña u orgánico) en una tarjeta, para comparar los dos lado a lado
   const tarjetaGrupo = (g: Grupo, r: ReturnType<typeof resumen>, pie: React.ReactNode) => {
@@ -200,30 +173,17 @@ export default function SaraPage() {
     );
   };
 
-  // Encabezado de cada tarjeta: de dónde vino, cuándo llegó y la confirmación manual.
+  // Encabezado de cada tarjeta: de dónde vino y cuándo llegó.
   // Es una función (no un componente) para que la tarjeta no se vuelva a montar en cada render y la nota no pierda el foco.
-  const persona = (p: Pac, origen: Origen) => {
-    const isSaving = saving === p.id;
-    return (
-      <div key={p.id} className="space-y-1.5">
-        <div className="flex items-center justify-between gap-2 flex-wrap px-1">
-          <p className="text-[13px]">
-            <span style={{ color: ORIGEN[origen].color }}>{ORIGEN[origen].label}</span>
-            <span style={{ color: "var(--text-3)" }}> · llegó el {format(new Date(p.created_at), "d MMM · h:mm a", { locale: es })}</span>
-          </p>
-          <div className="flex items-center gap-2">
-            {origen === "sin_confirmar" && <>
-              {botonSara("Es de Sara", "#34D399", () => marcarSara(p, true), Check, isSaving)}
-              {botonSara("No es de Sara", "#EF4444", () => marcarSara(p, false), X, isSaving)}
-            </>}
-            {origen === "contenido" && botonSara("No es de Sara", "#EF4444", () => marcarSara(p, false), X, isSaving)}
-            {origen === "confirmado" && botonSara("Quitar confirmación", "#94A3B8", () => marcarSara(p, null), X, isSaving)}
-          </div>
-        </div>
-        <CardOtro p={p} h={handlers} />
-      </div>
-    );
-  };
+  const persona = (p: Pac, origen: Origen) => (
+    <div key={p.id} className="space-y-1.5">
+      <p className="text-[13px] px-1">
+        <span style={{ color: ORIGEN[origen].color }}>{ORIGEN[origen].label}</span>
+        <span style={{ color: "var(--text-3)" }}> · llegó el {format(new Date(p.created_at), "d MMM · h:mm a", { locale: es })}</span>
+      </p>
+      <CardOtro p={p} h={handlers} />
+    </div>
+  );
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -269,7 +229,7 @@ export default function SaraPage() {
             <p className="section-label mb-2">Por origen</p>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
               {tarjetaGrupo("campana", rCampana, `${costo(rCampana.llegaron)} por persona · ${costo(rCampana.agendaron)} por agendado`)}
-              {tarjetaGrupo("organico", rOrganico, `${porGrupo.organico.filter(f => f.origen === "contenido").length} escribieron “Sara” · ${porGrupo.organico.filter(f => f.origen === "confirmado").length} confirmados por la asesora · sin costo de pauta`)}
+              {tarjetaGrupo("organico", rOrganico, "Escribieron “Sara” en el chat · sin costo de pauta")}
               <div className="dm-card p-4">
                 <div className="flex items-center gap-2 mb-2"><DollarSign className="w-4 h-4" style={{ color: "#FBBF24" }} /><span className="text-sm" style={{ color: "var(--text-2)" }}>Inversión en pauta</span></div>
                 <p className="text-3xl font-semibold" style={{ color: "var(--text)" }}>{COP(gasto)}</p>
@@ -286,7 +246,7 @@ export default function SaraPage() {
           {/* 3 · Personas, separadas por origen */}
           <div className="space-y-3">
             <p className="section-label">Personas · llama, escribe y registra el resultado (queda guardado en el CRM)</p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {GRUPOS.map(({ key, label, color, icon: Icon }) => {
                 const activo = grupo === key;
                 return (
@@ -304,10 +264,7 @@ export default function SaraPage() {
                 );
               })}
             </div>
-            <p className="text-[13px]" style={{ color: "var(--text-3)" }}>
-              {grupoActual.desc}.
-              {grupo === "confirmar" && ` Antes de la colaboración llegaban ${promedioAntes.toFixed(1)} orgánicos por día. Al llamarlos, pregunta cómo conocieron al doctor y márcalos con “Es de Sara” o “No es de Sara”.${descartados > 0 ? ` ${descartados} ya descartados.` : ""}`}
-            </p>
+            <p className="text-[13px]" style={{ color: "var(--text-3)" }}>{grupoActual.desc}.</p>
 
             <div className="relative">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "var(--text-3)" }} />

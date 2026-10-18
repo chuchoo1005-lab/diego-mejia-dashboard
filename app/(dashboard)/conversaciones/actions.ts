@@ -44,6 +44,25 @@ export async function getMensajes(convId: number) {
   return (data.payload ?? []).sort((a: any, b: any) => a.created_at - b.created_at)
 }
 
+// Link directo al chat en Chatwoot de un contacto, buscado por su identificador de WhatsApp.
+// Sirve para los usuarios con nombre de usuario (BSUID "CO.…"): no tienen teléfono, pero sí conversación.
+export async function urlChatChatwoot(identificador: string): Promise<string | null> {
+  const s = await fetch(
+    `${CW_URL}/api/v1/accounts/${CW_ACCOUNT}/contacts/search?q=${encodeURIComponent(identificador)}`,
+    { headers: { 'api_access_token': CW_TOKEN }, cache: 'no-store' }
+  )
+  if (!s.ok) return null
+  const contacto = ((await s.json()).payload ?? []).find((c: any) => c.identifier === identificador)
+  if (!contacto) return null
+  const c = await fetch(
+    `${CW_URL}/api/v1/accounts/${CW_ACCOUNT}/contacts/${contacto.id}/conversations`,
+    { headers: { 'api_access_token': CW_TOKEN }, cache: 'no-store' }
+  )
+  if (!c.ok) return null
+  const convs = ((await c.json()).payload ?? []).sort((a: any, b: any) => (b.last_activity_at ?? 0) - (a.last_activity_at ?? 0))
+  return convs.length ? `${CW_URL}/app/accounts/${CW_ACCOUNT}/conversations/${convs[0].id}` : null
+}
+
 export async function enviarMensaje(convId: number, contenido: string) {
   const res = await fetch(
     `${CW_URL}/api/v1/accounts/${CW_ACCOUNT}/conversations/${convId}/messages`,
