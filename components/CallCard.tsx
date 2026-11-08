@@ -135,8 +135,8 @@ export function esBsuid(t: string | null | undefined): boolean { return /^[A-Z]{
 export function resultadoLlamada(p: Paciente): string { return (p.perfil_paciente?.resultado_llamada as string) || ""; }
 export function notasInternas(p: Paciente): string { return (p.perfil_paciente?.notas_internas as string) || ""; }
 // Leads que registró el agente nuevo: mismo lugar y mismas acciones, solo con otro color para distinguirlos.
-export const COLOR_AGENTE = "#EC4899";
-export function esDelAgente(p: Paciente): boolean { return p.perfil_paciente?.origen_agente === "agente_nuevo"; }
+export const COLOR_AGENTE = "#3B82F6";
+export function esDelAgente(p: Pick<Paciente, "perfil_paciente">): boolean { return p.perfil_paciente?.origen_agente === "agente_nuevo"; }
 function EtiquetaAgente() {
   return <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${COLOR_AGENTE}20`, color: COLOR_AGENTE, border: `1px solid ${COLOR_AGENTE}55` }}>AGENTE NUEVO</span>;
 }
@@ -227,7 +227,9 @@ export function CardListo({ p, h }: { p: Paciente; h: CardHandlers }) {
             <div className="flex items-center gap-2 flex-wrap mb-1">
               <span className="font-bold" style={{ color: "var(--text)", fontSize: "15px" }}>{nombre}</span>
               {agente && <EtiquetaAgente />}
-              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(16,185,129,0.15)", color: "#10B981", border: "1px solid rgba(16,185,129,0.3)" }}>✓ LISTO PARA LLAMAR</span>
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={agente
+                ? { background: `${COLOR_AGENTE}26`, color: COLOR_AGENTE, border: `1px solid ${COLOR_AGENTE}4D` }
+                : { background: "rgba(16,185,129,0.15)", color: "#10B981", border: "1px solid rgba(16,185,129,0.3)" }}>✓ LISTO PARA LLAMAR</span>
               {resultado && <span className="text-[11px] font-bold px-2 py-0.5 rounded-full uppercase" style={{ background: `${etapa.color}20`, color: etapa.color, border: `1px solid ${etapa.color}40` }}>{etapa.icon} {etapa.label}</span>}
             </div>
             <p className="text-[13px]" style={{ color: "var(--text-3)" }}>{p.alias} · {tiempoAtras}</p>

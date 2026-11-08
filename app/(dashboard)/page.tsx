@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { format, formatDistanceToNow, isToday, isTomorrow } from "date-fns";
 import { es } from "date-fns/locale";
 import { Brain, Flame, Clock, MessageSquare, Users, TrendingUp, ArrowRight, Zap, Activity, Phone, AlertTriangle, Target, ChevronDown, ChevronUp, CalendarDays, Plus, MapPin, Stethoscope, CheckCircle } from "lucide-react";
-import { MAP_A_ETAPA, telAccionable, SRV, MoverBotones, resultadoUpdates } from "@/components/CallCard";
+import { MAP_A_ETAPA, telAccionable, SRV, MoverBotones, resultadoUpdates, esDelAgente, COLOR_AGENTE } from "@/components/CallCard";
 
 interface CitaAgenda {
   id: string; paciente_nombre: string; paciente_telefono: string | null; fecha_hora: string;
@@ -270,7 +270,9 @@ export default function Home() {
           {alertasUrgentes.slice(0, 3).map((p, alertaIdx) => {
             const telefono = tel(p); const nombre = nom(p);
             const isListo = ec(p) === "entrega_premium";
-            const colorEstado = isListo ? "#10B981" : "#EF4444";
+            // Los que registró el agente nuevo se ven en azul; los del bot actual siguen en verde.
+            const delAgente = esDelAgente(p);
+            const colorEstado = isListo ? (delAgente ? COLOR_AGENTE : "#10B981") : "#EF4444";
             const servicio = srv(p);
             const horario = p.perfil_paciente?.horario_contacto as string;
             const waClean = (telAccionable(p.perfil_paciente?.telefono_contacto as string, p.telefono_encriptado) || "").replace(/\D/g,"");
@@ -302,7 +304,7 @@ export default function Home() {
                       {horarioCorto && <span className="text-[10px] flex items-center gap-0.5 uppercase" style={{ color:"var(--text-3)" }}><Clock className="w-2.5 h-2.5" />{horarioCorto}</span>}
                     </div>
                     <p className="text-[12px] mt-0.5 uppercase" style={{ color: colorEstado }}>
-                      {isListo ? "✓ Listo para llamar" : "⚡ Urgente"} · {tiempoRegistro}
+                      {isListo ? (delAgente ? "✓ Listo para llamar · Agente nuevo" : "✓ Listo para llamar") : "⚡ Urgente"} · {tiempoRegistro}
                       {telefono && <span style={{ color:"var(--text-3)" }}> · {telefono}</span>}
                     </p>
                   </div>
