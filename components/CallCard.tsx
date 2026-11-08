@@ -134,6 +134,12 @@ export function esBsuid(t: string | null | undefined): boolean { return /^[A-Z]{
 
 export function resultadoLlamada(p: Paciente): string { return (p.perfil_paciente?.resultado_llamada as string) || ""; }
 export function notasInternas(p: Paciente): string { return (p.perfil_paciente?.notas_internas as string) || ""; }
+// Leads que registró el agente nuevo: mismo lugar y mismas acciones, solo con otro color para distinguirlos.
+export const COLOR_AGENTE = "#EC4899";
+export function esDelAgente(p: Paciente): boolean { return p.perfil_paciente?.origen_agente === "agente_nuevo"; }
+function EtiquetaAgente() {
+  return <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${COLOR_AGENTE}20`, color: COLOR_AGENTE, border: `1px solid ${COLOR_AGENTE}55` }}>AGENTE NUEVO</span>;
+}
 
 export interface CardHandlers {
   expanded: Set<string>;
@@ -208,15 +214,19 @@ export function CardListo({ p, h }: { p: Paciente; h: CardHandlers }) {
   const nivelCfg = NIVEL[nivel] ?? NIVEL.bajo;
   const svc = servicio ? svcBadge(servicio) : null;
   const tiempoAtras = formatDistanceToNow(ua(p), { locale: es, addSuffix: true });
+  const agente = esDelAgente(p);
 
   return (
-    <div className="overflow-hidden rounded-2xl" style={{ background: "rgba(16,185,129,0.05)", border: "1px solid rgba(16,185,129,0.25)", boxShadow: "0 0 20px rgba(16,185,129,0.06)" }}>
-      <div className="h-0.5 w-full" style={{ background: "linear-gradient(90deg, rgba(16,185,129,0.8), rgba(16,185,129,0.2))" }} />
+    <div className="overflow-hidden rounded-2xl" style={agente
+      ? { background: `${COLOR_AGENTE}0D`, border: `1px solid ${COLOR_AGENTE}55`, boxShadow: `0 0 20px ${COLOR_AGENTE}12` }
+      : { background: "rgba(16,185,129,0.05)", border: "1px solid rgba(16,185,129,0.25)", boxShadow: "0 0 20px rgba(16,185,129,0.06)" }}>
+      <div className="h-0.5 w-full" style={{ background: agente ? `linear-gradient(90deg, ${COLOR_AGENTE}, ${COLOR_AGENTE}33)` : "linear-gradient(90deg, rgba(16,185,129,0.8), rgba(16,185,129,0.2))" }} />
       <div className="p-4">
         <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-1">
               <span className="font-bold" style={{ color: "var(--text)", fontSize: "15px" }}>{nombre}</span>
+              {agente && <EtiquetaAgente />}
               <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(16,185,129,0.15)", color: "#10B981", border: "1px solid rgba(16,185,129,0.3)" }}>✓ LISTO PARA LLAMAR</span>
               {resultado && <span className="text-[11px] font-bold px-2 py-0.5 rounded-full uppercase" style={{ background: `${etapa.color}20`, color: etapa.color, border: `1px solid ${etapa.color}40` }}>{etapa.icon} {etapa.label}</span>}
             </div>
@@ -312,7 +322,8 @@ export function CardOtro({ p, accent, sinTerminarAgendar, h }: { p: Paciente; ac
   const waLink = waNum ? `https://wa.me/${waNum.startsWith("57") ? waNum : "57" + waNum}` : null;
   const resumen = p.perfil_paciente?.resumen_lead as string;
   const botActivo = !p.modo_humano;
-  const borderColor = accent ? "rgba(6,182,212,0.2)" : "var(--border)";
+  const agente = esDelAgente(p);
+  const borderColor = agente ? `${COLOR_AGENTE}66` : accent ? "rgba(6,182,212,0.2)" : "var(--border)";
   const svc = servicio ? svcBadge(servicio) : null;
   const tiempoAtras = formatDistanceToNow(ua(p), { locale: es, addSuffix: true });
 
@@ -324,6 +335,7 @@ export function CardOtro({ p, accent, sinTerminarAgendar, h }: { p: Paciente; ac
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
             <span className="font-bold text-[15px]" style={{ color: "var(--text)" }}>{nombre}</span>
+            {agente && <EtiquetaAgente />}
             {nombreEsWhatsapp && <span className="text-[12px] italic" style={{ color: "var(--text-3)" }}>(WhatsApp, no confirmado)</span>}
             {resultado && <span className="text-[11px] font-bold px-2 py-0.5 rounded-full uppercase" style={{ background: `${etapa.color}20`, color: etapa.color, border: `1px solid ${etapa.color}40` }}>{etapa.icon} {etapa.label}</span>}
           </div>
