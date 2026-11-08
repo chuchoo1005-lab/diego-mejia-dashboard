@@ -74,7 +74,13 @@ export default function BlackFridayPage() {
     const { data: menciones } = await supabase.from("conversaciones")
       .select("paciente_id,mensaje_encriptado").eq("direccion", "entrante").gte("timestamp", INICIO_ISO)
       .or("mensaje_encriptado.ilike.%black%,mensaje_encriptado.ilike.%viernes%negro%,mensaje_encriptado.ilike.%shaira%");
-    const mencion = Array.from(new Set((menciones || []).filter(m => PALABRA_BF.test(String(m.mensaje_encriptado || ""))).map(m => String(m.paciente_id))));
+    // El agente nuevo guarda sus mensajes aparte: deja la marca menciono_black_friday en el paciente.
+    const { data: delAgente } = await supabase.from("pacientes").select("id")
+      .eq("perfil_paciente->>menciono_black_friday", "true").gte("updated_at", INICIO_ISO);
+    const mencion = Array.from(new Set([
+      ...(menciones || []).filter(m => PALABRA_BF.test(String(m.mensaje_encriptado || ""))).map(m => String(m.paciente_id)),
+      ...(delAgente || []).map(p => String(p.id)),
+    ]));
     setIdsMencion(new Set(mencion));
 
     const filtros = [`perfil_paciente->>anuncio_id.in.(${ids.join(",")})`];
