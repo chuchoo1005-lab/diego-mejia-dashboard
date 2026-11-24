@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { RefreshCw, Users, Megaphone, MessageCircle, PhoneCall, CalendarCheck, CheckCircle, DollarSign, Search } from "lucide-react";
-import { MAP_A_ETAPA, RESULTADOS, CardOtro, CardHandlers, Paciente, resultadoLlamada, resultadoUpdates, coincideBusqueda } from "@/components/CallCard";
+import { MAP_A_ETAPA, RESULTADOS, CardOtro, CardHandlers, Paciente, resultadoLlamada, resultadoUpdates, Extra, coincideBusqueda } from "@/components/CallCard";
 import { COP } from "@/lib/precios";
 
 // Black Friday con la campaña de Shaira, dos partes que se miden por separado:
@@ -119,8 +119,8 @@ export default function BlackFridayPage() {
     setPacientes(prev => prev.map(p => p.id === id ? { ...p, perfil_paciente: newPerfil, updated_at: nowIso } : p));
     setSaving(null);
   };
-  const setResultado = (p: Paciente, valor: string) => updatePerfil(p.id, resultadoUpdates(valor));
-  const guardarNotas = (p: Paciente) => { const nota = notasTemp[p.id] ?? (p.perfil_paciente?.notas_internas as string ?? ""); updatePerfil(p.id, { notas_internas: nota }); };
+  const setResultado = (p: Paciente, valor: string, extra?: Extra) => updatePerfil(p.id, resultadoUpdates(valor, p, extra));
+  const guardarNotas = (p: Paciente) => { const nota = notasTemp[p.id] ?? (p.perfil_paciente?.notas_equipo as string ?? ""); updatePerfil(p.id, { notas_equipo: nota }); };
   const toggleCandado = async (p: Paciente) => {
     const nuevo = !p.modo_humano;
     setSaving(p.id);

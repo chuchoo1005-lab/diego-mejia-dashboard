@@ -6,7 +6,7 @@ import { es } from "date-fns/locale";
 import { Bell, MessageSquare, RefreshCw, Clock, Phone } from "lucide-react";
 import {
   Paciente, CardListo, CardOtro, CardHandlers,
-  ec, sc, ua, resultadoLlamada, RESULTADOS_TERMINALES, resultadoUpdates,
+  ec, sc, ua, resultadoLlamada, RESULTADOS_TERMINALES, resultadoUpdates, Extra,
 } from "@/components/CallCard";
 
 function playAlarmSound() {
@@ -118,8 +118,8 @@ export default function NotificacionesPage() {
     setSaving(null);
   };
 
-  const setResultado = (p: Paciente, valor: string) => updatePerfil(p.id, resultadoUpdates(valor));
-  const guardarNotas = (p: Paciente) => { const nota = notasTemp[p.id] ?? (p.perfil_paciente?.notas_internas as string ?? ""); updatePerfil(p.id, { notas_internas: nota }); };
+  const setResultado = (p: Paciente, valor: string, extra?: Extra) => updatePerfil(p.id, resultadoUpdates(valor, p, extra));
+  const guardarNotas = (p: Paciente) => { const nota = notasTemp[p.id] ?? (p.perfil_paciente?.notas_equipo as string ?? ""); updatePerfil(p.id, { notas_equipo: nota }); };
   const toggleCandado = async (p: Paciente) => {
     const nuevo = !p.modo_humano;
     setSaving(p.id);

@@ -1,55 +1,70 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { supabase } from "@/lib/supabase";
-import { Search, RefreshCw, Phone, TrendingUp, XCircle, Trophy, Clock, CheckCircle2, Repeat, CalendarX, Hourglass } from "lucide-react";
+import { supabase, SOLO_LECTURA } from "@/lib/supabase";
+import { Search, RefreshCw } from "lucide-react";
 import {
-  Paciente, CardOtro, CardHandlers,
-  sc, ec, ua, resultadoLlamada, MAP_A_ETAPA, resultadoUpdates, coincideBusqueda,
+  Paciente, CardOtro, CardHandlers, Etapa, Extra,
+  sc, ec, ua, etapaDe, resultadoUpdates, coincideBusqueda, citaDe, volverLlamarDe, proximoIntentoDe, finDeHoy, notasEquipo,
 } from "@/components/CallCard";
 
-type PipelineTab = "llamar" | "sin_terminar" | "proceso" | "espera" | "reprogramo" | "cerrados" | "asistio" | "no_asistio" | "no_interesado";
+type TabDef = { key: Etapa; label: string; color: string; icon: string; vacio: string };
 
-type TabDef = { key: PipelineTab; label: string; color: string; icon: React.ElementType };
+// Las etapas siguen el recorrido real de una persona: antes de llamarla, el contacto por teléfono,
+// la cita de valoración y el cierre. Cada una es un grupo exacto (sirve después para mensajes y recordatorios).
+const GRUPOS: { titulo: string; tabs: TabDef[] }[] = [
+  { titulo: "Antes de llamar", tabs: [
+    { key: "llamar",        label: "Para llamar",      color: "#10B981", icon: "📞", vacio: "Nadie pendiente de llamar" },
+    { key: "sin_terminar",  label: "Sin terminar",     color: "#F97316", icon: "🕓", vacio: "Nadie se quedó a medias" },
+  ]},
+  { titulo: "Llamadas", tabs: [
+    { key: "no_contesto",   label: "No contestó",      color: "#F97316", icon: "📵", vacio: "Nadie pendiente por no contestar" },
+    { key: "volver_llamar", label: "Volver a llamar",  color: "#38BDF8", icon: "📅", vacio: "Nadie pidió que la llamen otro día" },
+    { key: "pensando",      label: "Pensándolo",       color: "#FBBF24", icon: "🤔", vacio: "Nadie lo está pensando" },
+  ]},
+  { titulo: "Valoración", tabs: [
+    { key: "cerrados",      label: "Agendada",         color: "#22D3EE", icon: "🏆", vacio: "Nadie tiene valoración agendada" },
+    { key: "reprogramo",    label: "Reprogramó",       color: "#60A5FA", icon: "🔁", vacio: "Nadie ha cambiado la fecha" },
+    { key: "asistio",       label: "Asistió",          color: "#8B5CF6", icon: "✅", vacio: "Nadie ha asistido todavía" },
+    { key: "no_asistio",    label: "No asistió",       color: "#FB923C", icon: "🚫", vacio: "Nadie ha faltado a su cita" },
+  ]},
+  { titulo: "Cerrado", tabs: [
+    { key: "no_interesado", label: "No interesado",    color: "#EF4444", icon: "✕",  vacio: "Nadie dijo que no" },
+  ]},
+];
+const TABS = GRUPOS.flatMap(g => g.tabs);
 
-// Dos grupos: leads que todavía se están trabajando, y resultados ya definidos de una llamada/cita.
-const TABS_EN_CURSO: TabDef[] = [
-  { key: "llamar",        label: "Para llamar",   color: "#10B981", icon: Phone },
-  { key: "sin_terminar",  label: "Sin terminar",  color: "#F97316", icon: Clock },
-  { key: "proceso",       label: "En proceso",    color: "#FBBF24", icon: TrendingUp },
-  { key: "espera",        label: "En espera",     color: "#94A3B8", icon: Hourglass },
-  { key: "reprogramo",    label: "Reprogramó",    color: "#38BDF8", icon: Repeat },
-];
-const TABS_RESULTADO: TabDef[] = [
-  { key: "cerrados",      label: "Agendó valoración", color: "#22D3EE", icon: Trophy },
-  { key: "asistio",       label: "Asistió a la cita", color: "#8B5CF6", icon: CheckCircle2 },
-  { key: "no_asistio",    label: "No asistió",   color: "#FB923C", icon: CalendarX },
-  { key: "no_interesado", label: "No interesado", color: "#EF4444", icon: XCircle },
-];
-const TABS: TabDef[] = [...TABS_EN_CURSO, ...TABS_RESULTADO];
+const tiempo = (d: Date | null, siNo: number) => d ? d.getTime() : siNo;
+const at = (p: Paciente, campo: string) => { const v = p.perfil_paciente?.[campo]; return v ? new Date(String(v)).getTime() : 0; };
 
 export default function CitasPage() {
   const [leads, setLeads] = useState<Paciente[]>([]);
   const [agendarIniciado, setAgendarIniciado] = useState<Set<string>>(new Set());
   const [busqueda, setBusqueda] = useState("");
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<PipelineTab>("llamar");
+  const [tab, setTab] = useState<Etapa>("llamar");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState<string | null>(null);
   const [notasTemp, setNotasTemp] = useState<Record<string, string>>({});
+  const [ejemplo, setEjemplo] = useState(false);
 
   const load = useCallback(async () => {
+    // Revisión en local sin sesión (modo prueba): se muestran pacientes inventados.
+    if (SOLO_LECTURA && !(await supabase.auth.getUser()).data.user) {
+      const { pacientesDeEjemplo } = await import("@/lib/ejemplos");
+      const ej = pacientesDeEjemplo();
+      setLeads(ej.leads); setAgendarIniciado(ej.sinTerminar); setEjemplo(true); setLoading(false);
+      return;
+    }
     const SEL = "id,alias,calificado,telefono_encriptado,perfil_paciente,updated_at,modo_humano";
     const [{ data: recientes }, { data: enPipeline }, { data: convData }] = await Promise.all([
       supabase.from("pacientes").select(SEL)
         .eq("estado", "activo").order("updated_at", { ascending: false }).limit(200),
-      // Leads ya movidos a mano (proceso/cerrado/no interesado) no deben desaparecer solo porque el bot
-      // no los ha vuelto a tocar y quedaron fuera del limit(200) de arriba — se traen aparte, sin límite.
+      // Leads ya movidos a mano no deben desaparecer solo porque el bot no los ha vuelto a tocar
+      // y quedaron fuera del limit(200) de arriba — se traen aparte, sin límite.
       supabase.from("pacientes").select(SEL)
         .eq("estado", "activo").not("perfil_paciente->>resultado_llamada", "is", null),
       // El bot solo envía "...¿cómo te llamas?" justo después de pulsar "Agendar valoración" (o responder "sí" a un seguimiento).
-      // Es la única señal 100% confiable de que alguien de verdad inició el agendamiento, a diferencia de estado_conv
-      // (que también se pone al simplemente ver el video de un tratamiento) o de tener nombre capturado (que puede
-      // haberse dado de forma casual en la conversación, sin pedir agendar nada).
+      // Es la señal confiable de que alguien inició el registro (ver "Sin terminar").
       supabase.from("conversaciones").select("paciente_id").eq("direccion", "saliente").ilike("mensaje_encriptado", "%cómo te llamas%"),
     ]);
     const porId = new Map<string, Paciente>();
@@ -60,10 +75,16 @@ export default function CitasPage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { load(); const t = setInterval(load, 30000); return () => clearInterval(t); }, [load]);
+  // En modo de prueba no se recarga solo: si recargara, los movimientos de prueba (que no se guardan) se desharían.
+  useEffect(() => {
+    load();
+    if (SOLO_LECTURA) return;
+    const t = setInterval(load, 30000); return () => clearInterval(t);
+  }, [load]);
 
   // Sincronización en tiempo real: si alguien mueve un lead desde otro dispositivo, se refleja aquí al instante
   useEffect(() => {
+    if (SOLO_LECTURA) return;
     let timeout: ReturnType<typeof setTimeout> | undefined;
     const channel = supabase
       .channel("realtime-pacientes-citas")
@@ -78,19 +99,22 @@ export default function CitasPage() {
   const updatePerfil = async (id: string, updates: Record<string, unknown>) => {
     setSaving(id);
     const pac = leads.find(p => p.id === id);
-    if (!pac) return;
+    if (!pac) { setSaving(null); return; }
     const newPerfil = { ...(pac.perfil_paciente || {}), ...updates };
-    // updated_at se pone a mano porque la tabla no lo actualiza sola en cada UPDATE:
-    // sin esto, un lead movido manualmente (ej. a "Proceso") queda con la fecha vieja del último
-    // toque del bot y termina cayendo fuera del limit(200) de load(), desapareciendo del panel.
+    // updated_at se pone a mano porque la tabla no lo actualiza sola en cada UPDATE (si no, el lead
+    // movido queda con la fecha vieja y puede caer fuera del limit(200) de load()).
     const nowIso = new Date().toISOString();
     await supabase.from("pacientes").update({ perfil_paciente: newPerfil, updated_at: nowIso }).eq("id", id);
     setLeads(prev => prev.map(p => p.id === id ? { ...p, perfil_paciente: newPerfil, updated_at: nowIso } : p));
     setSaving(null);
   };
 
-  const setResultado = (p: Paciente, valor: string) => updatePerfil(p.id, resultadoUpdates(valor));
-  const guardarNotas = (p: Paciente) => { const nota = notasTemp[p.id] ?? (p.perfil_paciente?.notas_internas as string ?? ""); updatePerfil(p.id, { notas_internas: nota }); };
+  const setResultado = (p: Paciente, valor: string, extra?: Extra) => {
+    updatePerfil(p.id, resultadoUpdates(valor, p, extra));
+    // Cierra la tarjeta: la persona pasa a su nueva pestaña.
+    setExpanded(prev => { const s = new Set(prev); s.delete(p.id); return s; });
+  };
+  const guardarNotas = (p: Paciente) => { const nota = notasTemp[p.id] ?? notasEquipo(p); updatePerfil(p.id, { notas_equipo: nota }); };
 
   const toggleCandado = async (p: Paciente) => {
     const nuevo = !p.modo_humano;
@@ -103,126 +127,134 @@ export default function CitasPage() {
 
   const match = (p: Paciente) => coincideBusqueda(p, busqueda);
 
-  // Etapa de cada lead según MAP_A_ETAPA
-  const etapa = (p: Paciente): PipelineTab => {
-    const r = resultadoLlamada(p);
-    if (!r) return "llamar";
-    return (MAP_A_ETAPA[r] as PipelineTab) ?? "llamar";
-  };
-
-  // Pidió agendar (recibió el mensaje "¿cómo te llamas?") pero nunca llegó a entrega_premium (datos completos).
-  // Cubre tanto al que respondió a medias (dio nombre pero no teléfono/horario) como al que pidió agendar y no volvió a escribir.
+  // Pidió agendar con el bot (recibió "¿cómo te llamas?") pero nunca completó los datos.
   const agendamientoIncompleto = (p: Paciente) => agendarIniciado.has(p.id) && ec(p) !== "entrega_premium";
 
-  // Pipeline propio, sin mezclar sus números con "Para llamar". Ordenado por actividad real más reciente
-  // (ultima_actividad_at, la marca el bot solo con mensajes reales) para que lo de anoche quede arriba
-  // y no se mezcle con leads de días atrás.
-  const porRecencia = (a: Paciente, b: Paciente) => ua(b).getTime() - ua(a).getTime();
-  const paraLlamar    = leads.filter(p => etapa(p) === "llamar" && !agendamientoIncompleto(p) && (ec(p) === "entrega_premium" || sc(p) >= 60) && match(p)).sort(porRecencia);
-  const sinTerminar   = leads.filter(p => etapa(p) === "llamar" && agendamientoIncompleto(p) && match(p)).sort(porRecencia);
-  const enProceso     = leads.filter(p => etapa(p) === "proceso"       && match(p));
-  const enEspera      = leads.filter(p => etapa(p) === "espera"        && match(p));
-  const reprogramaron = leads.filter(p => etapa(p) === "reprogramo"    && match(p));
-  const cerrados      = leads.filter(p => etapa(p) === "cerrados"      && match(p));
-  const asistieron    = leads.filter(p => etapa(p) === "asistio"       && match(p));
-  const noAsistieron  = leads.filter(p => etapa(p) === "no_asistio"    && match(p));
-  const noInteresado  = leads.filter(p => etapa(p) === "no_interesado" && match(p));
-
-  const counts: Record<PipelineTab, number> = {
-    llamar: paraLlamar.length,
-    sin_terminar: sinTerminar.length,
-    proceso: enProceso.length,
-    espera: enEspera.length,
-    reprogramo: reprogramaron.length,
-    cerrados: cerrados.length,
-    asistio: asistieron.length,
-    no_asistio: noAsistieron.length,
-    no_interesado: noInteresado.length,
+  // Etapa que se muestra: "Para llamar" exige datos completos (o interés alto); el resto, lo que se registró.
+  const etapaVista = (p: Paciente): Etapa | null => {
+    const e = etapaDe(p);
+    if (e !== "llamar") return e;
+    if (agendamientoIncompleto(p)) return "sin_terminar";
+    if (ec(p) === "entrega_premium" || sc(p) >= 60) return "llamar";
+    return null;
   };
+
+  const porEtapa: Record<Etapa, Paciente[]> = {
+    llamar: [], sin_terminar: [], no_contesto: [], volver_llamar: [], pensando: [],
+    cerrados: [], reprogramo: [], asistio: [], no_asistio: [], no_interesado: [],
+  };
+  for (const p of leads) { const e = etapaVista(p); if (e && match(p)) porEtapa[e].push(p); }
+
+  // Orden de cada lista: primero lo que hay que hacer antes.
+  const recientePrimero = (a: Paciente, b: Paciente) => ua(b).getTime() - ua(a).getTime();
+  const resultadoReciente = (a: Paciente, b: Paciente) => at(b, "resultado_at") - at(a, "resultado_at");
+  porEtapa.llamar.sort(recientePrimero);
+  porEtapa.sin_terminar.sort(recientePrimero);
+  // el que ya toca intentar primero; entre iguales, el intento más viejo
+  porEtapa.no_contesto.sort((a, b) => tiempo(proximoIntentoDe(a), 0) - tiempo(proximoIntentoDe(b), 0) || at(a, "ultima_llamada_at") - at(b, "ultima_llamada_at"));
+  porEtapa.volver_llamar.sort((a, b) => tiempo(volverLlamarDe(a), 9e15) - tiempo(volverLlamarDe(b), 9e15)); // el día más cercano primero
+  porEtapa.pensando.sort(resultadoReciente);
+  porEtapa.cerrados.sort((a, b) => tiempo(citaDe(a), 9e15) - tiempo(citaDe(b), 9e15));                   // la cita más próxima primero
+  porEtapa.reprogramo.sort((a, b) => tiempo(citaDe(a), 9e15) - tiempo(citaDe(b), 9e15));
+  porEtapa.asistio.sort(resultadoReciente);
+  porEtapa.no_asistio.sort(resultadoReciente);
+  porEtapa.no_interesado.sort(resultadoReciente);
 
   const toggleExp = (id: string) => setExpanded(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
   const handlers: CardHandlers = { expanded, toggleExp, notasTemp, setNotasTemp, saving, setResultado, guardarNotas, toggleCandado };
 
-  const currentList = {
-    llamar: paraLlamar, sin_terminar: sinTerminar, proceso: enProceso, espera: enEspera, reprogramo: reprogramaron,
-    cerrados, asistio: asistieron, no_asistio: noAsistieron, no_interesado: noInteresado,
-  }[tab];
+  const currentList = porEtapa[tab];
   const currentTab = TABS.find(t => t.key === tab)!;
+
+  // "Para hoy": lo que la asesora tiene que hacer hoy, como la bandeja de tareas de un CRM.
+  const fin = finDeHoy();
+  const inicioHoy = new Date(new Date().toDateString()).getTime();
+  const conCita = [...porEtapa.cerrados, ...porEtapa.reprogramo];
+  const hoy = [
+    { key: "llamar" as Etapa, icon: "📞", label: "Nuevos por llamar", n: porEtapa.llamar.length, color: "#10B981" },
+    { key: "no_contesto" as Etapa, icon: "📵", label: "Reintentar hoy", n: porEtapa.no_contesto.filter(p => tiempo(proximoIntentoDe(p), 0) <= fin).length, color: "#F97316" },
+    { key: "volver_llamar" as Etapa, icon: "📅", label: "Llamar hoy", n: porEtapa.volver_llamar.filter(p => tiempo(volverLlamarDe(p), 0) <= fin).length, color: "#38BDF8" },
+    { key: "cerrados" as Etapa, icon: "🗓", label: "Citas de hoy", n: conCita.filter(p => { const t = tiempo(citaDe(p), -1); return t >= inicioHoy && t <= fin; }).length, color: "#22D3EE" },
+    { key: "cerrados" as Etapa, icon: "❓", label: "¿Asistió? sin marcar", n: conCita.filter(p => { const t = tiempo(citaDe(p), -1); return t > 0 && t < Date.now() - 2 * 3600_000; }).length, color: "#EF4444" },
+  ];
 
   return (
     <div className="space-y-5 animate-fade-in">
 
-      {/* Header */}
-      <div className="flex items-end justify-between">
+      {SOLO_LECTURA && (
+        <div className="rounded-xl px-4 py-3 text-sm font-semibold" style={{ background: "rgba(251,191,36,0.12)", color: "#FBBF24", border: "1px solid rgba(251,191,36,0.35)" }}>
+          🧪 Modo prueba: puedes mover a las personas para ver cómo funciona, pero nada se guarda. Al recargar la página vuelve todo como estaba.
+          {ejemplo && <span className="block mt-1 font-normal">Estás viendo pacientes de ejemplo inventados (no se inició sesión).</span>}
+        </div>
+      )}
+
+      {/* Encabezado */}
+      <div className="flex items-end justify-between gap-3">
         <div>
-          <p className="section-label mb-2">CRM · Pipeline</p>
+          <p className="section-label mb-2">CRM · Pacientes</p>
           <h1 style={{ fontFamily: "var(--font-cormorant)", fontSize: "2rem", fontWeight: 500, color: "var(--text)" }}>Leads</h1>
         </div>
-        <button onClick={load} className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl"
+        <button onClick={load} className="flex items-center gap-2 text-sm px-4 min-h-[44px] rounded-xl"
           style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", color: "var(--text-2)" }}>
           <RefreshCw className="w-3.5 h-3.5" /> Actualizar
         </button>
       </div>
 
-      {/* Pipeline tabs — agrupadas: en curso vs. resultado ya definido */}
-      <div className="space-y-3">
-        <div>
-          <p className="section-label mb-2 px-0.5">En curso</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-            {TABS_EN_CURSO.map(({ key, label, color, icon: Icon }) => {
-              const active = tab === key;
-              const count = counts[key];
-              return (
-                <button key={key} onClick={() => setTab(key)}
-                  className="flex flex-col items-center gap-1.5 px-2 py-3.5 rounded-2xl text-center transition-all"
-                  style={{
-                    background: active ? `linear-gradient(160deg, ${color}28, ${color}0a)` : `${color}0c`,
-                    border: `1px solid ${active ? `${color}55` : `${color}20`}`,
-                    boxShadow: active ? `0 0 18px ${color}25` : "none",
-                  }}>
-                  <Icon className="w-4 h-4" style={{ color: active ? color : `${color}99` }} />
-                  <span className="text-xl sm:text-2xl font-black leading-none" style={{ color: active ? color : "var(--text-2)" }}>{count}</span>
-                  <span className="text-[12px] sm:text-[13px] font-medium leading-tight" style={{ color: active ? color : "var(--text-3)" }}>{label}</span>
-                </button>
-              );
-            })}
-          </div>
+      {/* Para hoy */}
+      <div className="dm-card p-3">
+        <p className="section-label mb-2 px-0.5">Para hoy</p>
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+          {hoy.map(x => (
+            <button key={x.label} onClick={() => setTab(x.key)} disabled={!x.n}
+              className="flex items-center gap-2 min-h-[48px] px-2.5 rounded-xl text-left"
+              style={{ background: x.n ? `${x.color}14` : "rgba(255,255,255,0.02)", border: `1px solid ${x.n ? x.color + "40" : "var(--border)"}`, opacity: x.n ? 1 : 0.55, WebkitTapHighlightColor: "transparent" }}>
+              <span className="text-[18px] font-black shrink-0" style={{ color: x.n ? x.color : "var(--text-3)" }}>{x.n}</span>
+              <span className="text-[12px] font-semibold leading-tight" style={{ color: x.n ? "var(--text)" : "var(--text-3)" }}>{x.icon} {x.label}</span>
+            </button>
+          ))}
         </div>
-        <div>
-          <p className="section-label mb-2 px-0.5">Resultado</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {TABS_RESULTADO.map(({ key, label, color, icon: Icon }) => {
-              const active = tab === key;
-              const count = counts[key];
-              return (
-                <button key={key} onClick={() => setTab(key)}
-                  className="flex flex-col items-center gap-1.5 px-2 py-3.5 rounded-2xl text-center transition-all"
-                  style={{
-                    background: active ? `linear-gradient(160deg, ${color}28, ${color}0a)` : `${color}0c`,
-                    border: `1px solid ${active ? `${color}55` : `${color}20`}`,
-                    boxShadow: active ? `0 0 18px ${color}25` : "none",
-                  }}>
-                  <Icon className="w-4 h-4" style={{ color: active ? color : `${color}99` }} />
-                  <span className="text-xl sm:text-2xl font-black leading-none" style={{ color: active ? color : "var(--text-2)" }}>{count}</span>
-                  <span className="text-[12px] sm:text-[13px] font-medium leading-tight" style={{ color: active ? color : "var(--text-3)" }}>{label}</span>
-                </button>
-              );
-            })}
+      </div>
+
+      {/* Etapas agrupadas por el recorrido de la persona */}
+      <div className="space-y-2.5">
+        {GRUPOS.map(g => (
+          <div key={g.titulo}>
+            <p className="section-label mb-1 px-0.5">{g.titulo}</p>
+            <div className="grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap sm:gap-2">
+              {g.tabs.map(({ key, label, color, icon }) => {
+                const active = tab === key;
+                const count = porEtapa[key].length;
+                return (
+                  <button key={key} onClick={() => setTab(key)}
+                    className="flex items-center gap-1.5 min-h-[44px] px-2.5 sm:px-3.5 rounded-xl transition-all min-w-0"
+                    style={{
+                      background: active ? `${color}26` : `${color}0c`,
+                      border: `1.5px solid ${active ? `${color}80` : `${color}25`}`,
+                      WebkitTapHighlightColor: "transparent",
+                    }}>
+                    <span className="text-[14px] shrink-0">{icon}</span>
+                    <span className="text-[13px] sm:text-[14px] font-semibold truncate flex-1 text-left" style={{ color: active ? color : "var(--text-2)" }}>{label}</span>
+                    <span className="text-[12px] font-black min-w-[22px] px-1.5 py-0.5 rounded-full text-center shrink-0"
+                      style={{ background: active ? color : "rgba(255,255,255,0.08)", color: active ? "#000" : "var(--text-2)" }}>{count}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        ))}
       </div>
 
       {/* Búsqueda */}
       <div className="relative">
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "var(--text-3)" }} />
-        <input type="text" placeholder="Buscar por nombre o teléfono..." value={busqueda}
-          onChange={e => setBusqueda(e.target.value)} className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl"
+        <input type="search" placeholder="Buscar por nombre o teléfono..." value={busqueda}
+          onChange={e => setBusqueda(e.target.value)} className="w-full pl-10 pr-4 min-h-[48px] text-base rounded-xl"
           style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", color: "var(--text)" }} />
       </div>
 
-      {/* Section label */}
+      {/* Título de la lista */}
       <div className="flex items-center gap-2">
-        <currentTab.icon className="w-4 h-4" style={{ color: currentTab.color }} />
+        <span>{currentTab.icon}</span>
         <h2 className="text-sm font-bold uppercase tracking-wide" style={{ color: currentTab.color }}>{currentTab.label}</h2>
         <span className="text-sm px-2 py-0.5 rounded-full font-bold" style={{ background: `${currentTab.color}15`, color: currentTab.color }}>{currentList.length}</span>
       </div>
@@ -233,27 +265,12 @@ export default function CitasPage() {
         </div>
       ) : currentList.length === 0 ? (
         <div className="dm-card p-10 text-center">
-          <currentTab.icon className="w-8 h-8 mx-auto mb-3" style={{ color: "var(--text-3)" }} />
-          <p className="font-medium" style={{ color: "var(--text-2)" }}>
-            {tab === "llamar" ? "Sin leads pendientes de llamar"
-            : tab === "sin_terminar" ? "Nadie se quedó a medias agendando"
-            : tab === "proceso" ? "Sin leads en proceso"
-            : tab === "espera" ? "Nadie está en espera por ahora"
-            : tab === "reprogramo" ? "Nadie ha reprogramado su cita"
-            : tab === "cerrados" ? "Nadie ha agendado valoración todavía"
-            : tab === "asistio" ? "Nadie ha asistido a su cita todavía"
-            : tab === "no_asistio" ? "Nadie ha faltado a su cita"
-            : "Sin leads no interesados"}
-          </p>
-          {tab !== "llamar" && tab !== "sin_terminar" && (
-            <p className="text-sm mt-1" style={{ color: "var(--text-3)" }}>
-              Mueve leads aquí desde "Para llamar"
-            </p>
-          )}
+          <p className="text-2xl mb-2">{currentTab.icon}</p>
+          <p className="font-medium" style={{ color: "var(--text-2)" }}>{currentTab.vacio}</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {currentList.map(p => <CardOtro key={p.id} p={p} accent={tab === "llamar"} sinTerminarAgendar={agendamientoIncompleto(p)} h={handlers} />)}
+          {currentList.map(p => <CardOtro key={p.id} p={p} etapa={tab} accent={tab === "llamar"} sinTerminarAgendar={tab === "sin_terminar"} h={handlers} />)}
         </div>
       )}
     </div>

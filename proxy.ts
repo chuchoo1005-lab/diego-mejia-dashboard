@@ -36,6 +36,12 @@ export async function proxy(request: NextRequest) {
 
   const isProtected = PROTECTED.some(p => path === p || path.startsWith(p + '/'))
 
+  // Revisión local en modo prueba: deja ver /citas sin sesión (muestra pacientes inventados, no los reales,
+  // porque la base no entrega datos sin sesión). Exige `next dev` + NEXT_PUBLIC_SOLO_LECTURA=1, que solo
+  // existe en .env.development.local; el panel publicado nunca cumple esto.
+  const revisionLocal = process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_SOLO_LECTURA === '1'
+  if (!user && isProtected && revisionLocal && path === '/citas') return response
+
   // Sin sesión → redirigir al login
   if (!user && isProtected) {
     const url = request.nextUrl.clone()

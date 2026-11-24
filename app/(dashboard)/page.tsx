@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { format, formatDistanceToNow, isToday, isTomorrow } from "date-fns";
 import { es } from "date-fns/locale";
 import { Brain, Flame, Clock, MessageSquare, Users, TrendingUp, ArrowRight, Zap, Activity, Phone, AlertTriangle, Target, ChevronDown, ChevronUp, CalendarDays, Plus, MapPin, Stethoscope, CheckCircle } from "lucide-react";
-import { MAP_A_ETAPA, telAccionable, SRV, MoverBotones, resultadoUpdates, esDelAgente, COLOR_AGENTE } from "@/components/CallCard";
+import { MAP_A_ETAPA, telAccionable, SRV, MoverBotones, resultadoUpdates, Extra, esDelAgente, COLOR_AGENTE } from "@/components/CallCard";
 
 interface CitaAgenda {
   id: string; paciente_nombre: string; paciente_telefono: string | null; fecha_hora: string;
@@ -228,9 +228,9 @@ export default function Home() {
   const toggleExpandedAlerta = (id: string) => setExpandedAlertas(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
   // Mover un paciente de etapa directo desde la franja de alertas — al cambiar resultado_llamada
   // deja de cumplir etapaLead(p)==="llamar" y desaparece solo de la lista (mismo criterio que /citas).
-  const moverResultadoAlerta = async (p: Paciente, valor: string) => {
+  const moverResultadoAlerta = async (p: Paciente, valor: string, extra?: Extra) => {
     setSavingAlerta(p.id);
-    const newPerfil = { ...(p.perfil_paciente || {}), ...resultadoUpdates(valor) };
+    const newPerfil = { ...(p.perfil_paciente || {}), ...resultadoUpdates(valor, p, extra) };
     const nowIso = new Date().toISOString();
     await supabase.from("pacientes").update({ perfil_paciente: newPerfil, updated_at: nowIso }).eq("id", p.id);
     setPacs(prev => prev.map(x => x.id === p.id ? { ...x, perfil_paciente: newPerfil, updated_at: nowIso } : x));
@@ -282,7 +282,6 @@ export default function Home() {
             const horarioCorto = horario ? (horario.length > 20 ? horario.slice(0,20)+"…" : horario) : null;
 
             const isExpAlerta = expandedAlertas.has(p.id);
-            const resultadoAlerta = (p.perfil_paciente?.resultado_llamada as string) || "";
             return (
               <motion.div key={p.id} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.35, delay: 0.06 * alertaIdx }}
                 className="rounded-lg overflow-hidden"
@@ -335,7 +334,7 @@ export default function Home() {
                 {isExpAlerta && (
                   <div className="px-3 pb-3" style={{ borderTop:"1px solid rgba(255,255,255,0.06)" }}>
                     <div className="pt-3">
-                      <MoverBotones resultado={resultadoAlerta} isSaving={savingAlerta === p.id} onMover={v => moverResultadoAlerta(p, v)} />
+                      <MoverBotones p={p} isSaving={savingAlerta === p.id} onMover={(v, extra) => moverResultadoAlerta(p, v, extra)} />
                     </div>
                   </div>
                 )}
